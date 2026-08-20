@@ -333,9 +333,8 @@ export function Craft({
       </section>
       <section className="game-context-grid">
         <article className="game-context-card question-context">
-          <p className="panel-label">QUESTION · CLIENT MANDATE</p>
-          <h2>Build the product</h2>
-          <p className="mission-copy">Your client invests €{money(mission.budget)}. {mission.client}</p>
+          <p className="panel-label">CLIENT MANDATE</p>
+          <p className="mission-copy">{mission.client}</p>
           <div className="mission-rules">
             <span>Budget benchmark €{money(mission.budget)} · soft cap</span>
             <span>Protection ≥ €{money(mission.protection)}</span>
@@ -359,7 +358,6 @@ export function Craft({
         <aside className="ingredient-panel">
           <div className="panel-label">
             <span>INSTRUMENTS</span>
-            <small>Add any leg</small>
           </div>
           <div className="ingredient-list">
             {ingredients.map((i) => (
@@ -393,7 +391,6 @@ export function Craft({
               <div className="drop-zone">
                 <div className="drop-plus">+</div>
                 <strong>Add your first position</strong>
-                <span>Every card is an editable position</span>
               </div>
             ) : (
               <div className="leg-list">
@@ -551,7 +548,6 @@ export function Craft({
                       <strong>↓ {(activeQuote.marketDistribution.downProbability * 100).toFixed(1)}%</strong>
                       <strong>MEAN {money(activeQuote.marketDistribution.forward)}</strong>
                     </div>
-                    <small>Risk-neutral pricing odds: ↑ {(activeQuote.distribution.upProbability * 100).toFixed(1)}% / ↓ {(activeQuote.distribution.downProbability * 100).toFixed(1)}%. NPV remains spot.</small>
                   </div>
                 )}
                 <button
@@ -567,7 +563,6 @@ export function Craft({
             <div className="chart-head">
               <div>
                 <span className="panel-label">MISSION CHECK</span>
-                <strong>Client mandate checks</strong>
               </div>
             </div>
             <div className="constraint-grid">
@@ -629,9 +624,6 @@ export function Craft({
           <div>
             <p className="eyebrow">{result.passed ? "MISSION COMPLETE" : "MISSION FAILED · −1 LIFE"}</p>
             <h2>{result.passed ? "Mandate passed" : "Client constraints missed"}</h2>
-            <p>
-              {legs.length} explicit Long/Short positions. No hidden leg.
-            </p>
           </div>
           <div className="discovery-xp">{result.score >= 0 ? "+" : ""}{result.score} PTS</div>
           <button

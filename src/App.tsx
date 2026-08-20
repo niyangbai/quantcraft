@@ -157,7 +157,7 @@ function App() {
           {mode === "greekthon" && !scoreboard.gameOver && <Greekthon ql={runtime.ql} bank={questionBank.greekthon} onScore={recordGreekthon} />}
           {mode === "hedge" && !scoreboard.gameOver && <Hedge ql={runtime.ql} bank={questionBank.hedge} onScore={recordHedge} />}
           {mode === "collection" && <Collection name={profile?.name ?? "Player"} scoreboard={scoreboard} onRename={renamePlayer} onResetScore={newRun} />}
-          {scoreboard.gameOver && mode !== "collection" && <section className="game-over"><span>RUN OVER · {scoreboard.difficulty.toUpperCase()}</span><h1>No lives left.</h1><strong>{totalScore} PTS</strong><p>You lost all {scoreboard.maxLives} lives. Review the settlement or begin a clean run.</p><div><button onClick={() => setMode("collection")}>VIEW SETTLEMENT</button><button onClick={newRun}>NEW RUN</button></div></section>}
+          {scoreboard.gameOver && mode !== "collection" && <section className="game-over"><span>RUN OVER · {scoreboard.difficulty.toUpperCase()}</span><h1>No lives left.</h1><strong>{totalScore} PTS</strong><div><button onClick={() => setMode("collection")}>VIEW SETTLEMENT</button><button onClick={newRun}>NEW RUN</button></div></section>}
         </div>
       </main>
       {!profile && <Onboarding onFinish={finishOnboarding} />}

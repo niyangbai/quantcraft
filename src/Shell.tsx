@@ -35,12 +35,12 @@ function QuestionBankPanel({ bank, onInstallBank }: { bank: QuestionBank; onInst
       event.target.value = "";
     }
   };
-  return <section className="question-bank-panel"><div><p className="panel-label">SHARED QUESTION BANK</p><h2>One JSON. Three games.</h2><p>Craft missions, Greekthon flashcards, and Hedge products use the same validated file. The installed bank is saved in this browser.</p><div className="bank-counts"><span><strong>{bank.craft.length}</strong> Craft</span><span><strong>{bank.greekthon.scenarios.length}</strong> Scenarios</span><span><strong>{bank.greekthon.books.length}</strong> Greek books</span><span><strong>{bank.greekthon.metrics.length}</strong> KPIs</span><span><strong>{bank.hedge.products.length}</strong> Hedge products</span></div></div><div className="bank-actions"><button onClick={downloadExample}>DOWNLOAD EXAMPLE JSON</button><label>UPLOAD QUESTION BANK<input type="file" accept="application/json,.json" onChange={uploadBank} /></label></div>{bankMessage && <div className={bankMessage.ok ? "bank-message ok" : "bank-message error"}>{bankMessage.text}</div>}</section>;
+  return <section className="question-bank-panel"><div><p className="panel-label">QUESTION BANK</p><h2>Custom questions</h2><p>Upload one validated JSON file for all three games.</p><div className="bank-counts"><span><strong>{bank.craft.length}</strong> Craft</span><span><strong>{bank.greekthon.scenarios.length}</strong> Scenarios</span><span><strong>{bank.greekthon.books.length}</strong> Greek books</span><span><strong>{bank.greekthon.metrics.length}</strong> KPIs</span><span><strong>{bank.hedge.products.length}</strong> Hedge products</span></div></div><div className="bank-actions"><button onClick={downloadExample}>DOWNLOAD EXAMPLE JSON</button><label>UPLOAD QUESTION BANK<input type="file" accept="application/json,.json" onChange={uploadBank} /></label></div>{bankMessage && <div className={bankMessage.ok ? "bank-message ok" : "bank-message error"}>{bankMessage.text}</div>}</section>;
 }
 
 export function Landing({ scoreboard, bank, onInstallBank, onDifficulty, onSelect }: { scoreboard: Scoreboard; bank: QuestionBank; onInstallBank: (bank: QuestionBank) => void; onDifficulty: (difficulty: Difficulty) => void; onSelect: (mode: Mode) => void }) {
   const total = scoreboard.craft.score + scoreboard.greekthon.score + scoreboard.hedge.score;
-  return <section className="landing"><div className="landing-hero"><p className="eyebrow">QUANTCRAFT · QUANTLIB WASM</p><h1>Build risk.<br />Read risk.</h1><p>Choose a difficulty, then a mode. All three games share one score and one life pool.</p><div className="landing-run"><span>{scoreboard.difficulty === "intern" ? "INFINITE LIFE" : <>{"♥".repeat(scoreboard.lives)}{"♡".repeat(scoreboard.maxLives - scoreboard.lives)}</>}</span><strong>{total} PTS</strong><small>{scoreboard.difficulty.toUpperCase()} · {scoreboard.gameOver ? "RUN ENDED" : "RUN ACTIVE"}</small></div></div><div className="difficulty-picker"><div><p className="panel-label">DIFFICULTY</p><strong>Lives per run</strong></div>{([['intern','INTERN','Infinite life'],['analyst','ANALYST','5 lives'],['associate','ASSOCIATE','4 lives'],['vp','VP','3 lives'],['director','DIRECTOR','2 lives'],['md','MD','1 life']] as [Difficulty,string,string][]).map(([id,label,detail]) => <button key={id} className={scoreboard.difficulty === id ? "active" : ""} onClick={() => onDifficulty(id)}><strong>{label}</strong><small>{detail}</small></button>)}</div><div className="mode-cards"><button onClick={() => onSelect("craft")}><span>✣</span><small>STRUCTURE GAME</small><strong>CRAFT</strong><p>Build a priced multi-leg product against client constraints and a live budget.</p><b>ENTER →</b></button><button onClick={() => onSelect("greekthon")}><span>Δ</span><small>FLASH GAME</small><strong>GREEKTHON</strong><p>Read changing fair value and Greeks before the countdown expires.</p><b>ENTER →</b></button><button onClick={() => onSelect("hedge")}><span>≋</span><small>RISK GAME</small><strong>HEDGE</strong><p>Rebalance a structured-product book until its residual Greeks fit the desk limits.</p><b>ENTER →</b></button></div><QuestionBankPanel bank={bank} onInstallBank={onInstallBank} /></section>;
+  return <section className="landing"><div className="landing-hero"><h1>Build risk.<br />Read risk.</h1><p>Choose a difficulty and a desk. Score and lives are shared.</p><div className="landing-run"><span>{scoreboard.difficulty === "intern" ? "INFINITE LIFE" : <>{"♥".repeat(scoreboard.lives)}{"♡".repeat(scoreboard.maxLives - scoreboard.lives)}</>}</span><strong>{total} PTS</strong><small>{scoreboard.difficulty.toUpperCase()} · {scoreboard.gameOver ? "RUN ENDED" : "RUN ACTIVE"}</small></div></div><div className="difficulty-picker"><div><p className="panel-label">DIFFICULTY</p><strong>Lives per run</strong></div>{([['intern','INTERN','Infinite life'],['analyst','ANALYST','5 lives'],['associate','ASSOCIATE','4 lives'],['vp','VP','3 lives'],['director','DIRECTOR','2 lives'],['md','MD','1 life']] as [Difficulty,string,string][]).map(([id,label,detail]) => <button key={id} className={scoreboard.difficulty === id ? "active" : ""} onClick={() => onDifficulty(id)}><strong>{label}</strong><small>{detail}</small></button>)}</div><div className="mode-cards"><button onClick={() => onSelect("craft")}><span>✣</span><strong>CRAFT</strong><p>Build a multi-leg product within the client mandate.</p></button><button onClick={() => onSelect("greekthon")}><span>Δ</span><strong>GREEKTHON</strong><p>Call the direction of fair value and Greeks.</p></button><button onClick={() => onSelect("hedge")}><span>≋</span><strong>HEDGE</strong><p>Trade the book inside its risk limits.</p></button></div><QuestionBankPanel bank={bank} onInstallBank={onInstallBank} /></section>;
 }
 
 export function Collection({ name, scoreboard, onRename, onResetScore }: { name: string; scoreboard: Scoreboard; onRename: (name: string) => void; onResetScore: () => void }) {
@@ -55,24 +55,14 @@ export function Collection({ name, scoreboard, onRename, onResetScore }: { name:
         <div>
           <div className="player-title"><p className="eyebrow">{name.toUpperCase()} · PLAYER SETTLEMENT</p><button onClick={() => { setDraftName(name); setEditingName(true); }}>EDIT NAME</button></div>
           {editingName && <form className="rename-form" onSubmit={(event) => { event.preventDefault(); if (!draftName.trim()) return; onRename(draftName); setEditingName(false); }}><input autoFocus maxLength={30} value={draftName} onChange={(event) => setDraftName(event.target.value)} /><button type="submit" disabled={!draftName.trim()}>SAVE</button><button type="button" onClick={() => setEditingName(false)}>CANCEL</button></form>}
-          <h1>One score. Three games.</h1>
+          <h1>Run settlement</h1>
         </div>
         <div className="level-card">
           <span>TOTAL SCORE</span>
           <strong>{total}</strong>
-          <small>CRAFT + GREEKTHON + HEDGE</small>
         </div>
       </div>
       <div className="collection-stats">
-        <strong>
-          {scoreboard.craft.score} <small>CRAFT POINTS</small>
-        </strong>
-        <strong>
-          {scoreboard.greekthon.score} <small>GREEKTHON POINTS</small>
-        </strong>
-        <strong>
-          {scoreboard.hedge.score} <small>HEDGE POINTS</small>
-        </strong>
         <strong>
           {scoreboard.craft.rounds + scoreboard.greekthon.answers + scoreboard.hedge.rounds} <small>TOTAL ROUNDS</small>
         </strong>
@@ -80,18 +70,16 @@ export function Collection({ name, scoreboard, onRename, onResetScore }: { name:
           {scoreboard.difficulty === "intern" ? "INFINITE LIFE" : scoreboard.gameOver ? "OUT" : `${scoreboard.lives}/${scoreboard.maxLives}`} <small>{scoreboard.gameOver ? "RUN ENDED" : "LIVES LEFT"}</small>
         </strong>
       </div>
-      <div className="life-rule"><strong>{scoreboard.difficulty.toUpperCase()} · {scoreboard.difficulty === "intern" ? "UNLIMITED LIVES" : `${scoreboard.maxLives}-LIFE RUN`}</strong><span>Failed Craft submission: {scoreboard.difficulty === "intern" ? "no life lost" : "−1 life"}</span><span>Wrong Greekthon answer: {scoreboard.difficulty === "intern" ? "no life lost" : "−1 life"}</span><span>Failed Hedge: {scoreboard.difficulty === "intern" ? "no life lost" : "−1 life"}</span><span>Timeout: {scoreboard.difficulty === "intern" ? "no life lost" : "−1 life"}</span></div>
+      <div className="life-rule"><strong>{scoreboard.difficulty.toUpperCase()} · {scoreboard.difficulty === "intern" ? "UNLIMITED LIVES" : `${scoreboard.maxLives}-LIFE RUN`}</strong><span>{scoreboard.difficulty === "intern" ? "Failed rounds and timeouts do not cost lives." : "A failed round, wrong answer, or timeout costs 1 life."}</span></div>
       <div className="settlement-grid">
         <article><span>CRAFT</span><strong>{scoreboard.craft.score}</strong><small>{scoreboard.craft.wins}/{scoreboard.craft.rounds} passed · {winRate.toFixed(0)}% win rate</small><b>BEST ROUND {scoreboard.craft.best}</b></article>
         <article><span>GREEKTHON</span><strong>{scoreboard.greekthon.score}</strong><small>{scoreboard.greekthon.correct}/{scoreboard.greekthon.answers} correct · {accuracy.toFixed(0)}% accuracy</small><b>BEST STREAK ×{scoreboard.greekthon.bestStreak}</b></article>
         <article><span>HEDGE</span><strong>{scoreboard.hedge.score}</strong><small>{scoreboard.hedge.passed}/{scoreboard.hedge.rounds} books inside limits</small><b>BEST ROUND {scoreboard.hedge.best}</b></article>
       </div>
       <section className="recent-settlements">
-        <div className="settlement-head"><div><p className="panel-label">RECENT SETTLEMENTS</p><h2>{scoreboard.gameOver ? "Final score ledger" : "Current run ledger"}</h2></div><button onClick={onResetScore}>NEW RUN</button></div>
+        <div className="settlement-head"><div><h2>{scoreboard.gameOver ? "Final score ledger" : "Current run ledger"}</h2></div><button onClick={onResetScore}>NEW RUN</button></div>
         {scoreboard.recent.length ? scoreboard.recent.map((entry, index) => <div className="settlement-row" key={`${entry.at}-${index}`}><span>{entry.game}</span><strong>{entry.label}</strong><small>{entry.at}</small><b className={entry.score >= 0 ? "positive" : "negative"}>{entry.score >= 0 ? "+" : ""}{entry.score}</b></div>) : <div className="empty-ledger">Complete a round in any game to start the ledger.</div>}
       </section>
     </section>
   );
 }
-
-
