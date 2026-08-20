@@ -7,16 +7,34 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
+# Dependencies and generated application/package output
+node_modules/
+dist/
+dist-ssr/
+coverage/
+*.tsbuildinfo
+.cache/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
 *.local
+
+# Local Emscripten, Boost, QuantLib sources and build cache (multi-GB)
+/.wasm-toolchain/
+
+# QuantLib WASM runtime artifacts are distributable package files.
+!packages/market-kernel/wasm/
+!packages/market-kernel/wasm/quantlib.mjs
+!packages/market-kernel/wasm/quantlib.wasm
 
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
 .idea
 .DS_Store
+Thumbs.db
 *.suo
 *.ntvs*
 *.njsproj

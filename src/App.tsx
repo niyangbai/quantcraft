@@ -1,10 +1,168 @@
-import { useState } from 'react'
-import './App.css'
-type Mode='craft'|'playground'|'lab'|'collection'
-const ingredients=[{id:'bond',label:'Bond',detail:'Stable base',color:'sand',symbol:'B'},{id:'call',label:'Call',detail:'Upside option',color:'coral',symbol:'↗'},{id:'put',label:'Put',detail:'Downside option',color:'mint',symbol:'↘'},{id:'coupon',label:'Coupon',detail:'Yield booster',color:'blue',symbol:'%'}]
-function App(){const[mode,setMode]=useState<Mode>('craft');const[added,setAdded]=useState<string[]>([]);const[priced,setPriced]=useState(false);const[xp,setXp]=useState(1240);const add=(id:string)=>{if(!added.includes(id))setAdded(v=>[...v,id]);setPriced(false)};const remove=(id:string)=>{setAdded(v=>v.filter(x=>x!==id));setPriced(false)};const price=()=>{setPriced(true);setXp(1340)};return <div className="app-shell"><header className="topbar"><div className="brand-mark"><span className="brand-dot"/>QUANT<span>CRAFT</span></div><div className="topbar-status"><span className="status-pulse"/> Markets open for play</div><div className="player-stats"><span className="streak">✦ 3</span><span className="coin">◈ 280</span><span className="avatar">QC</span></div></header><main className="main-content">{mode==='craft'&&<Craft added={added} priced={priced} add={add} remove={remove} price={price} next={()=>{setAdded([]);setPriced(false)}}/>}{mode==='playground'&&<Playground/>}{mode==='lab'&&<Lab/>}{mode==='collection'&&<Collection xp={xp}/>}</main><nav className="bottom-nav">{([['craft','Craft','✣'],['playground','Playground','⌘'],['lab','Quant Lab','∿'],['collection','Collection','▦']]as[Mode,string,string][]).map(([id,label,icon])=><button key={id} className={mode===id?'nav-item active':'nav-item'} onClick={()=>setMode(id)}><span className="nav-icon">{icon}</span>{label}{id==='collection'&&<b>12</b>}</button>)}</nav></div>}
-function Craft({added,priced,add,remove,price,next}:{added:string[];priced:boolean;add:(id:string)=>void;remove:(id:string)=>void;price:()=>void;next:()=>void}){const found=added.includes('bond')&&added.includes('call');return <><section className="mission-header"><div><p className="eyebrow">WORLD 01 · PAYOFF PLAINS</p><h1>The Nervous Bull</h1><p className="mission-copy">Sophie is bullish on European equities, but she refuses to lose her starting capital.</p></div><div className="mission-progress">MISSION 01<div><i/></div><small>1 / 3</small></div></section><section className="craft-layout"><aside className="ingredient-panel"><div className="panel-label"><span>INGREDIENTS</span><small>Drag or tap to add</small></div><div className="ingredient-list">{ingredients.map(i=><button key={i.id} className={`ingredient-card ${i.color} ${added.includes(i.id)?'selected':''}`} onClick={()=>add(i.id)}><span className="ingredient-symbol">{i.symbol}</span><span><strong>{i.label}</strong><small>{i.detail}</small></span>{added.includes(i.id)&&<em>✓</em>}</button>)}</div><div className="quanti-tip"><div className="quanti-face">◡</div><p><strong>Quanti says</strong><br/>Start simple. A stable base plus upside optionality is a good first machine.</p></div></aside><div className="builder-column"><div className="builder-toolbar"><span>YOUR MACHINE</span><span className="toolbar-note">SX5E · 3Y · €100 notional</span></div><div className="builder-stage">{!added.length?<div className="drop-zone"><div className="drop-plus">+</div><strong>Drop ingredients here</strong><span>Build a payoff from the left</span></div>:<><div className="machine-stack">{added.map((id,n)=>{const i=ingredients.find(x=>x.id===id)!;return <div className={`machine-block ${i.color}`} key={id} style={{'--order':n}as React.CSSProperties}><span>{i.symbol}</span><div><strong>{i.label}</strong><small>{i.detail}</small></div><button onClick={()=>remove(id)}>×</button></div>})}<div className="connector"/></div><div className="payoff-result"><span className="result-icon">↗</span><div><small>YOUR PAYOFF</small><strong>{found?'Principal + upside participation':'Add a base and an option'}</strong></div></div></>}</div><div className="chart-card"><div className="chart-head"><div><span className="panel-label">PAYOFF SHAPE</span><strong>{found?'Capital Protected Note':'Waiting for a structure'}</strong></div><span className="chart-tag">AT MATURITY</span></div><div className="payoff-chart"><svg viewBox="0 0 640 170"><path className="grid-line" d="M25 140H620 M25 100H620 M25 60H620 M25 20H620"/><path className="axis-line" d="M25 10V145H620"/><path className="curve-fill" d={found?'M25 135 L210 135 L270 134 L430 78 L620 22 L620 145 L25 145Z':'M25 135 L620 135 L620 145 L25 145Z'}/><path className="curve" d={found?'M25 135 L210 135 L270 134 L430 78 L620 22':'M25 135 L620 135'}/></svg><div className="chart-x-labels"><span>-20%</span><span>0%</span><span>+20%</span><span>+40%</span></div></div></div><div className="action-row">{priced?<div className="reveal-result"><span>FAIR VALUE</span><strong>98.62</strong><small>Desk edge +1.38%</small></div>:<div className="locked-price"><span>FAIR VALUE</span><strong>???</strong><small>Make a prediction first</small></div>}<button className="primary-action" disabled={!found} onClick={price}>{priced?'✓ PRICED':'PRICE IT'} <span>→</span></button></div></div></section>{priced&&<section className="discovery-banner"><div className="discovery-spark">✦</div><div><p className="eyebrow">NEW DISCOVERY</p><h2>Capital Protected Note</h2><p>Principal protected. Upside participation unlocked.</p></div><div className="discovery-xp">+100 XP</div><button onClick={next}>NEXT CRAFT <span>→</span></button></section>}</>}
-function Playground(){return <section className="mode-view"><p className="eyebrow">UNRESTRICTED SANDBOX</p><h1>Make something strange.</h1><p className="mode-intro">Every ingredient is unlocked. Tinker with payoff machines without a mission watching.</p><div className="playground-grid"><div className="big-empty"><span>+</span><strong>Start a new machine</strong><small>Drop blocks onto the canvas</small></div>{['Autocall','Worst-of Basket','Vol Target'].map(n=><div className="saved-machine" key={n}><span>RECENT BUILD</span><strong>{n}</strong><small>Open machine →</small></div>)}</div></section>}
-function Lab(){return <section className="mode-view"><p className="eyebrow">QUANT LAB · EXPERIMENT 02</p><h1>Smooth Operator</h1><p className="mode-intro">Make equities less scary. Keep the upside, turn down the ride.</p><div className="lab-layout"><div className="lab-builder"><div className="lab-block mint">Equity <small>SX5E</small></div><div className="lab-arrow">↓</div><div className="lab-block blue">Momentum <small>12 month signal</small></div><div className="lab-arrow">↓</div><div className="lab-block coral">10% Vol Target <small>Dynamic exposure</small></div><button className="primary-action">RUN HISTORY <span>→</span></button></div><div className="lab-results"><span className="panel-label">FIRST READ</span>{[['2020','😬 survived'],['2022','😐 struggled'],['Drawdown','Much smaller'],['Turnover','Medium']].map(([a,b])=><div className="stat-row" key={a}><strong>{a}</strong><span className={a==='Drawdown'?'good':''}>{b}</span></div>)}</div></div></section>}
-function Collection({xp}:{xp:number}){return <section className="mode-view"><div className="collection-heading"><div><p className="eyebrow">YOUR STRUCTURE BOOK</p><h1>Small machines. Big consequences.</h1></div><div className="level-card"><span>CRAFT LEVEL</span><strong>07</strong><small>{xp.toLocaleString()} XP</small></div></div><div className="collection-stats"><strong>03 <small>DISCOVERED</small></strong><strong>09 <small>INGREDIENTS</small></strong><strong>01 <small>WORLD OPEN</small></strong></div><div className="book-grid">{['Capital Protected Note','Call','Put','???','???','???'].map((n,i)=><div className={`book-item ${i>2?'mystery':''}`} key={`${n}-${i}`}><span>{i>2?'?':['◒','↗','↘'][i]}</span><strong>{n}</strong><small>{i>2?'Hint locked':'Structure found'}</small></div>)}</div></section>}
-export default App
+import { useEffect, useState } from "react";
+import { getQuantLib } from "./quantlib";
+import { Craft } from "./Craft";
+import { Greekthon, Hedge } from "./RiskGames";
+import { Collection, Landing, Onboarding } from "./Shell";
+import "./Core.css";
+
+import { difficultyLives, emptyScoreboard, exampleQuestionBank, parseQuestionBank } from "./game";
+import type {
+  Difficulty,
+  Mode,
+  PlayerProfile,
+  QuestionBank,
+  RuntimeState,
+  Scoreboard,
+} from "./game";
+function useQuantLib(): RuntimeState {
+  const [state, setState] = useState<RuntimeState>({ status: "loading" });
+  useEffect(() => {
+    getQuantLib()
+      .then((ql) => setState({ status: "ready", ql }))
+      .catch((error) => setState({ status: "error", error: String(error) }));
+  }, []);
+  return state;
+}
+
+function App() {
+  const runtime = useQuantLib();
+  const [mode, setMode] = useState<Mode>("landing");
+  const [profile, setProfile] = useState<PlayerProfile | undefined>(() => {
+    try {
+      const saved = localStorage.getItem("quantcraft.profile");
+      if (!saved) return undefined;
+      const parsed = JSON.parse(saved) as PlayerProfile;
+      return parsed.name && parsed.storage === true ? parsed : undefined;
+    } catch { return undefined; }
+  });
+  const [scoreboard, setScoreboard] = useState<Scoreboard>(() => {
+    try {
+      if (!profile?.storage) return emptyScoreboard;
+      const saved = localStorage.getItem("quantcraft.scoreboard");
+      if (!saved) return emptyScoreboard;
+      const parsed = JSON.parse(saved) as Partial<Scoreboard>;
+      return {
+        ...emptyScoreboard,
+        ...parsed,
+        difficulty: parsed.difficulty ?? "vp",
+        maxLives: typeof parsed.maxLives === "number" ? parsed.maxLives : 3,
+        lives: typeof parsed.lives === "number" ? parsed.lives : 3,
+        gameOver: parsed.gameOver === true,
+        craft: { ...emptyScoreboard.craft, ...parsed.craft },
+        greekthon: { ...emptyScoreboard.greekthon, ...parsed.greekthon },
+        hedge: { ...emptyScoreboard.hedge, ...parsed.hedge },
+        recent: Array.isArray(parsed.recent) ? parsed.recent : [],
+      };
+    } catch { return emptyScoreboard; }
+  });
+  const [questionBank, setQuestionBank] = useState<QuestionBank>(() => {
+    try {
+      if (!profile?.storage) return exampleQuestionBank;
+      const saved = localStorage.getItem("quantcraft.questionBank");
+      return saved ? parseQuestionBank(JSON.parse(saved)) : exampleQuestionBank;
+    } catch {
+      return exampleQuestionBank;
+    }
+  });
+  const installQuestionBank = (bank: QuestionBank) => {
+    if (profile?.storage) localStorage.setItem("quantcraft.questionBank", JSON.stringify(bank));
+    setQuestionBank(bank);
+  };
+  useEffect(() => {
+    if (profile?.storage) localStorage.setItem("quantcraft.scoreboard", JSON.stringify(scoreboard));
+  }, [scoreboard, profile]);
+  const finishOnboarding = (name: string, storage: boolean) => {
+    const next = { name: name.trim(), storage };
+    if (storage) localStorage.setItem("quantcraft.profile", JSON.stringify(next));
+    setProfile(next);
+  };
+  const renamePlayer = (name: string) => setProfile((current) => {
+    if (!current) return current;
+    const next = { ...current, name: name.trim() };
+    if (next.storage) localStorage.setItem("quantcraft.profile", JSON.stringify(next));
+    return next;
+  });
+  const recordCraft = (score: number, passed: boolean, label: string) => setScoreboard((current) => ({
+    ...current,
+    lives: current.difficulty === "intern" ? current.lives : Math.max(0, current.lives - Number(!passed)),
+    gameOver: current.difficulty === "intern" ? false : current.lives - Number(!passed) <= 0,
+    craft: { score: current.craft.score + score, rounds: current.craft.rounds + 1, wins: current.craft.wins + Number(passed), best: Math.max(current.craft.best, score) },
+    recent: [{ game: "Craft" as const, label, score, at: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) }, ...current.recent].slice(0, 8),
+  }));
+  const recordGreekthon = (score: number, correct: boolean, streak: number, label: string) => setScoreboard((current) => ({
+    ...current,
+    lives: current.difficulty === "intern" ? current.lives : Math.max(0, current.lives - Number(!correct)),
+    gameOver: current.difficulty === "intern" ? false : current.lives - Number(!correct) <= 0,
+    greekthon: { score: current.greekthon.score + score, answers: current.greekthon.answers + 1, correct: current.greekthon.correct + Number(correct), bestStreak: Math.max(current.greekthon.bestStreak, streak) },
+    recent: [{ game: "Greekthon" as const, label, score, at: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) }, ...current.recent].slice(0, 8),
+  }));
+  const recordHedge = (score: number, passed: boolean, label: string) => setScoreboard((current) => ({
+    ...current,
+    lives: current.difficulty === "intern" ? current.lives : Math.max(0, current.lives - Number(!passed)),
+    gameOver: current.difficulty === "intern" ? false : current.lives - Number(!passed) <= 0,
+    hedge: { score: current.hedge.score + score, rounds: current.hedge.rounds + 1, passed: current.hedge.passed + Number(passed), best: Math.max(current.hedge.best, score) },
+    recent: [{ game: "Hedge" as const, label, score, at: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) }, ...current.recent].slice(0, 8),
+  }));
+  const totalScore = scoreboard.craft.score + scoreboard.greekthon.score + scoreboard.hedge.score;
+  const newRun = () => setScoreboard((current) => ({ ...emptyScoreboard, difficulty: current.difficulty, maxLives: current.maxLives, lives: current.maxLives, recent: [] }));
+  const selectDifficulty = (difficulty: Difficulty) => {
+    if (scoreboard.difficulty === difficulty) return;
+    const lives = difficultyLives[difficulty] ?? 0;
+    setScoreboard({ ...emptyScoreboard, difficulty, maxLives: lives, lives, recent: [] });
+  };
+  return (
+    <div className="app-shell">
+      <header className="topbar">
+        <button className="brand-mark brand-button" onClick={() => setMode("landing")} aria-label="Back to home"><span className="brand-dot" />QUANT<span>CRAFT</span></button>
+        <div className="topbar-status">
+          <span className={`status-pulse ${runtime.status}`} />
+          {runtime.status === "ready"
+            ? "Pricing engine ready"
+            : runtime.status === "loading"
+              ? "Preparing the market…"
+              : "Pricing engine unavailable"}
+        </div>
+        <a
+          className="repo-link"
+          href="https://github.com/your-org/quantcraft"
+          target="_blank"
+          rel="noreferrer"
+          aria-label="Open the QuantCraft GitHub repository"
+          title="GitHub repository"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 .7a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2.23c-3.22.7-3.9-1.37-3.9-1.37-.52-1.34-1.28-1.7-1.28-1.7-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.57-.29-5.27-1.28-5.27-5.68 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.16 1.18a10.93 10.93 0 0 1 5.76 0c2.2-1.49 3.16-1.18 3.16-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.41-2.71 5.38-5.29 5.67.42.36.79 1.06.79 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .7Z" />
+          </svg>
+        </a>
+        <button
+          className="avatar avatar-button"
+          onClick={() => setMode("collection")}
+          aria-label="Open collection"
+          title="Collection"
+        >
+          {profile ? profile.name.split(/\s+/).map((part) => part[0]).join("").slice(0, 2).toUpperCase() : "?"}
+        </button>
+      </header>
+      {runtime.status === "error" && (
+        <div className="runtime-error">
+          QuantLib failed to load: {runtime.error}
+        </div>
+      )}
+      <main className="main-content">
+        <div className="page-transition" key={mode}>
+          {mode === "landing" && <Landing scoreboard={scoreboard} bank={questionBank} onInstallBank={installQuestionBank} onDifficulty={selectDifficulty} onSelect={setMode} />}
+          {mode === "craft" && !scoreboard.gameOver && (
+            <Craft ql={runtime.ql} missions={questionBank.craft} onScore={recordCraft} />
+          )}
+          {mode === "greekthon" && !scoreboard.gameOver && <Greekthon ql={runtime.ql} bank={questionBank.greekthon} onScore={recordGreekthon} />}
+          {mode === "hedge" && !scoreboard.gameOver && <Hedge ql={runtime.ql} bank={questionBank.hedge} onScore={recordHedge} />}
+          {mode === "collection" && <Collection name={profile?.name ?? "Player"} scoreboard={scoreboard} onRename={renamePlayer} onResetScore={newRun} />}
+          {scoreboard.gameOver && mode !== "collection" && <section className="game-over"><span>RUN OVER · {scoreboard.difficulty.toUpperCase()}</span><h1>No lives left.</h1><strong>{totalScore} PTS</strong><p>You lost all {scoreboard.maxLives} lives. Review the settlement or begin a clean run.</p><div><button onClick={() => setMode("collection")}>VIEW SETTLEMENT</button><button onClick={newRun}>NEW RUN</button></div></section>}
+        </div>
+      </main>
+      {!profile && <Onboarding onFinish={finishOnboarding} />}
+    </div>
+  );
+}
+
+export default App;

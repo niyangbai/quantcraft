@@ -1,0 +1,32 @@
+{
+  "name": "@quantcraft/market-kernel",
+  "version": "0.1.0",
+  "description": "Official QuantLib 1.43 compiled to WebAssembly with a TypeScript API",
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "wasm",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "node scripts/clean.mjs && tsc -p tsconfig.json",
+    "build:wasm": "bash scripts/build-wasm.sh",
+    "test": "npm run build && node --test test/kernel.test.mjs"
+  },
+  "devDependencies": {
+    "typescript": "~6.0.2"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

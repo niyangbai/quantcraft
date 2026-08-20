@@ -2,14 +2,19 @@
   "name": "quantcraft-app",
   "private": true,
   "version": "0.0.0",
+  "license": "AGPL-3.0-only",
   "type": "module",
+  "workspaces": ["packages/*"],
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
+    "dev": "npm run build:kernel && vite",
+    "build": "npm run build:kernel && tsc -b && vite build",
+    "build:kernel": "npm run build --workspace @quantcraft/market-kernel",
+    "test:kernel": "npm run test --workspace @quantcraft/market-kernel",
     "lint": "oxlint",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@quantcraft/market-kernel": "workspace:*",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },

@@ -1,32 +1,66 @@
-# React + TypeScript + Vite
+# QUANTCRAFT
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+> Build risk. Read risk. Survive the market.
 
-Currently, two official plugins are available:
+QuantCraft is a fast financial-markets game about judgment under pressure. Construct investment products, read changing risk, protect your lives, and turn two very different trading disciplines into one high score.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Choose your desk
 
-## React Compiler
+### ✣ Craft
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+A client arrives with a mandate: protect capital, retain upside, include a required instrument, and respect a target budget.
 
-## Expanding the Oxlint configuration
+Build the product one leg at a time. Go long or short, set the position size, choose strikes and maturities, and tune bond face values or coupon rates. Every instrument has a live market price, and the whole book moves as you edit it.
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+Your structure must satisfy every hard requirement before time expires. Budget is different: you may overspend, but every excess makes the deal less elegant and costs points.
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
-```
+The strongest structures are not merely valid. They are efficient.
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+### Δ Greekthon
+
+A position flashes onto the screen. Then the market changes.
+
+Will fair value rise or fall? What happens to delta, gamma, vega, theta, or rho? Read the book, read the shock, and choose **up** or **down** before the clock runs out.
+
+Questions may contain a single option or a combined position. As the run continues, decisions arrive faster. Build a streak, trust your risk intuition, and do not hesitate.
+
+### ≋ Hedge
+
+The desk has sold a structured product. The market has moved, and its risk must be rebalanced now.
+
+Each round freezes one dynamic-hedging point and shows the product from the dealer's side. Read the existing hedge, pre-trade risk, and the desk's quote sheet, then enter Buy/Sell orders for the underlying stock and a listed option. Post-trade risk remains hidden until the ticket is submitted. A clean hedge earns points; unnecessary turnover and lingering risk take them away.
+
+Capital-protected notes, reverse convertibles, call spreads, and volatility structures all create different books to neutralize. You have one market snapshot and one chance to lock the hedge.
+
+## One run, one score
+
+Craft, Greekthon, and Hedge share the same score and the same pool of lives. A failed mandate, a wrong risk call, a hedge outside its limits, or an expired timer can cost a life. When the last life is gone, the run ends and the result is recorded in your Collection.
+
+Choose the pressure level before starting:
+
+| Level | Lives |
+| --- | ---: |
+| Intern | Infinite life |
+| Analyst | 5 |
+| Associate | 4 |
+| VP | 3 |
+| Director | 2 |
+| MD | 1 |
+
+Start as an Intern to learn the instruments without fear. Climb toward MD when every decision counts.
+
+## Your Collection
+
+The Collection is your career ledger. It keeps your combined score, Craft results, Greekthon accuracy, Hedge results, best rounds, and recent settlements in one place.
+
+You can also change your player name whenever the desk needs a new identity.
+
+## Shared question bank
+
+All three modes draw from one question bank. Download the example bank, reshape the Craft mandates, Greekthon scenarios, and Hedge products, then upload it to create a new set of challenges for the entire game.
+
+Every run can become a different market day.
+
+---
+
+**Price the structure. Read the Greeks. Keep the book alive.**
