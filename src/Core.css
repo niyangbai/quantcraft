@@ -31,6 +31,21 @@ textarea {
   font: inherit;
 }
 
+button {
+  border-radius: 0;
+  transition: .18s ease;
+}
+
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--coral);
+  outline-offset: 3px;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
 #root,
 .app-shell { min-height: 100vh; }
 .app-shell { display: flex; flex-direction: column; background: radial-gradient(circle at 85% 12%, #fff4d2 0 12%, transparent 30%), linear-gradient(135deg, #f6f2e9, #eef0e8); }
@@ -258,7 +273,8 @@ textarea {
 }
 
 button:hover:not(:disabled):not(.back-home):not(.brand-button):not(.level-card button),
-.repo-link:hover {
+.repo-link:hover,
+.bank-actions label:hover {
   box-shadow: 4px 4px 0 var(--hover-accent), 0 10px 24px #24383a20 !important;
 }
 

@@ -155,7 +155,7 @@
 
 .difficulty-picker button:hover {
   border-color: var(--deep);
-  box-shadow: 4px 4px 0 var(--coral), 0 10px 24px #24383a20;
+  box-shadow: 4px 4px 0 var(--hover-accent), 0 10px 24px #24383a20;
   transform: translateY(-2px);
 }
 
