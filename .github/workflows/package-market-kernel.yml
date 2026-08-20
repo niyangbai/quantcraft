@@ -1,0 +1,47 @@
+name: Package market kernel
+
+on:
+  release:
+    types:
+      - published
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Test market kernel
+        run: npm run test:kernel
+
+      - name: Build installable package
+        run: |
+          mkdir -p artifacts
+          npm pack --workspace @quantcraft/market-kernel --pack-destination artifacts
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: quantcraft-market-kernel-${{ github.ref_name }}
+          path: artifacts/*.tgz
+          if-no-files-found: error
+
+      - name: Attach package to release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ github.event.release.tag_name }}" artifacts/*.tgz --clobber
