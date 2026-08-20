@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { QuantLibRuntime } from "@quantcraft/market-kernel";
-import { GameScoreboard, RoundResult, RoundTimer } from "./Controls";
+import { AiPromptModal, GameScoreboard, RoundResult, RoundTimer } from "./Controls";
 import { between, isoDate, market, secureSeed, seededRandom } from "./game";
 import type { HedgeLeg, QuestionBank, Scoreboard } from "./game";
 import "./Greekthon.css";
@@ -99,6 +99,7 @@ export function Hedge({ ql, bank, onScore, onBack, scoreboard }: { ql?: QuantLib
   const [selectedTrades, setSelectedTrades] = useState<string[]>([]);
   const [secondsLeft, setSecondsLeft] = useState(ROUND_SECONDS);
   const [result, setResult] = useState<{ passed: boolean; score: number; bestTradeIds: string[]; greeks: GreekRisk; timedOut: boolean }>();
+  const [aiPrompt, setAiPrompt] = useState<string>();
   const settleRef = useRef<(timedOut?: boolean) => void>(() => undefined);
   const round = useMemo(() => {
     if (!ql) return undefined;
@@ -205,6 +206,11 @@ export function Hedge({ ql, bank, onScore, onBack, scoreboard }: { ql?: QuantLib
   const bestTrades = round.trades.filter((trade) => result?.bestTradeIds.includes(trade.id));
   const bestHedgeLabel = bestTrades.length ? bestTrades.map((trade) => trade.label).join(" + ") : "DO NOTHING";
   const objectiveLabel = round.objectiveKeys.map((key) => greekLabels[key]).join(" + ");
+  const createHedgePrompt = () => {
+    const availableTools = [...round.trades.map((trade) => `${trade.label}: ${trade.detail}`), "DO NOTHING: keep the current book unchanged"].join("\n");
+    const selectedLabel = selectedTrades.length ? selectedTrades.map((id) => id === "do-nothing" ? "DO NOTHING" : round.trades.find((trade) => trade.id === id)?.label ?? id).join(" + ") : "No hedge selected";
+    setAiPrompt(["You are a derivatives risk tutor. Explain this failed portfolio-hedging exercise at the player's level. Teach the risk logic clearly, including why the selected hedge was weaker and how to choose a better hedge.", `PLAYER LEVEL: ${scoreboard.difficulty.toUpperCase()} (adapt the explanation and terminology to this level)`, `Market event: ${round.shock.label}`, `Market detail: ${round.shock.detail}`, `Spot: ${round.beforeSpot.toFixed(2)} -> ${round.spot.toFixed(2)}`, `Volatility: ${(round.beforeVolatility * 100).toFixed(1)}% -> ${(round.volatility * 100).toFixed(1)}%`, `Maturity: ${round.maturityDate}`, `Dealer objective: ${objectiveLabel}`, `Client product: ${round.template.name}`, `Product description: ${round.template.description}`, `Product option legs: ${round.legs.map((leg) => `${leg.qty > 0 ? "LONG" : "SHORT"} ${leg.strike} ${leg.type.toUpperCase()}`).join("; ")}`, "Available hedge tools:", availableTools, `My selected hedge: ${selectedLabel}`, `Resulting Greeks: Delta ${result?.greeks.delta.toFixed(3) ?? "n/a"}, Gamma ${result?.greeks.gamma.toFixed(3) ?? "n/a"}, Vega ${result?.greeks.vega.toFixed(2) ?? "n/a"}, Theta ${result?.greeks.theta.toFixed(2) ?? "n/a"}, Rho ${result?.greeks.rho.toFixed(2) ?? "n/a"}`, "Please explain the dealer's objective, identify the key mistake, and give a level-appropriate decision rule for future decisions."] .join("\n"));
+  };
   return (
     <section className="mode-view game-page hedge">
       <button className="back-home" onClick={onBack}><span aria-hidden="true">←</span> BACK TO HOME</button>
@@ -237,7 +243,7 @@ export function Hedge({ ql, bank, onScore, onBack, scoreboard }: { ql?: QuantLib
         </article>
       </div>
       {result && <div className="hedge-reveal"><div><span>BEFORE</span><strong>Δ {round.preTrade.delta.toFixed(3)}</strong><strong>Γ {round.preTrade.gamma.toFixed(3)}</strong><strong>V {round.preTrade.vega.toFixed(2)}</strong><strong>Θ {round.preTrade.theta.toFixed(2)}</strong><strong>ρ {round.preTrade.rho.toFixed(2)}</strong></div><div><span>AFTER YOUR HEDGE</span><strong>Δ {result.greeks.delta.toFixed(3)}</strong><strong>Γ {result.greeks.gamma.toFixed(3)}</strong><strong>V {result.greeks.vega.toFixed(2)}</strong><strong>Θ {result.greeks.theta.toFixed(2)}</strong><strong>ρ {result.greeks.rho.toFixed(2)}</strong></div><p>{result.passed ? "Good call. The dealer's objective is met: the combined book risk is reduced." : result.timedOut ? `Best hedge: ${bestHedgeLabel}.` : `The selected hedge leaves more combined Greek risk. Best hedge: ${bestHedgeLabel}.`}</p></div>}
-      {result ? <RoundResult passed={result.passed} status={result.passed ? "RISK REDUCED" : result.timedOut ? "MARKET CLOSED" : "RISK NOT IMPROVED"} score={result.score} actionLabel="NEXT SHOCK" onNext={next} /> : <div className="action-row submit-only"><button className="primary-action game-primary" disabled={!selectedTrades.length} onClick={() => settle(false)}>COMMIT HEDGE <span>→</span></button></div>}
+      {result ? <><RoundResult passed={result.passed} status={result.passed ? "RISK REDUCED" : result.timedOut ? "MARKET CLOSED" : "RISK NOT IMPROVED"} score={result.score} actionLabel="NEXT SHOCK" onNext={next} onAskAI={createHedgePrompt} />{aiPrompt && <AiPromptModal prompt={aiPrompt} onClose={() => setAiPrompt(undefined)} />}</> : <div className="action-row submit-only"><button className="primary-action game-primary" disabled={!selectedTrades.length} onClick={() => settle(false)}>COMMIT HEDGE <span>→</span></button></div>}
     </section>
   );
 }

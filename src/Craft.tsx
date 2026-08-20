@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { BondResult, OptionResult, QuantLibRuntime } from "@quantcraft/market-kernel";
 import { ingredients, money, randomMission } from "./game";
 import type { CraftLeg, CraftMission, IngredientId, Scoreboard } from "./game";
-import { GameScoreboard, RoundResult, RoundTimer, Slider } from "./Controls";
+import { AiPromptModal, GameScoreboard, RoundResult, RoundTimer, Slider } from "./Controls";
 import "./Craft.css";
 
 export function Craft({
@@ -35,6 +35,7 @@ export function Craft({
     passed: boolean;
     score: number;
   }>();
+  const [aiPrompt, setAiPrompt] = useState<string>();
   const add = (kind: IngredientId) => {
     if (result) return;
     setSelected(undefined);
@@ -363,6 +364,10 @@ export function Craft({
     setMission((current) => randomMission(missions, current.id));
     setLegs([]); setSelected(undefined); setDraft(undefined); setResult(undefined); setSecondsLeft(ROUND_SECONDS);
   };
+  const createCraftPrompt = () => {
+    const book = legs.length ? legs.map((leg) => `${leg.side.toUpperCase()} ${leg.quantity.toFixed(2)}x ${leg.kind.toUpperCase()} | strike ${leg.strike} | maturity ${leg.maturityDate}`).join("\n") : "No positions were added.";
+    setAiPrompt(["You are an options-structuring tutor. Explain this failed structured-product design exercise at the player's level, show the reasoning step by step, and suggest a corrected book without assuming advanced knowledge.", `PLAYER LEVEL: ${scoreboard.difficulty.toUpperCase()} (adapt the explanation and terminology to this level)`, `Mission: ${mission.title}`, `Client mandate: ${mission.client}`, "Market background:", `- Evaluation date: ${market.evaluationDate}`, `- Maturity date: ${market.maturityDate}`, `- Spot: ${market.spot}`, `- Risk-free rate: ${(market.rate * 100).toFixed(2)}%`, `- Expected return: ${(market.expectedReturn * 100).toFixed(2)}%`, `- Dividend yield: ${(market.dividend * 100).toFixed(2)}%`, `- Volatility: ${(market.volatility * 100).toFixed(1)}%`, "Requirements:", `- Protection at least EUR ${mission.protection.toFixed(2)}`, `- Delta at least ${mission.minDelta.toFixed(2)}`, `- ${mission.requiredLabel}`, `- Budget benchmark: EUR ${mission.budget.toFixed(2)}`, "My submitted book:", book, "Observed result:", `- Protection: ${result?.protection.toFixed(2) ?? "not calculated"}`, `- Delta: ${result?.delta.toFixed(3) ?? "not calculated"}`, `- Maturity aligned: ${result?.maturityAligned ? "yes" : "no"}`, `- Required leg present: ${result?.hasRequiredLeg ? "yes" : "no"}`, "Please identify exactly why the mandate failed, explain each missed constraint, and propose the smallest practical correction."] .join("\n"));
+  };
   return (
     <section className="mode-view game-page craft-page">
       <button className="back-home" onClick={onBack}><span aria-hidden="true">←</span> BACK TO HOME</button>
@@ -648,7 +653,7 @@ export function Craft({
           </div>}
         </div>
       </section>
-      {result && <RoundResult passed={result.passed} status={result.passed ? "MANDATE PASSED" : scoreboard.difficulty === "intern" ? "CLIENT CONSTRAINTS MISSED" : "CLIENT CONSTRAINTS MISSED · −1 LIFE"} score={result.score} actionLabel="NEXT MISSION" onNext={startNextMission} />}
+      {result && <><RoundResult passed={result.passed} status={result.passed ? "MANDATE PASSED" : scoreboard.difficulty === "intern" ? "CLIENT CONSTRAINTS MISSED" : "CLIENT CONSTRAINTS MISSED · −1 LIFE"} score={result.score} actionLabel="NEXT MISSION" onNext={startNextMission} onAskAI={createCraftPrompt} />{aiPrompt && <AiPromptModal prompt={aiPrompt} onClose={() => setAiPrompt(undefined)} />}</>}
     </section>
   );
 }

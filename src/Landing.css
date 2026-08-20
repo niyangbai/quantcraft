@@ -32,6 +32,7 @@
   color: var(--muted);
   text-decoration: none;
   transition: 0.18s ease;
+  --hover-accent: #6fa7b6;
 }
 
 .repo-link svg {
@@ -148,6 +149,14 @@
   background: var(--paper);
   cursor: pointer;
   text-align: left;
+  transition: .2s ease;
+  --hover-accent: #e2c17b;
+}
+
+.difficulty-picker button:hover {
+  border-color: var(--deep);
+  box-shadow: 4px 4px 0 var(--coral), 0 10px 24px #24383a20;
+  transform: translateY(-2px);
 }
 
 .difficulty-picker button strong,
@@ -198,7 +207,7 @@
 
 .mode-cards button:hover {
   border-color: var(--deep);
-  box-shadow: 0 8px 24px #24383a12;
+  box-shadow: 8px 8px 0 var(--coral), 0 16px 34px #24383a24;
   transform: translateY(-2px);
 }
 
@@ -251,8 +260,8 @@
   display: grid;
   place-items: center;
   padding: 20px;
-  background: #203537e8;
-  backdrop-filter: blur(10px);
+  background: transparent;
+  backdrop-filter: none;
   animation: veil-enter 0.3s ease both;
 }
 

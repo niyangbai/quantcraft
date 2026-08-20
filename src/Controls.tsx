@@ -3,13 +3,37 @@ import type { Scoreboard } from "./game";
 
 type GameMode = "craft" | "greekthon" | "hedge";
 
-export function RoundResult({ passed, status, score, actionLabel, onNext }: { passed: boolean; status: string; score: number; actionLabel: string; onNext: () => void }) {
+export function RoundResult({ passed, status, score, actionLabel, onNext, onAskAI }: { passed: boolean; status: string; score: number; actionLabel: string; onNext: () => void; onAskAI?: () => void }) {
   return (
     <div className={`round-result ${passed ? "passed" : "failed"}`}>
       <div><small>{status}</small><strong>{score >= 0 ? "+" : ""}{score} PTS</strong></div>
-      <button onClick={onNext}>{actionLabel} <span aria-hidden="true">→</span></button>
+      <div className="round-result-actions">{!passed && onAskAI && <button onClick={onAskAI}>ASK AI <span aria-hidden="true">↗</span></button>}<button onClick={onNext}>{actionLabel} <span aria-hidden="true">→</span></button></div>
     </div>
   );
+}
+
+export function AiPromptModal({ prompt, onClose }: { prompt: string; onClose: () => void }) {
+  const [copied, setCopied] = useState(false);
+  const copyPrompt = async () => {
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(prompt);
+      } else {
+        throw new Error("Clipboard API unavailable");
+      }
+    } catch {
+      const textarea = document.createElement("textarea");
+      textarea.value = prompt;
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      textarea.remove();
+    }
+    setCopied(true);
+  };
+  return <div className="ai-prompt-backdrop" role="dialog" aria-modal="true" aria-labelledby="ai-prompt-title" onClick={onClose}><section className="ai-prompt-modal" onClick={(event) => event.stopPropagation()}><div className="ai-prompt-head"><div><p className="panel-label">LEARNING REVIEW</p><h2 id="ai-prompt-title">Ask an AI tutor</h2></div><button type="button" onClick={onClose} aria-label="Close AI prompt">×</button></div><p className="ai-prompt-intro">Copy this context into your preferred AI tool for a level-aware explanation.</p><textarea readOnly value={prompt} aria-label="AI tutor prompt" /><div className="ai-prompt-actions"><button type="button" onClick={copyPrompt}>{copied ? "COPIED" : "COPY PROMPT"}</button><button type="button" className="ai-prompt-close" onClick={onClose}>CLOSE</button></div></section></div>;
 }
 
 export function GameScoreboard({ scoreboard, mode }: { scoreboard: Scoreboard; mode: GameMode }) {
