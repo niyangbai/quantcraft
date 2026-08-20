@@ -394,17 +394,68 @@
   }
 
   .mode-cards button {
-    min-height: 220px;
+    min-height: 0;
+    padding: 22px;
+  }
+
+  .mode-cards button > span {
+    margin-bottom: 18px;
+  }
+
+  .mode-cards button b {
+    margin-top: 14px;
   }
 }
 
 @media (max-width: 560px) {
+  .landing-hero h1 {
+    font-size: clamp(46px, 15vw, 58px);
+    letter-spacing: -3px;
+  }
+
+  .landing-run {
+    width: 100%;
+  }
+
+  .difficulty-picker {
+    gap: 5px;
+  }
+
+  .difficulty-picker button {
+    min-height: 58px;
+    padding: 10px;
+  }
+
+  .mode-cards {
+    gap: 9px;
+  }
+
+  .mode-cards button strong {
+    font-size: 27px;
+  }
+
   .onboarding-card {
-    padding: 25px;
+    max-height: calc(100dvh - 24px);
+    padding: 24px;
+    overflow-y: auto;
+    box-shadow: 7px 7px 0 var(--coral);
+  }
+
+  .onboarding-card h1 {
+    margin-bottom: 20px;
+    font-size: 31px;
+  }
+
+  .onboarding-mark {
+    margin-bottom: 18px;
   }
 
   .onboarding-actions {
     grid-template-columns: 1fr;
+  }
+
+  .onboarding-actions button {
+    min-height: 46px;
   }
 }
 

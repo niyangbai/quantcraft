@@ -40,5 +40,24 @@
 .hedge-result button { padding: 11px 13px; border: 1px solid #ffffff80; background: transparent; color: white; cursor: pointer; font-size: 9px; font-weight: 900; }
 @media (max-width: 760px) {
   .hedge-layout, .residual-grid { grid-template-columns: 1fr; }
-  .hedge-aim { flex-wrap: wrap; }}
+  .hedge-aim { flex-wrap: wrap; }
+  .hedge-layout article { padding: 19px; }
+  .ticket-row select, .ticket-row input { min-height: 44px; font-size: 11px; }
+  .hedge-result button { min-height: 44px; }
+}
 
+@media (max-width: 420px) {
+  .hedge-layout article { padding: 15px; }
+  .dealer-risk, .existing-book { gap: 5px; }
+  .hedge-aim { gap: 8px 12px; }
+  .quote-sheet > * { padding: 7px 4px; font-size: 7px; }
+  .quote-sheet > span { font-size: 6px; letter-spacing: .3px; }
+  .ticket-row { grid-template-columns: 1fr 1fr; gap: 5px; }
+  .ticket-row strong { grid-column: 1 / -1; margin-top: 5px; }
+  .ticket-notice { gap: 10px; line-height: 1.4; }
+  .residual-grid > div { padding: 13px; }
+  .residual-grid strong { font-size: 20px; }
+  .hedge-result { align-items: stretch; flex-direction: column; gap: 13px; }
+  .hedge-result strong { font-size: 17px; }
+  .hedge-result button { width: 100%; }
+}

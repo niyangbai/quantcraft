@@ -9,11 +9,18 @@
   text-rendering: optimizeLegibility;
 }
 
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 html,
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100%;
+  overflow-x: hidden;
 }
 
 button,
@@ -145,14 +152,24 @@ textarea {
 @keyframes round-countdown { from { transform: scaleX(1); } to { transform: scaleX(0); } }
 
 @media (max-width: 760px) {
-  .topbar { padding: 0 18px; gap: 10px; }
+  .topbar { height: 64px; padding: 0 16px; gap: 8px; }
+  .brand-mark { padding: 10px 0; font-size: 13px; }
+  .brand-dot { margin-right: 18px; }
+  .repo-link, .avatar { width: 38px; height: 38px; }
   .topbar-status { display: none; }
-  .main-content { padding: 38px 18px 70px; }
+  .main-content { padding: 32px 16px 64px; }
+  .game-page > .mode-header { min-height: 0; margin-bottom: 18px; padding-bottom: 16px; }
   .mode-header { align-items: stretch; flex-direction: column; }
+  .mode-view h1, .mission-header h1 { margin-bottom: 8px; font-size: clamp(32px, 10vw, 46px); letter-spacing: -1.5px; }
+  .mode-intro, .mission-copy { font-size: 12px; }
   .game-context-grid { grid-template-columns: 1fr; }
+  .game-context-card { padding: 16px; }
   .market-snapshot { grid-template-columns: 1fr 1fr; }
+  .market-snapshot > span { padding: 11px 10px; }
+  .market-snapshot strong { font-size: 13px; }
   .header-tools { flex-wrap: wrap; }
-  .round-timer { width: 100%; min-width: 0; }
+  .round-timer { width: 100%; min-width: 0; padding: 12px 14px; }
+  .round-timer strong { margin: 5px 0 8px; font-size: 23px; }
   .craft-layout { grid-template-columns: 1fr; }
   .ingredient-panel { order: 2; }
   .builder-column { order: 1; }
@@ -166,4 +183,21 @@ textarea {
   .collection-stats { gap: 14px; justify-content: space-between; flex-wrap: wrap; }
   .collection-stats strong { font-size: 18px; }
   .collection-stats small { display: block; margin: 3px 0 0; }
+  .action-row { gap: 18px; }
+  .primary-action, .game-primary { min-height: 46px; }
+}
+
+@media (max-width: 420px) {
+  .main-content { padding-inline: 12px; }
+  .topbar { padding-inline: 12px; }
+  .brand-mark { margin-right: auto; }
+  .mode-view h1, .mission-header h1 { font-size: 31px; }
+  .game-context-grid { gap: 9px; margin-bottom: 18px; }
+  .game-context-card h2 { font-size: 18px; }
+  .market-snapshot > span { font-size: 7px; letter-spacing: .7px; }
+  .action-row { align-items: stretch; flex-direction: column; }
+  .action-row .game-primary { width: 100%; }
+  .locked-price, .reveal-result { text-align: center; }
+  .collection-heading { flex-direction: column; }
+  .level-card { width: 100%; }
 }
