@@ -13,6 +13,6 @@
 .share-modal-head h2 { margin: 5px 0 0; color: var(--deep); font-size: 24px; }
 .share-close { width: 34px; height: 34px; border: 1px solid var(--line); background: transparent; color: var(--deep); font-size: 22px; cursor: pointer; }
 .share-modal img { display: block; width: 100%; border: 1px solid var(--line); }
-.share-done { display: block; margin: 15px 0 0 auto; padding: 11px 16px; border: 0; background: var(--deep); color: white; font-size: 9px; font-weight: 900; letter-spacing: 1px; cursor: pointer; }
-.share-done:hover { background: var(--coral); }
+.share-done { display: block; margin: 15px 0 0 auto; padding: 11px 16px; border: 1px solid var(--deep); background: transparent; color: var(--deep); font-size: 9px; font-weight: 900; letter-spacing: 1px; cursor: pointer; }
+.share-done:hover { background: transparent; color: var(--coral); }
 @media(max-width:560px){.share-backdrop{padding:12px}.share-modal{padding:15px}.level-card button{font-size:7px}}

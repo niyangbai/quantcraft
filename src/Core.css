@@ -257,7 +257,7 @@ textarea {
   .level-card { width: 100%; }
 }
 
-button:hover:not(:disabled):not(.back-home):not(.brand-button),
+button:hover:not(:disabled):not(.back-home):not(.brand-button):not(.level-card button),
 .repo-link:hover {
   box-shadow: 4px 4px 0 var(--hover-accent), 0 10px 24px #24383a20 !important;
 }
