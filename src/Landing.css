@@ -76,10 +76,15 @@
   position: absolute;
   right: 0;
   bottom: 0;
-  min-width: 135px;
+  display: grid;
+  grid-template-rows: 18px 31px 10px;
+  align-content: center;
+  width: 180px;
+  height: 94px;
   padding: 15px 20px;
   border: 1px solid var(--line);
   background: var(--paper);
+  overflow: hidden;
 }
 
 .landing-run span,
@@ -90,19 +95,26 @@
 
 .landing-run span {
   color: var(--coral);
+  line-height: 18px;
   letter-spacing: 2px;
+  white-space: nowrap;
 }
 
 .landing-run strong {
-  margin: 5px 0;
+  margin: 3px 0;
   color: var(--deep);
   font-size: 25px;
+  line-height: 25px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .landing-run small {
   color: var(--muted);
   font-size: 8px;
+  line-height: 10px;
   letter-spacing: 1px;
+  white-space: nowrap;
 }
 
 .difficulty-picker {
@@ -128,6 +140,9 @@
 }
 
 .difficulty-picker button {
+  display: grid;
+  grid-template-rows: minmax(12px, auto) minmax(20px, auto);
+  align-content: center;
   padding: 11px;
   border: 1px solid var(--line);
   background: var(--paper);
@@ -141,14 +156,18 @@
 }
 
 .difficulty-picker button strong {
+  align-self: end;
   color: var(--deep);
   font-size: 10px;
+  line-height: 1.2;
 }
 
 .difficulty-picker button small {
+  align-self: start;
   margin-top: 4px;
   color: var(--muted);
   font-size: 8px;
+  line-height: 1.25;
 }
 
 .difficulty-picker button.active {
@@ -165,6 +184,9 @@
 }
 
 .mode-cards button {
+  display: grid;
+  grid-template-rows: 73px minmax(42px, auto) minmax(50px, auto);
+  align-content: start;
   min-height: 280px;
   padding: 25px;
   border: 1px solid var(--line);
@@ -182,7 +204,7 @@
 
 .mode-cards button > span {
   display: block;
-  margin-bottom: 36px;
+  margin-bottom: 0;
   color: var(--coral);
   font-size: 37px;
 }
@@ -200,13 +222,17 @@
 }
 
 .mode-cards strong {
-  margin: 5px 0;
+  align-self: start;
+  margin: 5px 0 0;
   color: var(--deep);
   font-size: 31px;
+  line-height: 1.1;
 }
 
 .mode-cards p {
+  align-self: start;
   max-width: 330px;
+  margin: 5px 0 0;
   color: var(--muted);
   font-size: 11px;
   line-height: 1.5;
@@ -377,7 +403,6 @@
 
   .landing-run {
     position: static;
-    width: max-content;
     margin-top: 20px;
   }
 
@@ -394,12 +419,13 @@
   }
 
   .mode-cards button {
+    grid-template-rows: 55px minmax(36px, auto) minmax(34px, auto);
     min-height: 0;
     padding: 22px;
   }
 
   .mode-cards button > span {
-    margin-bottom: 18px;
+    margin-bottom: 0;
   }
 
   .mode-cards button b {
@@ -422,8 +448,13 @@
   }
 
   .difficulty-picker button {
+    grid-template-rows: 12px minmax(20px, auto);
     min-height: 58px;
     padding: 10px;
+  }
+
+  .difficulty-picker button small {
+    min-height: 20px;
   }
 
   .mode-cards {
