@@ -1,18 +1,22 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { BondResult, OptionResult, QuantLibRuntime } from "@quantcraft/market-kernel";
 import { ingredients, money, randomMission } from "./game";
-import type { CraftLeg, CraftMission, IngredientId } from "./game";
-import { RoundTimer, Slider } from "./Controls";
+import type { CraftLeg, CraftMission, IngredientId, Scoreboard } from "./game";
+import { GameScoreboard, RoundResult, RoundTimer, Slider } from "./Controls";
 import "./Craft.css";
 
 export function Craft({
   ql,
   missions,
   onScore,
+  onBack,
+  scoreboard,
 }: {
   ql?: QuantLibRuntime;
   missions: CraftMission[];
   onScore: (score: number, passed: boolean, label: string) => void;
+  onBack: () => void;
+  scoreboard: Scoreboard;
 }) {
   const ROUND_SECONDS = 60;
   const nextUid = useRef(1);
@@ -21,41 +25,40 @@ export function Craft({
   const [secondsLeft, setSecondsLeft] = useState(ROUND_SECONDS);
   const [legs, setLegs] = useState<CraftLeg[]>([]);
   const [selected, setSelected] = useState<number>();
+  const [draft, setDraft] = useState<CraftLeg>();
   const [result, setResult] = useState<{
     delta: number;
     protection: number;
     protectionBounded: boolean;
     maturityAligned: boolean;
-    positiveValue: boolean;
     hasRequiredLeg: boolean;
     passed: boolean;
     score: number;
   }>();
   const add = (kind: IngredientId) => {
     if (result) return;
-    const uid = nextUid.current++;
-    setLegs((v) => [
-      ...v,
-      {
-        uid,
-        kind,
-        side: "long",
-        quantity: kind === "bond" ? 1 : 0.5,
-        strike: market.strike,
-        faceAmount: 100,
-        couponRate: 5,
-        maturityDate: market.maturityDate,
-        cashPayoff: 10,
-        barrier: Math.round(market.spot * .8),
-        barrierType: "down-out",
-        optionType: "call",
-      },
-    ]);
-    setSelected(uid);
-    setResult(undefined);
+    setSelected(undefined);
+    setDraft({
+      uid: nextUid.current,
+      kind,
+      side: "long",
+      quantity: kind === "bond" ? 1 : 0.5,
+      strike: market.strike,
+      faceAmount: 100,
+      couponRate: 5,
+      maturityDate: market.maturityDate,
+      cashPayoff: 10,
+      barrier: Math.round(market.spot * .8),
+      barrierType: "down-out",
+      optionType: "call",
+    });
   };
   const update = (uid: number, patch: Partial<CraftLeg>) => {
     if (result) return;
+    if (draft?.uid === uid) {
+      setDraft((current) => current ? { ...current, ...patch } : current);
+      return;
+    }
     setLegs((v) => v.map((x) => (x.uid === uid ? { ...x, ...patch } : x)));
     setResult(undefined);
   };
@@ -65,7 +68,45 @@ export function Craft({
     setSelected(undefined);
     setResult(undefined);
   };
-  const active = legs.find((x) => x.uid === selected);
+  const closeEditor = () => { setDraft(undefined); setSelected(undefined); };
+  const commitDraft = () => {
+    if (!draft || result) return;
+    setLegs((current) => [...current, draft]);
+    nextUid.current += 1;
+    closeEditor();
+  };
+  const active = draft ?? legs.find((x) => x.uid === selected);
+  const editorOpen = Boolean(active);
+  useEffect(() => {
+    if (!editorOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setDraft(undefined);
+        setSelected(undefined);
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const editor = document.querySelector<HTMLElement>(".leg-editor");
+      const focusable = editor?.querySelectorAll<HTMLElement>("button:not(:disabled), input:not(:disabled), select:not(:disabled)");
+      if (!focusable?.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [editorOpen]);
   const activeQuote = useMemo(() => {
     if (!ql || !active) return undefined;
     const sign = active.side === "long" ? 1 : -1;
@@ -198,6 +239,7 @@ export function Craft({
   ]);
   const price = () => {
     if (!ql || result) return;
+    closeEditor();
     const priced = legs.map((leg) => {
       const sign = leg.side === "long" ? 1 : -1;
       if (leg.kind === "equity") {
@@ -290,13 +332,12 @@ export function Craft({
     const budgetScore = total > 0 ? Math.max(-200, Math.min(200, Math.round((mission.budget - total) * 10))) : 0;
     const constraintScore = (protection >= mission.protection ? 100 : 0) + (delta >= mission.minDelta ? 100 : 0) + (maturityAligned ? 100 : 0) + (hasRequiredLeg ? 100 : 0);
     const timeScore = secondsLeft * 5;
-    const score = budgetScore + constraintScore + timeScore;
+    const score = passed ? budgetScore + constraintScore + timeScore : -50;
     setResult({
       delta,
       protection,
       protectionBounded: minimumPayoff.bounded,
       maturityAligned,
-      positiveValue,
       hasRequiredLeg,
       passed,
       score,
@@ -320,10 +361,12 @@ export function Craft({
   }, [ql, result, mission.id]);
   const startNextMission = () => {
     setMission((current) => randomMission(missions, current.id));
-    setLegs([]); setSelected(undefined); setResult(undefined); setSecondsLeft(ROUND_SECONDS);
+    setLegs([]); setSelected(undefined); setDraft(undefined); setResult(undefined); setSecondsLeft(ROUND_SECONDS);
   };
   return (
     <section className="mode-view game-page craft-page">
+      <button className="back-home" onClick={onBack}><span aria-hidden="true">←</span> BACK TO HOME</button>
+      <GameScoreboard scoreboard={scoreboard} mode="craft" />
       <section className="mode-header mission-header">
         <div>
           <p className="eyebrow">CRAFT SPRINT · {mission.id}</p>
@@ -336,7 +379,6 @@ export function Craft({
           <p className="panel-label">CLIENT MANDATE</p>
           <p className="mission-copy">{mission.client}</p>
           <div className="mission-rules">
-            <span>Budget benchmark €{money(mission.budget)} · soft cap</span>
             <span>Protection ≥ €{money(mission.protection)}</span>
             <span>Delta ≥ {mission.minDelta.toFixed(2)}</span>
             <span>{mission.requiredLabel}</span>
@@ -426,16 +468,17 @@ export function Craft({
                 })}
               </div>
             )}
-            {active && (
-              <div className="leg-editor">
+            {active && (<>
+              <div className="leg-editor-backdrop" aria-hidden="true" />
+              <div className="leg-editor" role="dialog" aria-modal="true" aria-labelledby="leg-editor-title">
                 <div className="editor-head">
                   <div>
-                    <small>EDIT LEG</small>
-                    <strong>
+                    <small>{draft ? "NEW LEG" : "EDIT LEG"}</small>
+                    <strong id="leg-editor-title">
                       {ingredients.find((x) => x.id === active.kind)?.label}
                     </strong>
                   </div>
-                  <button onClick={() => setSelected(undefined)}>×</button>
+                  <button autoFocus onClick={closeEditor} aria-label="Close leg editor">×</button>
                 </div>
                 <div className="side-switch">
                   <button
@@ -550,14 +593,14 @@ export function Craft({
                     </div>
                   </div>
                 )}
-                <button
-                  className="remove-leg"
-                  onClick={() => remove(active.uid)}
-                >
-                  Remove leg
-                </button>
+                <div className="leg-editor-actions">
+                  {draft
+                    ? <button className="editor-secondary" onClick={closeEditor}>CANCEL</button>
+                    : <button className="remove-leg" onClick={() => remove(active.uid)}>REMOVE LEG</button>}
+                  <button className="editor-primary" onClick={draft ? commitDraft : closeEditor}>{draft ? "ADD LEG" : "DONE"}</button>
+                </div>
               </div>
-            )}
+            </>)}
           </div>
           <div className="chart-card">
             <div className="chart-head">
@@ -594,45 +637,18 @@ export function Craft({
               </div>
             </div>
           </div>
-          <div className="action-row">
-            <div className={result && result.score >= 0 ? "reveal-result" : "locked-price"}>
-              <span>MISSION SCORE</span>
-              <strong>{result ? `${result.score >= 0 ? "+" : ""}${result.score}` : "???"}</strong>
-              <small>
-                {result
-                  ? result.passed
-                    ? "All mission constraints met"
-                    : !result.positiveValue
-                      ? "A valid book needs a positive issue value."
-                      : "Some hard client constraints are missing."
-                  : "Configure positions first"}
-              </small>
-            </div>
+          {!result && <div className="action-row submit-only">
             <button
               className="primary-action game-primary"
-              disabled={!legs.length || !ql || !!result}
+              disabled={!legs.length || !ql}
               onClick={price}
             >
-              {result ? "SUBMITTED" : ql ? "FINISH ROUND" : "PREPARING…"} <span>→</span>
+              {ql ? "FINISH ROUND" : "PREPARING…"} <span>→</span>
             </button>
-          </div>
+          </div>}
         </div>
       </section>
-      {result && (
-        <section className="discovery-banner">
-          <div className="discovery-spark">✦</div>
-          <div>
-            <p className="eyebrow">{result.passed ? "MISSION COMPLETE" : "MISSION FAILED · −1 LIFE"}</p>
-            <h2>{result.passed ? "Mandate passed" : "Client constraints missed"}</h2>
-          </div>
-          <div className="discovery-xp">{result.score >= 0 ? "+" : ""}{result.score} PTS</div>
-          <button
-            onClick={startNextMission}
-          >
-            NEXT MISSION <span>→</span>
-          </button>
-        </section>
-      )}
+      {result && <RoundResult passed={result.passed} status={result.passed ? "MANDATE PASSED" : scoreboard.difficulty === "intern" ? "CLIENT CONSTRAINTS MISSED" : "CLIENT CONSTRAINTS MISSED · −1 LIFE"} score={result.score} actionLabel="NEXT MISSION" onNext={startNextMission} />}
     </section>
   );
 }

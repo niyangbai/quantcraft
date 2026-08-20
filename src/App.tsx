@@ -41,12 +41,15 @@ function App() {
       const saved = localStorage.getItem("quantcraft.scoreboard");
       if (!saved) return emptyScoreboard;
       const parsed = JSON.parse(saved) as Partial<Scoreboard>;
+      const difficulty = parsed.difficulty ?? emptyScoreboard.difficulty;
+      const defaultLives = difficultyLives[difficulty] ?? 0;
       return {
         ...emptyScoreboard,
         ...parsed,
-        difficulty: parsed.difficulty ?? "vp",
-        maxLives: typeof parsed.maxLives === "number" ? parsed.maxLives : 3,
-        lives: typeof parsed.lives === "number" ? parsed.lives : 3,
+        difficulty,
+        maxLives: typeof parsed.maxLives === "number" ? parsed.maxLives : defaultLives,
+        lives: typeof parsed.lives === "number" ? parsed.lives : defaultLives,
+        streak: typeof parsed.streak === "number" ? parsed.streak : 0,
         gameOver: parsed.gameOver === true,
         craft: { ...emptyScoreboard.craft, ...parsed.craft },
         greekthon: { ...emptyScoreboard.greekthon, ...parsed.greekthon },
@@ -55,6 +58,7 @@ function App() {
       };
     } catch { return emptyScoreboard; }
   });
+  const [showGameOver, setShowGameOver] = useState(scoreboard.gameOver);
   const [questionBank, setQuestionBank] = useState<QuestionBank>(() => {
     try {
       if (!profile?.storage) return exampleQuestionBank;
@@ -71,6 +75,11 @@ function App() {
   useEffect(() => {
     if (profile?.storage) localStorage.setItem("quantcraft.scoreboard", JSON.stringify(scoreboard));
   }, [scoreboard, profile]);
+  useEffect(() => {
+    if (!scoreboard.gameOver) return;
+    const timer = window.setTimeout(() => setShowGameOver(true), 650);
+    return () => window.clearTimeout(timer);
+  }, [scoreboard.gameOver]);
   const finishOnboarding = (name: string, storage: boolean) => {
     const next = { name: name.trim(), storage };
     if (storage) localStorage.setItem("quantcraft.profile", JSON.stringify(next));
@@ -82,32 +91,42 @@ function App() {
     if (next.storage) localStorage.setItem("quantcraft.profile", JSON.stringify(next));
     return next;
   });
+  const nextRunState = (current: Scoreboard, passed: boolean) => {
+    if (!passed) {
+      const lives = current.difficulty === "intern" ? current.lives : Math.max(0, current.lives - 1);
+      return { streak: 0, lives, gameOver: current.difficulty === "intern" ? false : lives === 0 };
+    }
+    const streak = current.streak + 1;
+    const earnsLife = current.difficulty !== "intern" && streak % 3 === 0 && current.lives < current.maxLives;
+    return { streak, lives: current.lives + Number(earnsLife), gameOver: false };
+  };
   const recordCraft = (score: number, passed: boolean, label: string) => setScoreboard((current) => ({
     ...current,
-    lives: current.difficulty === "intern" ? current.lives : Math.max(0, current.lives - Number(!passed)),
-    gameOver: current.difficulty === "intern" ? false : current.lives - Number(!passed) <= 0,
+    ...nextRunState(current, passed),
     craft: { score: current.craft.score + score, rounds: current.craft.rounds + 1, wins: current.craft.wins + Number(passed), best: Math.max(current.craft.best, score) },
     recent: [{ game: "Craft" as const, label, score, at: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) }, ...current.recent].slice(0, 8),
   }));
   const recordGreekthon = (score: number, correct: boolean, streak: number, label: string) => setScoreboard((current) => ({
     ...current,
-    lives: current.difficulty === "intern" ? current.lives : Math.max(0, current.lives - Number(!correct)),
-    gameOver: current.difficulty === "intern" ? false : current.lives - Number(!correct) <= 0,
+    ...nextRunState(current, correct),
     greekthon: { score: current.greekthon.score + score, answers: current.greekthon.answers + 1, correct: current.greekthon.correct + Number(correct), bestStreak: Math.max(current.greekthon.bestStreak, streak) },
     recent: [{ game: "Greekthon" as const, label, score, at: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) }, ...current.recent].slice(0, 8),
   }));
   const recordHedge = (score: number, passed: boolean, label: string) => setScoreboard((current) => ({
     ...current,
-    lives: current.difficulty === "intern" ? current.lives : Math.max(0, current.lives - Number(!passed)),
-    gameOver: current.difficulty === "intern" ? false : current.lives - Number(!passed) <= 0,
+    ...nextRunState(current, passed),
     hedge: { score: current.hedge.score + score, rounds: current.hedge.rounds + 1, passed: current.hedge.passed + Number(passed), best: Math.max(current.hedge.best, score) },
     recent: [{ game: "Hedge" as const, label, score, at: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) }, ...current.recent].slice(0, 8),
   }));
   const totalScore = scoreboard.craft.score + scoreboard.greekthon.score + scoreboard.hedge.score;
-  const newRun = () => setScoreboard((current) => ({ ...emptyScoreboard, difficulty: current.difficulty, maxLives: current.maxLives, lives: current.maxLives, recent: [] }));
+  const newRun = () => {
+    setShowGameOver(false);
+    setScoreboard((current) => ({ ...emptyScoreboard, difficulty: current.difficulty, maxLives: current.maxLives, lives: current.maxLives, recent: [] }));
+  };
   const selectDifficulty = (difficulty: Difficulty) => {
     if (scoreboard.difficulty === difficulty) return;
     const lives = difficultyLives[difficulty] ?? 0;
+    setShowGameOver(false);
     setScoreboard({ ...emptyScoreboard, difficulty, maxLives: lives, lives, recent: [] });
   };
   return (
@@ -151,15 +170,23 @@ function App() {
       <main className="main-content">
         <div className="page-transition" key={mode}>
           {mode === "landing" && <Landing scoreboard={scoreboard} bank={questionBank} onInstallBank={installQuestionBank} onDifficulty={selectDifficulty} onSelect={setMode} />}
-          {mode === "craft" && !scoreboard.gameOver && (
-            <Craft ql={runtime.ql} missions={questionBank.craft} onScore={recordCraft} />
+          {mode === "craft" && !showGameOver && (
+            <Craft ql={runtime.ql} missions={questionBank.craft} onScore={recordCraft} onBack={() => setMode("landing")} scoreboard={scoreboard} />
           )}
-          {mode === "greekthon" && !scoreboard.gameOver && <Greekthon ql={runtime.ql} bank={questionBank.greekthon} onScore={recordGreekthon} />}
-          {mode === "hedge" && !scoreboard.gameOver && <Hedge ql={runtime.ql} bank={questionBank.hedge} onScore={recordHedge} />}
-          {mode === "collection" && <Collection name={profile?.name ?? "Player"} scoreboard={scoreboard} onRename={renamePlayer} onResetScore={newRun} />}
-          {scoreboard.gameOver && mode !== "collection" && <section className="game-over"><span>RUN OVER · {scoreboard.difficulty.toUpperCase()}</span><h1>No lives left.</h1><strong>{totalScore} PTS</strong><div><button onClick={() => setMode("collection")}>VIEW SETTLEMENT</button><button onClick={newRun}>NEW RUN</button></div></section>}
+          {mode === "greekthon" && !showGameOver && <Greekthon ql={runtime.ql} bank={questionBank.greekthon} onScore={recordGreekthon} onBack={() => setMode("landing")} scoreboard={scoreboard} />}
+          {mode === "hedge" && !showGameOver && <Hedge ql={runtime.ql} bank={questionBank.hedge} onScore={recordHedge} onBack={() => setMode("landing")} scoreboard={scoreboard} />}
+          {mode === "collection" && <Collection name={profile?.name ?? "Player"} scoreboard={scoreboard} onRename={renamePlayer} onResetScore={newRun} onBack={() => setMode("landing")} />}
+          {showGameOver && mode !== "landing" && mode !== "collection" && <section className="game-over"><span>RUN OVER · {scoreboard.difficulty.toUpperCase()}</span><h1>No lives left.</h1><strong>{totalScore} PTS</strong><div><button onClick={() => setMode("collection")}>VIEW SETTLEMENT</button><button onClick={newRun}>NEW RUN</button></div></section>}
         </div>
       </main>
+      <footer className="site-footer">
+        <div>
+          <p>For educational and entertainment purposes only. Nothing in this game is financial, investment, trading, legal, or tax advice. Prices, scenarios, and model outputs are illustrative and may not reflect real markets. Verify decisions independently.</p>
+          <nav aria-label="Footer links">
+            <a href="https://github.com/niyangbai/quantcraft/blob/master/LICENSE" target="_blank" rel="noreferrer">LICENSE</a>
+          </nav>
+        </div>
+      </footer>
       {!profile && <Onboarding onFinish={finishOnboarding} />}
     </div>
   );

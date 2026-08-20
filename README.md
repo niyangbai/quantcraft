@@ -38,9 +38,9 @@ Answers are evaluated at the displayed four-decimal precision. After an answer o
 
 The desk has sold a structured product. The market has moved, and its risk must be rebalanced now.
 
-Each round presents a selloff, rally, volatility shock, or volatility crush. Read the product from the dealer's side, identify its directional and volatility exposure, then choose the stock or option trade that best offsets the combined risk. Sometimes the right response is not to trade.
+Each round presents a selloff, rally, volatility shock, or volatility crush. Read the product from the dealer's side, identify its exposures, then select one or more stock and option tools to reduce the combined Delta, Gamma, Vega, Theta, and Rho risk. The dealer's objective is risk neutralization, not a market prediction.
 
-Exact Greeks stay hidden while you decide. After submission, QuantLib reveals the before-and-after Delta and Vega and explains the stronger response. The game rewards hedge intuition rather than solving for an exact quantity.
+Exact Greeks stay hidden while you decide. After submission, QuantLib reveals the before-and-after Greeks and explains the strongest multi-tool response. The game rewards hedge intuition rather than solving for an exact quantity.
 
 ## Difficulty and scoring
 
@@ -68,6 +68,19 @@ When local storage is enabled, the player profile, scoreboard, and uploaded ques
 ## Local development
 
 Requirements: Node.js 18 or newer and npm.
+
+Use the project management script for the common workflows:
+
+```bash
+./manage.sh compile      # build the kernel and type-check the app
+./manage.sh build        # production build
+./manage.sh run          # development server
+```
+
+Run `./manage.sh help` for all commands. Arguments after `run` are passed to
+Vite, such as `./manage.sh run --host 0.0.0.0`.
+
+The underlying npm commands remain available:
 
 ```bash
 npm install

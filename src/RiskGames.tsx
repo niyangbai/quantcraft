@@ -1,29 +1,39 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { QuantLibRuntime } from "@quantcraft/market-kernel";
-import { RoundTimer } from "./Controls";
+import { GameScoreboard, RoundResult, RoundTimer } from "./Controls";
 import { between, isoDate, market, secureSeed, seededRandom } from "./game";
-import type { HedgeLeg, QuestionBank } from "./game";
+import type { HedgeLeg, QuestionBank, Scoreboard } from "./game";
 import "./Greekthon.css";
 import "./Hedge.css";
 
 type GreekDirection = "down" | "unchanged" | "up";
+type GreekRisk = { delta: number; gamma: number; vega: number; theta: number; rho: number };
+type GreekKey = keyof GreekRisk;
+const greekLabels: Record<GreekKey, string> = { delta: "DELTA", gamma: "GAMMA", vega: "VEGA", theta: "THETA", rho: "RHO" };
+const addRisk = (base: GreekRisk, change: GreekRisk): GreekRisk => ({
+  delta: base.delta + change.delta,
+  gamma: base.gamma + change.gamma,
+  vega: base.vega + change.vega,
+  theta: base.theta + change.theta,
+  rho: base.rho + change.rho,
+});
 
-const greekDirection = (before: number, after: number): GreekDirection => {
-  const displayedBefore = Number(before.toFixed(4));
-  const displayedAfter = Number(after.toFixed(4));
+const displayedDirection = (before: number, after: number, precision: number): GreekDirection => {
+  const displayedBefore = Number(before.toFixed(precision));
+  const displayedAfter = Number(after.toFixed(precision));
   if (displayedAfter === displayedBefore) return "unchanged";
   return displayedAfter > displayedBefore ? "up" : "down";
 };
 
-export function Greekthon({ ql, bank, onScore }: { ql?: QuantLibRuntime; bank: QuestionBank["greekthon"]; onScore: (score: number, correct: boolean, streak: number, label: string) => void }) {
+const greekDirection = (before: number, after: number) => displayedDirection(before, after, 4);
+
+export function Greekthon({ ql, bank, onScore, onBack, scoreboard }: { ql?: QuantLibRuntime; bank: QuestionBank["greekthon"]; onScore: (score: number, correct: boolean, streak: number, label: string) => void; onBack: () => void; scoreboard: Scoreboard }) {
   const REVIEW_DURATION_MS = 3000;
   const [seed, setSeed] = useState(0);
   const [randomKey, setRandomKey] = useState(secureSeed);
-  const [score, setScore] = useState(0);
-  const [streak, setStreak] = useState(0);
   const [answered, setAnswered] = useState(false);
   const [feedback, setFeedback] = useState<"correct" | "wrong" | "timeout">();
-  const duration = Math.max(2600, 8500 - streak * 550);
+  const duration = Math.max(2600, 8500 - scoreboard.streak * 550);
   const question = useMemo(() => {
     if (!ql) return undefined;
     const { scenarios, books, metrics } = bank;
@@ -44,7 +54,18 @@ export function Greekthon({ ql, bank, onScore }: { ql?: QuantLibRuntime; bank: Q
     afterDate.setUTCMonth(afterDate.getUTCMonth() + monthShift);
     const scale = baseSpot / 100;
     const book = { ...bookTemplate, legs: bookTemplate.legs.map((leg) => ({ ...leg, strike: Math.round(leg.strike * scale) })) };
-    const scenario = { ...scenarioTemplate, spot: afterSpot, vol: afterVol, rate: afterRate, date: isoDate(afterDate), detail: `S ${baseSpot}→${afterSpot} · Vol ${(baseVol * 100).toFixed(1)}→${(afterVol * 100).toFixed(1)}% · R ${(baseRate * 100).toFixed(2)}→${(afterRate * 100).toFixed(2)}%` };
+    const scenario = { ...scenarioTemplate, spot: afterSpot, vol: afterVol, rate: afterRate, date: isoDate(afterDate) };
+    const marketMove = {
+      beforeSpot: baseSpot,
+      afterSpot,
+      beforeVolatility: baseVol,
+      afterVolatility: afterVol,
+      beforeRate: baseRate,
+      afterRate,
+      spotDirection: displayedDirection(baseSpot, afterSpot, 2),
+      volatilityDirection: displayedDirection(baseVol * 100, afterVol * 100, 1),
+      rateDirection: displayedDirection(baseRate * 100, afterRate * 100, 2),
+    };
     const labels = { value: "FAIR VALUE", delta: "DELTA", gamma: "GAMMA", vega: "VEGA", theta: "THETA", rho: "RHO" };
     const evaluate = (spot: number, vol: number, rate: number, date: string) => book.legs.reduce((sum, leg) => {
       const result = ql.priceEuropean({ evaluationDate: date, maturityDate: market.maturityDate, spot, strike: leg.strike, riskFreeRate: rate, dividendYield: dividend, volatility: vol, type: leg.type });
@@ -52,32 +73,32 @@ export function Greekthon({ ql, bank, onScore }: { ql?: QuantLibRuntime; bank: Q
     }, 0);
     const before = evaluate(baseSpot, baseVol, baseRate, "2025-01-02");
     const after = evaluate(scenario.spot, scenario.vol, scenario.rate, scenario.date);
-    return { scenario, book, metric: labels[metric], before, after, direction: greekDirection(before, after) };
+    return { scenario, marketMove, book, metric: labels[metric], before, after, direction: greekDirection(before, after) };
   }, [ql, randomKey, bank]);
   const next = () => { setRandomKey(secureSeed()); setSeed((value) => value + 1); setAnswered(false); setFeedback(undefined); };
   const answer = (direction: GreekDirection) => {
     if (!question || answered) return;
     const correct = direction === question.direction;
-    const nextStreak = correct ? streak + 1 : 0;
-    const points = correct ? 100 + streak * 10 : -50;
-    setAnswered(true); setFeedback(correct ? "correct" : "wrong"); setScore(v => v + points); setStreak(nextStreak);
+    const nextStreak = correct ? scoreboard.streak + 1 : 0;
+    const points = correct ? 100 + scoreboard.streak * 10 : -50;
+    setAnswered(true); setFeedback(correct ? "correct" : "wrong");
     onScore(points, correct, nextStreak, `${question.metric} · ${question.book.name}`);
     setTimeout(next, REVIEW_DURATION_MS);
   };
   useEffect(() => {
     if (!question || answered) return;
-    const timer = setTimeout(() => { setAnswered(true); setFeedback("timeout"); setScore(v => v - 50); setStreak(0); onScore(-50, false, 0, `${question.metric} · Time out`); setTimeout(next, REVIEW_DURATION_MS); }, duration);
+    const timer = setTimeout(() => { setAnswered(true); setFeedback("timeout"); onScore(-50, false, 0, `${question.metric} · Time out`); setTimeout(next, REVIEW_DURATION_MS); }, duration);
     return () => clearTimeout(timer);
   }, [question, answered, duration, onScore]);
-  return <section className="mode-view game-page greekthon"><div className="mode-header greekthon-head"><div><p className="eyebrow">GREEKTHON · FLASH ROUND</p><h1>Up, flat, or down?</h1></div><div className="header-tools"><div className="greek-stats"><span>SCORE<strong>{score}</strong></span><span>STREAK<strong>×{streak}</strong></span></div><RoundTimer label="DECISION WINDOW" value={`${(duration / 1000).toFixed(1)}s`} durationMs={duration} resetKey={seed} /></div></div><p className="mode-intro">Read the market shock, the position, and the requested metric. No calculator. Just direction.</p>{question ? <div className={`flashcard ${feedback ?? ""}`}><div className="flash-top"><span className="greek-chip">{question.metric}</span><span>ROUND {seed + 1}</span></div><div className="market-shock"><small>MARKET EVENT</small><strong>{question.scenario.label}</strong><span>{question.scenario.detail}</span></div><div className="position-book"><small>YOUR POSITION</small><h2>{question.book.name}</h2>{question.book.legs.map((leg, index) => <div key={`${leg.type}-${index}`}><b className={leg.qty > 0 ? "long" : "short"}>{leg.qty > 0 ? "LONG" : "SHORT"}</b><span>{Math.abs(leg.qty)}× {leg.strike} {leg.type.toUpperCase()}</span></div>)}</div><div className="flash-question">What happens to portfolio <strong>{question.metric}</strong>?</div>{answered ? <div className="flash-feedback"><strong>{feedback === "correct" ? "CORRECT" : feedback === "timeout" ? "TIME'S UP" : "WRONG"}</strong><span>{question.before.toFixed(4)} → <b className={`metric-${question.direction}`}>{question.after.toFixed(4)}</b></span></div> : <div className="direction-buttons"><button onClick={() => answer("down")}>↓<span>GOES DOWN</span></button><button onClick={() => answer("unchanged")}>→<span>UNCHANGED</span></button><button onClick={() => answer("up")}>↑<span>GOES UP</span></button></div>}</div> : <div className="drop-zone">Preparing cards…</div>}</section>;
+  return <section className="mode-view game-page greekthon"><button className="back-home" onClick={onBack}><span aria-hidden="true">←</span> BACK TO HOME</button><GameScoreboard scoreboard={scoreboard} mode="greekthon" /><div className="mode-header greekthon-head"><div><p className="eyebrow">GREEKTHON · FLASH ROUND · STREAK ×{scoreboard.streak}</p><h1>Up, flat, or down?</h1></div><div className="header-tools"><RoundTimer label="DECISION WINDOW" value={`${(duration / 1000).toFixed(1)}s`} durationMs={duration} resetKey={seed} /></div></div><p className="mode-intro">Read the market shock, the position, and the requested metric. No calculator. Just direction.</p>{question ? <div className={`flashcard ${feedback ?? ""}`}><div className="flash-top"><span className="greek-chip">{question.metric}</span><span>ROUND {seed + 1}</span></div><div className="market-shock"><small>MARKET EVENT</small><strong>{question.scenario.label}</strong><div className="shock-metrics"><span><small>SPOT PRICE</small><strong>{question.marketMove.beforeSpot.toFixed(2)} <b className={`move-${question.marketMove.spotDirection}`}>→ {question.marketMove.afterSpot.toFixed(2)}</b></strong></span><span><small>IMPLIED VOLATILITY</small><strong>{(question.marketMove.beforeVolatility * 100).toFixed(1)}% <b className={`move-${question.marketMove.volatilityDirection}`}>→ {(question.marketMove.afterVolatility * 100).toFixed(1)}%</b></strong></span><span><small>INTEREST RATE</small><strong>{(question.marketMove.beforeRate * 100).toFixed(2)}% <b className={`move-${question.marketMove.rateDirection}`}>→ {(question.marketMove.afterRate * 100).toFixed(2)}%</b></strong></span></div></div><div className="position-book"><small>YOUR POSITION</small><h2>{question.book.name}</h2>{question.book.legs.map((leg, index) => <div key={`${leg.type}-${index}`}><b className={leg.qty > 0 ? "long" : "short"}>{leg.qty > 0 ? "LONG" : "SHORT"}</b><span>{Math.abs(leg.qty)}× {leg.strike} {leg.type.toUpperCase()}</span></div>)}</div><div className="flash-question">What happens to portfolio <strong>{question.metric}</strong>?</div>{answered ? <div className="flash-feedback"><strong>{feedback === "correct" ? "CORRECT" : feedback === "timeout" ? "TIME'S UP" : "WRONG"}</strong><span>{question.before.toFixed(4)} → <b className={`metric-${question.direction}`}>{question.after.toFixed(4)}</b></span></div> : <div className="direction-buttons"><button onClick={() => answer("down")}>↓<span>GOES DOWN</span></button><button onClick={() => answer("unchanged")}>→<span>UNCHANGED</span></button><button onClick={() => answer("up")}>↑<span>GOES UP</span></button></div>}</div> : <div className="drop-zone">Preparing cards…</div>}</section>;
 }
 
-export function Hedge({ ql, bank, onScore }: { ql?: QuantLibRuntime; bank: QuestionBank["hedge"]; onScore: (score: number, passed: boolean, label: string) => void }) {
+export function Hedge({ ql, bank, onScore, onBack, scoreboard }: { ql?: QuantLibRuntime; bank: QuestionBank["hedge"]; onScore: (score: number, passed: boolean, label: string) => void; onBack: () => void; scoreboard: Scoreboard }) {
   const ROUND_SECONDS = 45;
   const [roundKey, setRoundKey] = useState(secureSeed);
-  const [selectedTrade, setSelectedTrade] = useState<string>();
+  const [selectedTrades, setSelectedTrades] = useState<string[]>([]);
   const [secondsLeft, setSecondsLeft] = useState(ROUND_SECONDS);
-  const [result, setResult] = useState<{ passed: boolean; score: number; bestTradeId: string; delta: number; vega: number; timedOut: boolean }>();
+  const [result, setResult] = useState<{ passed: boolean; score: number; bestTradeIds: string[]; greeks: GreekRisk; timedOut: boolean }>();
   const settleRef = useRef<(timedOut?: boolean) => void>(() => undefined);
   const round = useMemo(() => {
     if (!ql) return undefined;
@@ -111,43 +132,53 @@ export function Hedge({ ql, bank, onScore }: { ql?: QuantLibRuntime; bank: Quest
     const price = (leg: HedgeLeg) => ql.priceEuropean({ evaluationDate, maturityDate, spot, strike: leg.strike, riskFreeRate: rate, dividendYield: dividend, volatility, type: leg.type });
     const client = legs.reduce((book, leg) => {
       const priced = price(leg);
-      return { delta: book.delta + leg.qty * priced.delta, vega: book.vega + leg.qty * priced.vega };
-    }, { delta: 0, vega: 0 });
-    const preTrade = { delta: -client.delta, vega: -client.vega };
+      return { delta: book.delta + leg.qty * priced.delta, gamma: book.gamma + leg.qty * priced.gamma, vega: book.vega + leg.qty * priced.vega, theta: book.theta + leg.qty * priced.theta, rho: book.rho + leg.qty * priced.rho };
+    }, { delta: 0, gamma: 0, vega: 0, theta: 0, rho: 0 });
+    const preTrade = { delta: -client.delta, gamma: -client.gamma, vega: -client.vega, theta: -client.theta, rho: -client.rho };
     const callStrike = Number((spot * 1.05).toFixed(2));
     const putStrike = Number((spot * .95).toFixed(2));
     const call = price({ type: "call", strike: callStrike, qty: 1 });
     const put = price({ type: "put", strike: putStrike, qty: 1 });
     const quantity = .5;
     const trades = [
-      { id: "buy-stock", label: "BUY STOCK", detail: "+0.50 delta", delta: quantity, vega: 0 },
-      { id: "sell-stock", label: "SELL STOCK", detail: "−0.50 delta", delta: -quantity, vega: 0 },
-      { id: "buy-call", label: `BUY ${callStrike} CALL`, detail: "Long delta · long vega", delta: quantity * call.delta, vega: quantity * call.vega },
-      { id: "sell-call", label: `SELL ${callStrike} CALL`, detail: "Short delta · short vega", delta: -quantity * call.delta, vega: -quantity * call.vega },
-      { id: "buy-put", label: `BUY ${putStrike} PUT`, detail: "Short delta · long vega", delta: quantity * put.delta, vega: quantity * put.vega },
-      { id: "sell-put", label: `SELL ${putStrike} PUT`, detail: "Long delta · short vega", delta: -quantity * put.delta, vega: -quantity * put.vega },
-      { id: "hold", label: "DO NOTHING", detail: "Keep the current exposure", delta: 0, vega: 0 },
+      { id: "buy-stock", label: "BUY STOCK", detail: "Long Delta · neutral other Greeks", delta: quantity, gamma: 0, vega: 0, theta: 0, rho: 0 },
+      { id: "sell-stock", label: "SELL STOCK", detail: "Short Delta · neutral other Greeks", delta: -quantity, gamma: 0, vega: 0, theta: 0, rho: 0 },
+      { id: "buy-call", label: `BUY ${callStrike} CALL`, detail: "Long Delta · Gamma · Vega", delta: quantity * call.delta, gamma: quantity * call.gamma, vega: quantity * call.vega, theta: quantity * call.theta, rho: quantity * call.rho },
+      { id: "sell-call", label: `SELL ${callStrike} CALL`, detail: "Short Delta · Gamma · Vega", delta: -quantity * call.delta, gamma: -quantity * call.gamma, vega: -quantity * call.vega, theta: -quantity * call.theta, rho: -quantity * call.rho },
+      { id: "buy-put", label: `BUY ${putStrike} PUT`, detail: "Short Delta · Gamma · long Vega", delta: quantity * put.delta, gamma: quantity * put.gamma, vega: quantity * put.vega, theta: quantity * put.theta, rho: quantity * put.rho },
+      { id: "sell-put", label: `SELL ${putStrike} PUT`, detail: "Long Delta · Gamma · short Vega", delta: -quantity * put.delta, gamma: -quantity * put.gamma, vega: -quantity * put.vega, theta: -quantity * put.theta, rho: -quantity * put.rho },
     ].map((trade) => ({
       ...trade,
       postDelta: preTrade.delta + trade.delta,
+      postGamma: preTrade.gamma + trade.gamma,
       postVega: preTrade.vega + trade.vega,
+      postTheta: preTrade.theta + trade.theta,
+      postRho: preTrade.rho + trade.rho,
     }));
-    const risk = (delta: number, vega: number) => Math.hypot(delta / .35, vega / 18);
-    const beforeRisk = risk(preTrade.delta, preTrade.vega);
-    const ranked = [...trades].sort((a, b) => risk(a.postDelta, a.postVega) - risk(b.postDelta, b.postVega));
-    return { template, shock, maturityDate, beforeSpot, beforeVolatility, spot, volatility, legs, preTrade, trades, bestTrade: ranked[0], beforeRisk, bestRisk: risk(ranked[0].postDelta, ranked[0].postVega), risk };
+    const greekKeys: GreekKey[] = ["delta", "gamma", "vega", "theta", "rho"];
+    const objectiveCount = 1 + Math.floor(rng() * 3);
+    const objectiveKeys = greekKeys.sort(() => rng() - .5).slice(0, objectiveCount);
+    const greekScale: Record<GreekKey, number> = { delta: .35, gamma: .04, vega: 18, theta: 2, rho: 20 };
+    const risk = (greeks: GreekRisk) => Math.hypot(...objectiveKeys.map((key) => greeks[key] / greekScale[key]));
+    const beforeRisk = risk(preTrade);
+    const combinations = Array.from({ length: 1 << trades.length }, (_, mask) => trades.filter((_, index) => mask & (1 << index)));
+    const bestTrades = combinations.sort((a, b) => risk(a.reduce((sum, trade) => addRisk(sum, trade), preTrade)) - risk(b.reduce((sum, trade) => addRisk(sum, trade), preTrade)))[0];
+    const bestGreeks = bestTrades.reduce((sum, trade) => addRisk(sum, trade), preTrade);
+    return { template, shock, maturityDate, beforeSpot, beforeVolatility, spot, volatility, legs, preTrade, trades, objectiveKeys, bestTrades, beforeRisk, bestRisk: risk(bestGreeks), risk };
   }, [ql, roundKey, bank]);
   const settle = (timedOut = false) => {
-    if (!round || result || (!selectedTrade && !timedOut)) return;
-    const trade = round.trades.find((candidate) => candidate.id === selectedTrade);
-    const chosenRisk = trade ? round.risk(trade.postDelta, trade.postVega) : round.beforeRisk;
+    if (!round || result || (!selectedTrades.length && !timedOut)) return;
+    const selectedIds = selectedTrades.filter((id) => id !== "do-nothing");
+    const selected = round.trades.filter((trade) => selectedIds.includes(trade.id));
+    const greeks = selected.reduce((sum, trade) => addRisk(sum, trade), round.preTrade);
+    const chosenRisk = round.risk(greeks);
     const availableImprovement = round.beforeRisk - round.bestRisk;
     const quality = availableImprovement <= .0001
-      ? Number(trade?.id === round.bestTrade.id)
+      ? Number(selectedIds.length === round.bestTrades.length && selectedIds.every((id) => round.bestTrades.some((trade) => trade.id === id)))
       : Math.max(0, Math.min(1, (round.beforeRisk - chosenRisk) / availableImprovement));
     const passed = !timedOut && quality >= .8;
     const score = passed ? Math.round(100 + quality * 40 + secondsLeft * .4) : -50;
-    setResult({ passed, score, bestTradeId: round.bestTrade.id, delta: trade?.postDelta ?? round.preTrade.delta, vega: trade?.postVega ?? round.preTrade.vega, timedOut });
+    setResult({ passed, score, bestTradeIds: round.bestTrades.map((trade) => trade.id), greeks, timedOut });
     onScore(score, passed, `${round.template.name} · ${round.shock.label}`);
   };
   useEffect(() => {
@@ -163,46 +194,50 @@ export function Hedge({ ql, bank, onScore }: { ql?: QuantLibRuntime; bank: Quest
   }, [secondsLeft, round, result]);
   const next = () => {
     setRoundKey(secureSeed());
-    setSelectedTrade(undefined);
+    setSelectedTrades([]);
     setSecondsLeft(ROUND_SECONDS);
     setResult(undefined);
   };
-  if (!round) return <section className="mode-view game-page hedge"><div className="drop-zone">Preparing hedge book…</div></section>;
+  if (!round) return <section className="mode-view game-page hedge"><button className="back-home" onClick={onBack}><span aria-hidden="true">←</span> BACK TO HOME</button><GameScoreboard scoreboard={scoreboard} mode="hedge" /><div className="drop-zone">Preparing hedge book…</div></section>;
   const deltaLabel = round.preTrade.delta >= 0 ? "LONG DELTA" : "SHORT DELTA";
+  const gammaLabel = round.preTrade.gamma >= 0 ? "LONG GAMMA" : "SHORT GAMMA";
   const vegaLabel = round.preTrade.vega >= 0 ? "LONG VEGA" : "SHORT VEGA";
-  const bestTrade = round.trades.find((trade) => trade.id === result?.bestTradeId);
+  const bestTrades = round.trades.filter((trade) => result?.bestTradeIds.includes(trade.id));
+  const bestHedgeLabel = bestTrades.length ? bestTrades.map((trade) => trade.label).join(" + ") : "DO NOTHING";
+  const objectiveLabel = round.objectiveKeys.map((key) => greekLabels[key]).join(" + ");
   return (
-    <section className="mode-view hedge">
+    <section className="mode-view game-page hedge">
+      <button className="back-home" onClick={onBack}><span aria-hidden="true">←</span> BACK TO HOME</button>
+      <GameScoreboard scoreboard={scoreboard} mode="hedge" />
       <div className="mode-header hedge-head">
         <div><p className="eyebrow">HEDGE · MARKET INTUITION</p><h1>Read the shock. Pick the trade.</h1></div>
         <RoundTimer label="MARKET CLOSE" value={`${secondsLeft}s`} progress={secondsLeft / ROUND_SECONDS * 100} urgent={secondsLeft <= 10} />
       </div>
-      <section className="game-context-grid">
-        <article className="game-context-card question-context">
-          <p className="panel-label">MARKET EVENT</p>
-          <h2>{round.shock.label}</h2>
-          <p>{round.shock.detail} Choose the response that best reduces the dealer's combined Delta and Vega risk.</p>
-        </article>
-        <article className="game-context-card market-context">
-          <p className="panel-label">BEFORE → AFTER</p>
-          <div className="market-snapshot">
-            <span>SPOT<strong>{round.beforeSpot.toFixed(2)} → {round.spot.toFixed(2)}</strong></span><span>VOL<strong>{(round.beforeVolatility * 100).toFixed(1)}% → {(round.volatility * 100).toFixed(1)}%</strong></span><span>MATURITY<strong>{round.maturityDate}</strong></span>
-          </div>
-        </article>
+      <section className="hedge-market market-shock">
+        <small>MARKET EVENT · BEFORE → AFTER</small>
+        <strong>{round.shock.label}</strong>
+        <p>{round.shock.detail} The dealer's goal is to neutralize the book's risk, not to predict the market.</p>
+        <div className="dealer-objective"><small>DEALER OBJECTIVE</small><strong>{objectiveLabel}</strong><span>Reduce this exposure{round.objectiveKeys.length > 1 ? " set" : ""} while avoiding unnecessary risk in the rest of the book.</span></div>
+        <div className="shock-metrics">
+          <span><small>SPOT PRICE</small><strong>{round.beforeSpot.toFixed(2)} <b>→ {round.spot.toFixed(2)}</b></strong></span>
+          <span><small>IMPLIED VOLATILITY</small><strong>{(round.beforeVolatility * 100).toFixed(1)}% <b>→ {(round.volatility * 100).toFixed(1)}%</b></strong></span>
+          <span><small>MATURITY</small><strong>{round.maturityDate}</strong></span>
+        </div>
       </section>
       <div className="hedge-layout">
-        <article className="hedge-product">
+        <article className="hedge-product position-book">
           <small>CLIENT PRODUCT · DEALER SHORT</small><h2>{round.template.name}</h2><p>{round.template.description}</p>
-          <div className="hedge-legs"><span>{round.template.extra}</span>{round.legs.map((leg, index) => <span key={`${leg.type}-${index}`}>{leg.qty > 0 ? "LONG" : "SHORT"} {Math.abs(leg.qty)}× {leg.strike} {leg.type.toUpperCase()}</span>)}</div>
-          <div className="risk-signals"><small>DEALER RISK AFTER SHOCK</small><strong className={round.preTrade.delta >= 0 ? "positive" : "negative"}>{deltaLabel}</strong><strong className={round.preTrade.vega >= 0 ? "positive" : "negative"}>{vegaLabel}</strong></div>
+          <div className="hedge-legs">{round.legs.map((leg, index) => <div key={`${leg.type}-${index}`}><b className={leg.qty > 0 ? "long" : "short"}>{leg.qty > 0 ? "LONG" : "SHORT"}</b><span>{leg.strike} {leg.type.toUpperCase()}</span></div>)}</div>
+          <div className="risk-signals"><small>DEALER RISK AFTER SHOCK</small><strong className={round.preTrade.delta >= 0 ? "positive" : "negative"}>{deltaLabel}</strong><strong className={round.preTrade.gamma >= 0 ? "positive" : "negative"}>{gammaLabel}</strong><strong className={round.preTrade.vega >= 0 ? "positive" : "negative"}>{vegaLabel}</strong></div>
         </article>
         <article className="hedge-ticket">
-          <h2>Choose the best response</h2>
-          <div className="trade-choices">{round.trades.map((trade) => <button key={trade.id} className={selectedTrade === trade.id ? "selected" : ""} onClick={() => setSelectedTrade(trade.id)} disabled={Boolean(result)}><strong>{trade.label}</strong><small>{trade.detail}</small></button>)}</div>
+          <h2>Build the hedge</h2>
+          <p className="hedge-choice-note">Select multiple instruments when one Greek needs more than one offset.</p>
+          <div className="trade-choices">{round.trades.map((trade) => <button key={trade.id} className={selectedTrades.includes(trade.id) ? "selected" : ""} onClick={() => setSelectedTrades((current) => current.includes(trade.id) ? current.filter((id) => id !== trade.id) : [...current.filter((id) => id !== "do-nothing"), trade.id])} disabled={Boolean(result)}><strong>{trade.label}</strong><small>{trade.detail}</small></button>)}<button className={selectedTrades.includes("do-nothing") ? "selected" : ""} onClick={() => setSelectedTrades((current) => current.includes("do-nothing") ? [] : ["do-nothing"])} disabled={Boolean(result)}><strong>DO NOTHING</strong><small>Keep the current book unchanged</small></button></div>
         </article>
       </div>
-      {result && <div className="hedge-reveal"><div><span>BEFORE</span><strong>Δ {round.preTrade.delta.toFixed(3)}</strong><strong>V {round.preTrade.vega.toFixed(2)}</strong></div><div><span>AFTER YOUR TRADE</span><strong>Δ {result.delta.toFixed(3)}</strong><strong>V {result.vega.toFixed(2)}</strong></div><p>{result.passed ? "Good call. Your trade offsets the book's dominant exposures." : result.timedOut ? `Best response: ${bestTrade?.label}.` : `That trade leaves more combined risk. Best response: ${bestTrade?.label}.`}</p></div>}
-      {result ? <div className={`hedge-result ${result.passed ? "passed" : "failed"}`}><div><small>{result.passed ? "RISK REDUCED" : result.timedOut ? "MARKET CLOSED" : "RISK NOT IMPROVED"}</small><strong>{result.score >= 0 ? "+" : ""}{result.score} PTS</strong></div><button onClick={next}>NEXT SHOCK →</button></div> : <div className="action-row submit-only"><button className="primary-action game-primary" disabled={!selectedTrade} onClick={() => settle(false)}>COMMIT TRADE <span>→</span></button></div>}
+      {result && <div className="hedge-reveal"><div><span>BEFORE</span><strong>Δ {round.preTrade.delta.toFixed(3)}</strong><strong>Γ {round.preTrade.gamma.toFixed(3)}</strong><strong>V {round.preTrade.vega.toFixed(2)}</strong><strong>Θ {round.preTrade.theta.toFixed(2)}</strong><strong>ρ {round.preTrade.rho.toFixed(2)}</strong></div><div><span>AFTER YOUR HEDGE</span><strong>Δ {result.greeks.delta.toFixed(3)}</strong><strong>Γ {result.greeks.gamma.toFixed(3)}</strong><strong>V {result.greeks.vega.toFixed(2)}</strong><strong>Θ {result.greeks.theta.toFixed(2)}</strong><strong>ρ {result.greeks.rho.toFixed(2)}</strong></div><p>{result.passed ? "Good call. The dealer's objective is met: the combined book risk is reduced." : result.timedOut ? `Best hedge: ${bestHedgeLabel}.` : `The selected hedge leaves more combined Greek risk. Best hedge: ${bestHedgeLabel}.`}</p></div>}
+      {result ? <RoundResult passed={result.passed} status={result.passed ? "RISK REDUCED" : result.timedOut ? "MARKET CLOSED" : "RISK NOT IMPROVED"} score={result.score} actionLabel="NEXT SHOCK" onNext={next} /> : <div className="action-row submit-only"><button className="primary-action game-primary" disabled={!selectedTrades.length} onClick={() => settle(false)}>COMMIT HEDGE <span>→</span></button></div>}
     </section>
   );
 }

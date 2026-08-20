@@ -1,20 +1,23 @@
-.hedge { max-width: 900px; }
+.hedge { max-width: 760px; }
+.hedge-market { margin: 30px 0 22px; padding: 25px 30px 22px; background: var(--paper); border: 1px solid var(--line); }
+.hedge-market > p { max-width: 620px; margin: 8px 0 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.hedge-market .shock-metrics { margin-top: 18px; }
+.dealer-objective { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; align-items: baseline; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
+.dealer-objective small { color: var(--muted); font-size: 8px; letter-spacing: 1.2px; }
+.dealer-objective strong { color: var(--deep); font-size: 14px; letter-spacing: .5px; }
+.dealer-objective span { grid-column: 1 / -1; color: var(--muted); font-size: 10px; line-height: 1.4; }
 .hedge-layout { display: grid; grid-template-columns: 1.08fr .92fr; gap: 12px; }
 .hedge-layout article { padding: 25px; border: 1px solid var(--line); background: var(--paper); }
 .hedge-layout h2 { margin: 7px 0; color: var(--deep); font-size: 22px; }
 .hedge-product > p { margin: 0 0 19px; color: var(--muted); font-size: 11px; }
-.hedge-legs { display: grid; gap: 6px; }
-.hedge-legs span { padding: 8px 10px; background: #edf0eb; color: var(--deep); font-size: 9px; font-weight: 800; }
-.hedge-result { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px; color: white; }
-.hedge-result.passed { background: #4f7e62; }
-.hedge-result.failed { background: #a85448; }
-.hedge-result small, .hedge-result strong { display: block; }
-.hedge-result small { margin-bottom: 4px; font-size: 8px; letter-spacing: 1px; }
-.hedge-result strong { font-size: 20px; }
-.hedge-result button { padding: 11px 13px; border: 1px solid #ffffff80; background: transparent; color: white; cursor: pointer; font-size: 9px; font-weight: 900; }
-.risk-signals { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-top: 20px; }
-.risk-signals small { grid-column: 1 / -1; color: var(--muted); font-size: 8px; letter-spacing: 1px; }
-.risk-signals strong { padding: 11px; border: 1px solid var(--line); font-size: 11px; text-align: center; }
+.hedge-product .hedge-legs { display: grid; grid-template-columns: 1fr; gap: 6px; }
+.hedge-legs > div { display: flex; align-items: center; gap: 9px; margin-top: 6px; color: var(--muted); font-size: 11px; }
+.hedge-legs b { width: 42px; padding: 5px; text-align: center; font-size: 7px; letter-spacing: .8px; }
+.hedge-legs b.long { background: #dceade; color: #467c57; }
+.hedge-legs b.short { background: #f7dcd5; color: #9b4d42; }
+.hedge-product .risk-signals { display: grid; grid-template-columns: 1fr; gap: 6px; margin-top: 20px; }
+.risk-signals small { color: var(--muted); font-size: 8px; letter-spacing: 1px; }
+.risk-signals strong { display: block; padding: 8px 10px; border: 1px solid var(--line); font-size: 9px; text-align: left; letter-spacing: .8px; }
 .risk-signals .positive { background: #e2efe5; color: #397651; }
 .risk-signals .negative { background: #f8e1dc; color: #a3483d; }
 .trade-choices { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 17px; }
@@ -25,6 +28,7 @@
 .trade-choices strong, .trade-choices small { display: block; }
 .trade-choices strong { font-size: 9px; }
 .trade-choices small { margin-top: 5px; color: var(--muted); font-size: 8px; }
+.hedge-choice-note { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.45; }
 .hedge-reveal { display: grid; grid-template-columns: 1fr 1fr 1.4fr; gap: 10px; margin: 12px 0; }
 .hedge-reveal > div, .hedge-reveal > p { margin: 0; padding: 15px 17px; border: 1px solid var(--line); background: var(--paper); }
 .hedge-reveal span { display: block; margin-bottom: 7px; color: var(--muted); font-size: 8px; letter-spacing: 1px; }
@@ -33,12 +37,9 @@
 @media (max-width: 760px) {
   .hedge-layout, .hedge-reveal { grid-template-columns: 1fr; }
   .hedge-layout article { padding: 19px; }
-  .hedge-result button { min-height: 44px; }
 }
 
 @media (max-width: 420px) {
+  .hedge-market { padding: 17px; }
   .hedge-layout article { padding: 15px; }
-  .hedge-result { align-items: stretch; flex-direction: column; gap: 13px; }
-  .hedge-result strong { font-size: 17px; }
-  .hedge-result button { width: 100%; }
 }

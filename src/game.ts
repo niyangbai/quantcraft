@@ -133,6 +133,7 @@ export type Scoreboard = {
   difficulty: Difficulty;
   maxLives: number;
   lives: number;
+  streak: number;
   gameOver: boolean;
   craft: { score: number; rounds: number; wins: number; best: number };
   greekthon: { score: number; answers: number; correct: number; bestStreak: number };
@@ -140,9 +141,10 @@ export type Scoreboard = {
   recent: Settlement[];
 };
 export const emptyScoreboard: Scoreboard = {
-  difficulty: "vp",
-  maxLives: 3,
-  lives: 3,
+  difficulty: "intern",
+  maxLives: 0,
+  lives: 0,
+  streak: 0,
   gameOver: false,
   craft: { score: 0, rounds: 0, wins: 0, best: 0 },
   greekthon: { score: 0, answers: 0, correct: 0, bestStreak: 0 },
