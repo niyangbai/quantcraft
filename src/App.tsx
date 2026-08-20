@@ -124,7 +124,7 @@ function App() {
         </div>
         <a
           className="repo-link"
-          href="https://github.com/your-org/quantcraft"
+          href="https://github.com/niyangbai/quantcraft"
           target="_blank"
           rel="noreferrer"
           aria-label="Open the QuantCraft GitHub repository"
