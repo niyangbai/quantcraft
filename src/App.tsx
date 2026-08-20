@@ -136,10 +136,10 @@ function App() {
         <div className="topbar-status">
           <span className={`status-pulse ${runtime.status}`} />
           {runtime.status === "ready"
-            ? "Pricing engine ready"
+            ? <><span>Internal pricing engine: </span><a className="engine-link" href="https://github.com/lballabio/QuantLib" target="_blank" rel="noreferrer">QuantLib</a></>
             : runtime.status === "loading"
-              ? "Preparing the market…"
-              : "Pricing engine unavailable"}
+              ? "Preparing internal pricing engine…"
+              : "Internal pricing engine unavailable"}
         </div>
         <a
           className="repo-link"
@@ -181,10 +181,9 @@ function App() {
       </main>
       <footer className="site-footer">
         <div>
-          <p>For educational and entertainment purposes only. Nothing in this game is financial, investment, trading, legal, or tax advice. Prices, scenarios, and model outputs are illustrative and may not reflect real markets. Verify decisions independently.</p>
-          <nav aria-label="Footer links">
-            <a href="https://github.com/niyangbai/quantcraft/blob/master/LICENSE" target="_blank" rel="noreferrer">LICENSE</a>
-          </nav>
+          <div className="footer-brand"><span className="brand-dot" aria-hidden="true" /><strong>QUANT<span>CRAFT</span></strong></div>
+          <p>For educational and entertainment purposes only. Nothing in this game is financial, investment, trading, legal, or tax advice. Prices and model outputs are illustrative.</p>
+          <nav aria-label="Footer links"><a href="https://github.com/niyangbai/quantcraft/blob/master/LICENSE" target="_blank" rel="noreferrer">LICENSE</a></nav>
         </div>
       </footer>
       {!profile && <Onboarding onFinish={finishOnboarding} />}

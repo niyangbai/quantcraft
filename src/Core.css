@@ -38,6 +38,8 @@ textarea {
 .brand-mark span:last-child { color: var(--coral); }
 .brand-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: var(--coral); margin-right: 20px; box-shadow: 7px 0 #e2c17b, 14px 0 #6fa7b6; }
 .topbar-status { color: var(--muted); font-size: 12px; margin-left: auto; }
+.engine-link { color: var(--deep); font-weight: 800; text-decoration: underline; text-decoration-color: var(--coral); text-underline-offset: 3px; }
+.engine-link:hover { color: var(--coral); }
 .status-pulse { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #75b487; margin-right: 7px; }
 .status-pulse.loading { background: #e2c17b; animation: pulse 1s infinite; }
 .status-pulse.error { background: #d86154; }
@@ -45,10 +47,14 @@ textarea {
 .runtime-error { background: #fee3dc; color: #8b382d; padding: 10px 5vw; font-size: 12px; border-bottom: 1px solid #efb5a8; }
 .main-content { width: 100%; max-width: 1280px; flex: 1; margin: auto; padding: 62px clamp(20px, 6vw, 90px) 90px; }
 .site-footer { border-top: 1px solid #d9ddd680; background: transparent; }
-.site-footer > div { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 24px; width: min(1120px, calc(100% - 40px)); margin: auto; padding: 20px 0 22px; }
-.site-footer p { max-width: 820px; margin: 0; color: #778080b8; font-size: 9px; line-height: 1.55; }
-.site-footer nav { display: flex; gap: 16px; }
-.site-footer a { color: #778080b8; font-size: 8px; font-weight: 800; letter-spacing: 1px; text-decoration: none; }
+.site-footer > div { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 28px; width: min(1120px, calc(100% - 40px)); margin: auto; padding: 24px 0 28px; }
+.footer-brand { display: flex; align-items: center; gap: 20px; min-width: 175px; }
+.footer-brand .brand-dot { flex: 0 0 auto; margin-right: 0; }
+.footer-brand strong { color: var(--deep); font-size: 13px; letter-spacing: 1px; }
+.footer-brand strong span { color: var(--coral); }
+.site-footer p { max-width: 620px; margin: 0; padding-left: 24px; border-left: 1px solid var(--line); color: #778080b8; font-size: 9px; line-height: 1.65; }
+.site-footer nav { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px 16px; }
+.site-footer a { color: var(--muted); font-size: 8px; font-weight: 800; letter-spacing: 1px; text-decoration: underline; text-decoration-color: var(--coral); text-underline-offset: 4px; }
 .site-footer a:hover { color: var(--coral); }
 
 .eyebrow,
@@ -181,7 +187,10 @@ textarea {
   .repo-link, .avatar { width: 38px; height: 38px; }
   .topbar-status { display: none; }
   .main-content { padding: 32px 16px 64px; }
-  .site-footer > div { grid-template-columns: 1fr; gap: 12px; width: calc(100% - 32px); padding-block: 22px; }
+  .site-footer > div { grid-template-columns: 1fr; gap: 16px; width: calc(100% - 32px); padding-block: 24px; }
+  .footer-brand { min-width: 0; }
+  .site-footer p { padding: 16px 0 0; border-top: 1px solid var(--line); border-left: 0; }
+  .site-footer nav { justify-content: flex-start; }
   .game-scoreboard { grid-template-columns: 1fr 1fr; }
   .game-page > .mode-header { min-height: 0; margin-bottom: 18px; padding-bottom: 16px; }
   .mode-header { align-items: stretch; flex-direction: column; }
