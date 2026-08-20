@@ -1,50 +1,64 @@
-# QUANTCRAFT
+<p align="center">
+	<img src="./public/favicon.svg" width="96" alt="QuantCraft logo" />
+</p>
 
-[![Deploy to GitHub Pages](https://github.com/niyangbai/quantcraft/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/niyangbai/quantcraft/actions/workflows/deploy-pages.yml)
-[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE)
-[![React 19](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)](https://react.dev/)
-[![TypeScript 6](https://img.shields.io/badge/TypeScript-6-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![QuantLib 1.43](https://img.shields.io/badge/QuantLib-1.43-24383A)](https://www.quantlib.org/)
+<h1 align="center">QuantCraft</h1>
 
-**Play online:** [https://niyangbai.github.io/quantcraft/](https://niyangbai.github.io/quantcraft/)
+<p align="center">
+	<a href="https://github.com/niyangbai/quantcraft/actions/workflows/deploy-pages.yml"><img src="https://github.com/niyangbai/quantcraft/actions/workflows/deploy-pages.yml/badge.svg" alt="Deploy to GitHub Pages" /></a>
+	<a href="LICENSE"><img src="https://img.shields.io/badge/License-AGPL_v3-blue.svg" alt="License: AGPL v3" /></a>
+	<a href="https://react.dev/"><img src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white" alt="React 19" /></a>
+	<a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-6-3178C6?logo=typescript&logoColor=white" alt="TypeScript 6" /></a>
+	<a href="https://www.quantlib.org/"><img src="https://img.shields.io/badge/QuantLib-1.43-24383A" alt="QuantLib 1.43" /></a>
+</p>
 
-> QuantCraft is a fully frontend, browser-only financial-markets game with no backend dependency. Pricing runs locally through QuantLib WebAssembly.
+<p align="center">
+	<a href="https://niyangbai.github.io/quantcraft/"><strong>▶ PLAY QUANTCRAFT ONLINE</strong></a>
+</p>
 
-QuantCraft tests product structuring, Greek intuition, and hedging judgment under time pressure. Its three modes share one score, one life pool, and one local player record.
+> QuantCraft is a browser-based financial-markets game. It has no backend dependency: pricing runs locally through QuantLib WebAssembly.
+
+Practice product structuring, Greek intuition, and hedging judgment under time pressure. All three modes share one score, one life pool, and one local player record.
+
+## At a glance
+
+| | Focus | Core decision |
+| --- | --- | --- |
+| **Craft** | Product structuring | Build a book that meets the client mandate |
+| **Greekthon** | Greek intuition | Call the direction of value or a Greek |
+| **Hedge** | Risk management | Choose tools that reduce dealer exposure |
 
 ## Game modes
 
-### ✣ Craft
+### ✣ Craft · Structure the product
 
 A client arrives with a mandate: protect capital, retain upside, include a required instrument, and respect a target budget.
 
-Build the product one leg at a time. Go long or short, set the position size, choose strikes and maturities, and tune bond face values or coupon rates. Every instrument has a live market price, and the whole book moves as you edit it.
+Build one leg at a time. Go long or short, set position sizes, choose strikes and maturities, and tune bond face values or coupon rates. Every instrument has a live market price, and the book updates as you edit it.
 
-Your structure must satisfy every hard requirement before time expires. Budget is different: you may overspend, but every excess makes the deal less elegant and costs points.
+Your structure must satisfy every hard requirement before time expires. Overspending is allowed, but every excess makes the deal less efficient and costs points.
 
 The strongest structures are not merely valid. They are efficient.
 
-### Δ Greekthon
+### Δ Greekthon · Read the shock
 
-A position flashes onto the screen. Then the market changes.
+A position flashes onto the screen. Then the market changes. Decide whether fair value, delta, gamma, vega, theta, or rho goes **up**, stays **unchanged**, or goes **down**.
 
-Will fair value rise, stay unchanged, or fall? What happens to delta, gamma, vega, theta, or rho? Read the book, read the shock, and choose **up**, **unchanged**, or **down** before the clock runs out.
-
-Questions may contain a single option or a combined position. As the run continues, decisions arrive faster. Build a streak, trust your risk intuition, and do not hesitate.
+Questions may contain a single option or a combined position. As the run continues, decisions arrive faster.
 
 Answers are evaluated at the displayed four-decimal precision. After an answer or timeout, the result remains visible for three seconds for review.
 
-### ≋ Hedge
+### ≋ Hedge · Rebalance the book
 
-The desk has sold a structured product. The market has moved, and its risk must be rebalanced now.
+The desk has sold a structured product. The market has moved, and its risk must be rebalanced.
 
-Each round presents a selloff, rally, volatility shock, or volatility crush. Read the product from the dealer's side, identify its exposures, then select one or more stock and option tools to reduce the combined Delta, Gamma, Vega, Theta, and Rho risk. The dealer's objective is risk neutralization, not a market prediction.
+Each round presents a selloff, rally, volatility shock, or volatility crush. Read the product from the dealer's side, identify its exposures, and select one or more stock or option tools.
 
-Exact Greeks stay hidden while you decide. After submission, QuantLib reveals the before-and-after Greeks and explains the strongest multi-tool response. The game rewards hedge intuition rather than solving for an exact quantity.
+The dealer's objective is to reduce the selected Delta, Gamma, Vega, Theta, and Rho exposure, not to predict the market. Exact Greeks stay hidden while you decide; QuantLib reveals the before-and-after values after submission.
 
 ## Difficulty and scoring
 
-Craft, Greekthon, and Hedge share the same score and the same pool of lives. A failed mandate, wrong risk call, poor hedge response, or expired timer can cost a life. When the last life is gone, the run ends and the result is recorded in your Collection.
+Craft, Greekthon, and Hedge share the same score and life pool. A failed mandate, wrong risk call, poor hedge response, or expired timer can cost a life. When the last life is gone, the run ends and the result is recorded in Collection.
 
 Choose the pressure level before starting:
 
@@ -57,7 +71,7 @@ Choose the pressure level before starting:
 | Director | 2 |
 | MD | 1 |
 
-The Collection records the combined score, per-mode results, accuracy, streaks, best rounds, remaining lives, and recent settlements.
+Collection records the combined score, per-mode results, accuracy, streaks, best rounds, remaining lives, and recent settlements.
 
 ## Shared question bank
 
@@ -65,11 +79,11 @@ All three modes draw from one validated JSON question bank. Download the example
 
 When local storage is enabled, the player profile, scoreboard, and uploaded question bank stay in that browser. QuantCraft uses no advertising or tracking cookies.
 
-## Local development
+## Development
 
 Requirements: Node.js 18 or newer and npm.
 
-Use the project management script for the common workflows:
+Use the management script for common workflows:
 
 ```bash
 ./manage.sh compile      # build the kernel and type-check the app
@@ -77,17 +91,20 @@ Use the project management script for the common workflows:
 ./manage.sh run          # development server
 ```
 
-Run `./manage.sh help` for all commands. Arguments after `run` are passed to
-Vite, such as `./manage.sh run --host 0.0.0.0`.
+Run `./manage.sh help` for all commands. Arguments after `run` are passed to Vite, for example:
 
-The underlying npm commands remain available:
+```bash
+./manage.sh run --host 0.0.0.0
+```
+
+The underlying npm commands are also available:
 
 ```bash
 npm install
 npm run dev
 ```
 
-The development command builds the local market kernel and starts Vite.
+`npm run dev` builds the local market kernel and starts Vite.
 
 ```bash
 npm run build        # production build
@@ -96,7 +113,7 @@ npm run test:kernel  # market-kernel tests
 npm run preview      # preview the production build
 ```
 
-## Architecture
+## Architecture and privacy
 
 - React 19 and TypeScript 6 frontend
 - Vite 8 build and development server
@@ -105,7 +122,17 @@ npm run preview      # preview the production build
 - Browser Local Storage for optional persistence
 - GitHub Actions deployment to GitHub Pages
 
-The application is entirely client-side. Market inputs and player data are not sent to a QuantCraft backend.
+The application is entirely client-side. Market inputs and player data are not sent to a QuantCraft backend. Optional persistence uses browser Local Storage.
+
+## Contact and issues
+
+QuantCraft is an educational market-structure game. Feedback is welcome:
+
+- **Bug reports:** [open a GitHub Issue](https://github.com/niyangbai/quantcraft/issues/new)
+- **Feature ideas:** [start a feature discussion](https://github.com/niyangbai/quantcraft/issues/new)
+- **Project contact:** [visit the QuantCraft repository](https://github.com/niyangbai/quantcraft)
+
+When reporting a problem, include the mode, difficulty, browser, and reproduction steps.
 
 ## License
 
