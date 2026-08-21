@@ -1,7 +1,9 @@
 import type { QuantLibRuntime } from "@quantcraft/quantlibjs";
 import type { PayoffSeed } from "./payoffGame";
+import { orderBookSeedDefaults } from "./orderbookGame";
+import type { OrderBookSeed } from "./orderbookGame";
 
-export type Mode = "landing" | "payoff" | "greek" | "hedge" | "collection";
+export type Mode = "landing" | "payoff" | "greek" | "orderbook" | "hedge" | "collection";
 export type RuntimeState = {
   status: "loading" | "ready" | "error";
   ql?: QuantLibRuntime;
@@ -16,9 +18,10 @@ export type QuestionBank = {
   version: 1;
   payoff: PayoffSeed[];
   greek: { scenarios: GreekScenario[]; books: GreekBook[]; metrics: GreekMetric[] };
+  orderbook: OrderBookSeed[];
   hedge: { products: HedgeProduct[] };
 };
-export type Settlement = { game: "Payoff" | "Greek" | "Hedge"; label: string; score: number; at: string };
+export type Settlement = { game: "Payoff" | "Greek" | "Order Book" | "Hedge"; label: string; score: number; at: string };
 export type PlayerProfile = { name: string; storage: boolean };
 export type Difficulty = "intern" | "analyst" | "associate" | "vp" | "director" | "md";
 export const difficultyLives: Record<Difficulty, number | null> = { intern: null, analyst: 5, associate: 4, vp: 3, director: 2, md: 1 };
@@ -30,6 +33,7 @@ export type Scoreboard = {
   gameOver: boolean;
   payoff: { score: number; answers: number; correct: number; bestStreak: number };
   greek: { score: number; answers: number; correct: number; bestStreak: number };
+  orderbook: { score: number; answers: number; correct: number; bestStreak: number };
   hedge: { score: number; rounds: number; passed: number; best: number };
   recent: Settlement[];
 };
@@ -41,6 +45,7 @@ export const emptyScoreboard: Scoreboard = {
   gameOver: false,
   payoff: { score: 0, answers: 0, correct: 0, bestStreak: 0 },
   greek: { score: 0, answers: 0, correct: 0, bestStreak: 0 },
+  orderbook: { score: 0, answers: 0, correct: 0, bestStreak: 0 },
   hedge: { score: 0, rounds: 0, passed: 0, best: 0 },
   recent: [],
 };
@@ -123,6 +128,7 @@ export const exampleQuestionBank: QuestionBank = {
     ],
     metrics: ["value", "delta", "gamma", "vega", "theta", "rho"],
   },
+  orderbook: orderBookSeedDefaults,
   hedge: {
     products: [
       { name: "Capital Protected Note", description: "Zero bond + long participation call", extra: "100 face zero bond", legs: [{ type: "call", strike: 100, qty: 1 }] },
@@ -140,6 +146,7 @@ export const parseQuestionBank = (input: unknown): QuestionBank => {
   if (bank.version !== 1) throw new Error("version must be 1");
   if (!Array.isArray(bank.payoff) || bank.payoff.length === 0) throw new Error("payoff must contain at least one position seed");
   if (!bank.greek || !Array.isArray(bank.greek.scenarios) || !bank.greek.scenarios.length || !Array.isArray(bank.greek.books) || !bank.greek.books.length || !Array.isArray(bank.greek.metrics) || !bank.greek.metrics.length) throw new Error("greek requires scenarios, books, and metrics");
+  if (!Array.isArray(bank.orderbook) || !bank.orderbook.length) bank.orderbook = orderBookSeedDefaults; // legacy banks predate orderbook templates
   if (!bank.hedge || !Array.isArray(bank.hedge.products) || !bank.hedge.products.length) throw new Error("hedge.products must contain at least one product");
   const iso = /^\d{4}-\d{2}-\d{2}$/;
   const payoffKinds = ["equity", "forward", "call", "put", "digital", "barrier", "bond", "coupon"];
@@ -160,6 +167,11 @@ export const parseQuestionBank = (input: unknown): QuestionBank => {
     if (!q.name || !Array.isArray(q.legs) || !q.legs.length || q.legs.some((leg) => !["call", "put"].includes(leg.type) || !Number.isFinite(leg.strike) || leg.strike <= 0 || !Number.isFinite(leg.qty) || leg.qty === 0)) throw new Error(`greek.books[${i}] is invalid`);
   });
   if (bank.greek.metrics.some((x) => !["value", "delta", "gamma", "vega", "theta", "rho"].includes(x))) throw new Error("greek.metrics contains an unsupported KPI");
+  bank.orderbook.forEach((seed, i) => {
+    if (!seed.id || !seed.label || !Number.isInteger(seed.spreadTicks) || seed.spreadTicks <= 0) throw new Error(`orderbook[${i}] requires id, label, and a positive integer spreadTicks`);
+    if (!Array.isArray(seed.bids) || !seed.bids.length || !Array.isArray(seed.asks) || !seed.asks.length || seed.bids.some((size) => !Number.isFinite(size) || size <= 0) || seed.asks.some((size) => !Number.isFinite(size) || size <= 0)) throw new Error(`orderbook[${i}] requires positive sizes for bids and asks`);
+  });
+  if (new Set(bank.orderbook.map((x) => x.id)).size !== bank.orderbook.length) throw new Error("orderbook question ids must be unique");
   bank.hedge.products.forEach((product, i) => {
     if (!product.name || !product.description || !product.extra || !Array.isArray(product.legs) || !product.legs.length) throw new Error(`hedge.products[${i}] requires text and at least one option leg`);
     if (product.legs.some((leg) => !["call", "put"].includes(leg.type) || !Number.isFinite(leg.strike) || leg.strike <= 0 || !Number.isFinite(leg.qty) || leg.qty === 0)) throw new Error(`hedge.products[${i}].legs is invalid`);

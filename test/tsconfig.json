@@ -16,5 +16,5 @@
     "rootDir": "../src",
     "outDir": "./dist"
   },
-  "include": ["../src/payoffGame.ts"]
+  "include": ["../src/payoffGame.ts", "../src/orderbookGame.ts"]
 }

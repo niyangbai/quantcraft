@@ -15,6 +15,7 @@ npm install @quantcraft/finmath
 | --- | --- | --- |
 | `payoff` | `@quantcraft/finmath/payoff` | Exact terminal payoff, max/min profit, breakevens |
 | `risk` | `@quantcraft/finmath/risk` | Greek aggregation, risk magnitude, best-hedge search, hedge quality |
+| `orderbook` | `@quantcraft/finmath/orderbook` | Price-time-priority market-order matching, best quotes, spread, depth |
 
 ```ts
 // Barrel: everything in one import.
@@ -63,6 +64,27 @@ const trades = [
 const { bestTrades, beforeRisk, bestRisk, risk } = bestHedge({ preTrade, trades, scales: DEFAULT_GREEK_SCALES });
 const chosenRisk = risk(addRisk(preTrade, trades[0]));
 const quality = hedgeQuality({ beforeRisk, chosenRisk, bestRisk }); // 0..1
+```
+
+## orderbook
+
+Deterministic market-order execution with price-time priority. A market buy
+consumes asks from the best (lowest) price up; a market sell consumes bids
+from the best (highest) price down. The input book is never mutated.
+
+```ts
+import { matchMarketOrder, bestAsk, depthAt } from "@quantcraft/finmath/orderbook";
+
+const book = {
+  bids: [{ price: 100.02, size: 250 }],
+  asks: [{ price: 100.04, size: 150 }, { price: 100.06, size: 200 }],
+};
+
+const result = matchMarketOrder(book, "buy", 200);
+// fills 150 @ 100.04 then 50 @ 100.06
+bestAsk(result.book); // 100.06
+depthAt(result.book, "ask", 100.06); // 150
+result.averagePrice; // 100.045 (VWAP)
 ```
 
 ## Development

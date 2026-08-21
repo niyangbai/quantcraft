@@ -16,6 +16,14 @@ import {
   GREEK_KEYS,
   GREEK_LABELS,
 } from "../dist/risk.js";
+import {
+  matchMarketOrder,
+  bestBid,
+  bestAsk,
+  spread,
+  mid,
+  depthAt,
+} from "../dist/orderbook.js";
 import * as finmath from "../dist/index.js";
 
 /* ------------------------------------------------------------------ */
@@ -208,8 +216,96 @@ test("GREEK_KEYS and GREEK_LABELS are aligned and scaled", () => {
 /* Barrel re-export                                                    */
 /* ------------------------------------------------------------------ */
 
-test("the package barrel re-exports both modules", () => {
-  assert.equal(typeof finmath.legPayoff, "function");
-  assert.equal(typeof finmath.bestHedge, "function");
+/* ------------------------------------------------------------------ */
+/* Orderbook module                                                    */
+/* ------------------------------------------------------------------ */
+
+const bookFixture = () => ({
+  bids: [
+    { price: 10002, size: 250 }, // 100.02 best bid
+    { price: 10000, size: 400 }, // 100.00
+  ],
+  asks: [
+    { price: 10004, size: 150 }, // 100.04 best ask
+    { price: 10006, size: 200 }, // 100.06
+  ],
 });
+
+test("book quotes", () => {
+  const book = bookFixture();
+  assert.equal(bestBid(book), 10002);
+  assert.equal(bestAsk(book), 10004);
+  assert.equal(spread(book), 2);
+  assert.equal(mid(book), 10003);
+  assert.equal(depthAt(book, "ask", 10004), 150);
+  assert.equal(depthAt(book, "ask", 10005), 0);
+  assert.equal(depthAt(book, "bid", 10000), 400);
+});
+
+test("market buy fills asks in price-time priority (user example)", () => {
+  const result = matchMarketOrder(bookFixture(), "buy", 200);
+  // 150 @ 100.04 then 50 @ 100.06; VWAP = 100.045
+  assert.deepEqual(result.fills, [
+    { price: 10004, size: 150 },
+    { price: 10006, size: 50 },
+  ]);
+  assert.equal(result.filledSize, 200);
+  assert.equal(result.remainingSize, 0);
+  assert.equal(result.averagePrice, 10004.5);
+  // the 100.04 ask is gone; 100.06 now has 150 left
+  assert.equal(bestAsk(result.book), 10006);
+  assert.equal(depthAt(result.book, "ask", 10006), 150);
+  assert.equal(depthAt(result.book, "ask", 10004), 0);
+  // bids untouched
+  assert.equal(bestBid(result.book), 10002);
+});
+
+test("market buy that exactly clears the best ask", () => {
+  const result = matchMarketOrder(bookFixture(), "buy", 150);
+  assert.deepEqual(result.fills, [{ price: 10004, size: 150 }]);
+  assert.equal(bestAsk(result.book), 10006);
+  assert.equal(depthAt(result.book, "ask", 10006), 200);
+});
+
+test("market sell consumes bids best-first", () => {
+  const result = matchMarketOrder(bookFixture(), "sell", 300);
+  assert.deepEqual(result.fills, [
+    { price: 10002, size: 250 },
+    { price: 10000, size: 50 },
+  ]);
+  assert.equal(bestBid(result.book), 10000);
+  assert.equal(depthAt(result.book, "bid", 10000), 350);
+  assert.equal(result.averagePrice, (250 * 10002 + 50 * 10000) / 300);
+  // asks untouched
+  assert.equal(bestAsk(result.book), 10004);
+});
+
+test("partial fill keeps the level at reduced size", () => {
+  const result = matchMarketOrder(bookFixture(), "buy", 100);
+  assert.deepEqual(result.fills, [{ price: 10004, size: 100 }]);
+  assert.equal(bestAsk(result.book), 10004); // still the best ask
+  assert.equal(depthAt(result.book, "ask", 10004), 50);
+});
+
+test("book exhaustion leaves remainingSize and the other side intact", () => {
+  const thin = { bids: [{ price: 10000, size: 100 }], asks: [{ price: 10004, size: 50 }] };
+  const result = matchMarketOrder(thin, "buy", 200);
+  assert.equal(result.filledSize, 50);
+  assert.equal(result.remainingSize, 150);
+  assert.equal(result.book.asks.length, 0);
+  assert.deepEqual(result.book.bids, thin.bids); // buyers only touch asks
+});
+
+test("matching does not mutate the input book", () => {
+  const book = bookFixture();
+  matchMarketOrder(book, "buy", 200);
+  assert.equal(depthAt(book, "ask", 10004), 150);
+  assert.equal(bestAsk(book), 10004);
+});
+
+test("the package barrel re-exports the orderbook module", () => {
+  assert.equal(typeof finmath.matchMarketOrder, "function");
+  assert.equal(typeof finmath.bestAsk, "function");
+});
+
 

@@ -18,13 +18,14 @@
 
 > QuantCraft is a browser-based financial-markets game. It has no backend dependency: pricing runs locally through QuantLib WebAssembly.
 
-Practice payoff reflexes, Greek intuition, and hedging judgment under time pressure. All three modes share one score, one life pool, and one local player record.
+Practice payoff reflexes, market-microstructure intuition, Greek intuition, and hedging judgment under time pressure. All four modes share one score, one life pool, and one local player record.
 
 ## At a glance
 
 | | Focus | Core decision |
 | --- | --- | --- |
 | **Payoff** | Terminal payoff reflex | Call the payoff, max profit, or breakeven of a position |
+| **Order Book** | Market microstructure | Call how a market order moves the ladder |
 | **Greek** | Greek intuition | Call the direction of value or a Greek |
 | **Hedge** | Risk management | Choose tools that reduce dealer exposure |
 
@@ -37,6 +38,14 @@ A position flashes onto the screen with a terminal spot. Read the book and answe
 Questions ramp through five levels: **1 leg → 2 legs → 3 legs → quantity → long/short mixed**. Instruments cover equity, forward, call, put, digital, barrier, bond, and coupon legs. Every payoff is exact arithmetic — `Payoff = Σ quantity × signed instrument payoff` — no pricing engine is involved.
 
 Correct answers score points and extend your streak; each two consecutive-correct milestone unlocks the next level. Wrong answers and timeouts show the per-leg working so the reflex sticks.
+
+### ☰ Order Book · Read the ladder
+
+A limit order book flashes onto the screen. A market order arrives — `MARKET BUY 200` — and one question follows: the new best ask, the fill VWAP, the new spread, or the remaining depth at a level. Four answers, one correct.
+
+The book is **persistent**: it does not regenerate per question. Each market order executes against it in **price-time priority**, the ladder erodes or reprices level by level, and the next question reads the updated book. When the book runs too thin, a fresh book starts.
+
+The matching engine lives in `@quantcraft/finmath` (`orderbook` module): deterministic market-order execution, best quotes, spread, and depth.
 
 ### Δ Greek · Read the shock
 
@@ -56,7 +65,7 @@ The dealer's objective is to reduce the selected Delta, Gamma, Vega, Theta, and 
 
 ## Difficulty and scoring
 
-Payoff, Greek, and Hedge share the same score and life pool. A wrong payoff, wrong risk call, poor hedge response, or expired timer can cost a life. When the last life is gone, the run ends and the result is recorded in Collection.
+Payoff, Order Book, Greek, and Hedge share the same score and life pool. A wrong payoff, wrong book read, wrong risk call, poor hedge response, or expired timer can cost a life. When the last life is gone, the run ends and the result is recorded in Collection.
 
 Choose the pressure level before starting:
 
@@ -73,7 +82,7 @@ Collection records the combined score, per-mode results, accuracy, streaks, best
 
 ## Shared question bank
 
-All three modes draw from one validated JSON question bank. Download the example bank, customize the Payoff position seeds, Greek scenarios, option books and metrics, or Hedge product templates, then upload it in the app.
+All four modes draw from one validated JSON question bank. Download the example bank, customize the Payoff position seeds, Order Book ladder templates, Greek scenarios, option books and metrics, or Hedge product templates, then upload it in the app.
 
 When local storage is enabled, the player profile, scoreboard, and uploaded question bank stay in that browser. QuantCraft uses no advertising or tracking cookies.
 
@@ -124,7 +133,7 @@ against it, importing the math from `@quantcraft/finmath`.
 - Vite 8 build and development server
 - Single UI module in [`src/ui`](src/ui) — design tokens (`base.css`), game-mode blocks (`game.css`), page styles (`pages.css`), shared controls (`controls.tsx`), the app shell (`AppShell.tsx`), the page screens (`pages.tsx`), and the game-mode kit (`GameFrame`, `ScenarioCard`, `PositionBook`, `ChoiceGrid`, `RevealBar`). New modes and pages are assembled from existing modules
 - Workspace packages:
-  - [`@quantcraft/finmath`](packages/finmath) — unified financial math with modular exports: `payoff` (terminal payoff, max profit, breakevens) and `risk` (Greek aggregation, risk magnitude, best-hedge search, hedge quality)
+  - [`@quantcraft/finmath`](packages/finmath) — unified financial math with modular exports: `payoff` (terminal payoff, max profit, breakevens), `risk` (Greek aggregation, risk magnitude, best-hedge search, hedge quality), and `orderbook` (price-time-priority market-order matching, best quotes, spread, depth)
   - [`@quantcraft/quantlibjs`](packages/quantlibjs) — official QuantLib 1.43 compiled to WebAssembly with a TypeScript API
 - Browser Local Storage for optional persistence
 - GitHub Actions deployment to GitHub Pages

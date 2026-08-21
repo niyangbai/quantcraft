@@ -20,6 +20,8 @@ export { ScenarioCard } from "./ScenarioCard";
 export type { Metric } from "./ScenarioCard";
 export { PositionBook } from "./PositionBook";
 export type { PositionLeg } from "./PositionBook";
+export { OrderBookCard } from "./OrderBookCard";
+export type { BookRow } from "./OrderBookCard";
 export { ChoiceGrid } from "./ChoiceGrid";
 export type { ChoiceItem } from "./ChoiceGrid";
 export { RevealBar } from "./RevealBar";

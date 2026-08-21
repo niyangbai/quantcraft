@@ -6,6 +6,7 @@
 
 .mode-view.game-page.payoff,
 .mode-view.game-page.greek,
+.mode-view.game-page.orderbook,
 .mode-view.game-page.hedge { max-width: 980px; }
 
 /* ------------------------------------------------------------------ */
@@ -105,6 +106,42 @@
 .reveal-grid .tone-positive { color: #397651; }
 .reveal-grid .tone-negative { color: #a3483d; }
 .reveal-grid p { display: flex; align-items: center; color: var(--muted); font-size: 10px; line-height: 1.5; }
+
+/* ------------------------------------------------------------------ */
+/* Order book ladder                                                   */
+/* ------------------------------------------------------------------ */
+
+.order-book h2 { margin: 7px 0 12px; font-size: 21px; }
+.order-ladder { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.order-side > small,
+.order-spread small { display: block; color: var(--muted); font-size: 8px; letter-spacing: 1.3px; margin-bottom: 6px; }
+.book-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  background: #fff;
+  font-variant-numeric: tabular-nums;
+}
+.book-row span { color: var(--deep); font-weight: 800; font-size: 13px; }
+.book-row b { color: var(--muted); font-size: 11px; }
+.order-side:first-child .book-row span { color: #9b4d42; } /* asks */
+.order-side:last-child .book-row span { color: #467c57; } /* bids */
+.book-row.hit { border-color: var(--coral); background: #fff1eb; }
+.book-row.hit b { color: var(--coral); }
+.order-spread {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: var(--paper);
+}
+.order-spread small { margin: 0; }
+.order-spread strong { color: var(--deep); font-size: 12px; font-variant-numeric: tabular-nums; }
 
 /* ------------------------------------------------------------------ */
 /* Responsive                                                          */

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getQuantLib } from "./quantlib";
 import { Payoff } from "./Payoff";
+import { OrderBook } from "./OrderBook";
 import { Greek, Hedge } from "./RiskGames";
 import { AppShell, GameOverScreen, Collection, Landing, Onboarding } from "./ui";
 
@@ -52,6 +53,7 @@ function App() {
         gameOver: parsed.gameOver === true,
         payoff: { ...emptyScoreboard.payoff, ...parsed.payoff },
         greek: { ...emptyScoreboard.greek, ...(parsed.greek ?? parsed.greekthon) }, // legacy scoreboards used the "greekthon" key
+        orderbook: { ...emptyScoreboard.orderbook, ...parsed.orderbook },
         hedge: { ...emptyScoreboard.hedge, ...parsed.hedge },
         recent: Array.isArray(parsed.recent) ? parsed.recent : [],
       };
@@ -111,13 +113,19 @@ function App() {
     greek: { score: current.greek.score + score, answers: current.greek.answers + 1, correct: current.greek.correct + Number(correct), bestStreak: Math.max(current.greek.bestStreak, streak) },
     recent: [{ game: "Greek" as const, label, score, at: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) }, ...current.recent].slice(0, 8),
   }));
+  const recordOrderBook = (score: number, correct: boolean, streak: number, label: string) => setScoreboard((current) => ({
+    ...current,
+    ...nextRunState(current, correct),
+    orderbook: { score: current.orderbook.score + score, answers: current.orderbook.answers + 1, correct: current.orderbook.correct + Number(correct), bestStreak: Math.max(current.orderbook.bestStreak, streak) },
+    recent: [{ game: "Order Book" as const, label, score, at: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) }, ...current.recent].slice(0, 8),
+  }));
   const recordHedge = (score: number, passed: boolean, label: string) => setScoreboard((current) => ({
     ...current,
     ...nextRunState(current, passed),
     hedge: { score: current.hedge.score + score, rounds: current.hedge.rounds + 1, passed: current.hedge.passed + Number(passed), best: Math.max(current.hedge.best, score) },
     recent: [{ game: "Hedge" as const, label, score, at: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) }, ...current.recent].slice(0, 8),
   }));
-  const totalScore = scoreboard.payoff.score + scoreboard.greek.score + scoreboard.hedge.score;
+  const totalScore = scoreboard.payoff.score + scoreboard.greek.score + scoreboard.orderbook.score + scoreboard.hedge.score;
   const newRun = () => {
     setShowGameOver(false);
     setScoreboard((current) => ({ ...emptyScoreboard, difficulty: current.difficulty, maxLives: current.maxLives, lives: current.maxLives, recent: [] }));
@@ -141,6 +149,7 @@ function App() {
         <Payoff seeds={questionBank.payoff} onScore={recordPayoff} onBack={() => setMode("landing")} scoreboard={scoreboard} />
       )}
       {mode === "greek" && !showGameOver && <Greek ql={runtime.ql} bank={questionBank.greek} onScore={recordGreek} onBack={() => setMode("landing")} scoreboard={scoreboard} />}
+      {mode === "orderbook" && !showGameOver && <OrderBook seeds={questionBank.orderbook} onScore={recordOrderBook} onBack={() => setMode("landing")} scoreboard={scoreboard} />}
       {mode === "hedge" && !showGameOver && <Hedge ql={runtime.ql} bank={questionBank.hedge} onScore={recordHedge} onBack={() => setMode("landing")} scoreboard={scoreboard} />}
       {mode === "collection" && <Collection name={profile?.name ?? "Player"} scoreboard={scoreboard} onRename={renamePlayer} onResetScore={newRun} onBack={() => setMode("landing")} />}
       {showGameOver && mode !== "landing" && mode !== "collection" && <GameOverScreen difficulty={scoreboard.difficulty} totalScore={totalScore} onCollection={() => setMode("collection")} onNewRun={newRun} />}

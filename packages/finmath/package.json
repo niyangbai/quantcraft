@@ -26,6 +26,10 @@
     "./risk": {
       "types": "./dist/risk.d.ts",
       "import": "./dist/risk.js"
+    },
+    "./orderbook": {
+      "types": "./dist/orderbook.d.ts",
+      "import": "./dist/orderbook.js"
     }
   },
   "files": [
