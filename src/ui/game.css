@@ -66,13 +66,6 @@
 .side-badge.long { background: #dceade; color: #467c57; }
 .side-badge.short { background: #f7dcd5; color: #9b4d42; }
 
-.book-signals { display: grid; grid-template-columns: 1fr; gap: 6px; margin-top: 20px; }
-.book-signals small { color: var(--muted); font-size: 8px; letter-spacing: 1px; }
-.book-signals strong { display: block; padding: 8px 10px; border: 1px solid var(--line); font-size: 9px; text-align: left; letter-spacing: .8px; }
-.book-signals .positive { background: #e2efe5; color: #397651; }
-.book-signals .negative { background: #f8e1dc; color: #a3483d; }
-.book-signals .signal-rule { font-weight: 900; letter-spacing: .6px; }
-
 /* ------------------------------------------------------------------ */
 /* Choice grid                                                         */
 /* ------------------------------------------------------------------ */
@@ -131,9 +124,6 @@
 .analysis-cell { padding: 15px 17px; border: 1px solid var(--line); background: var(--paper); }
 .analysis-cell > span { display: block; margin-bottom: 7px; color: var(--muted); font-size: 8px; letter-spacing: 1px; }
 .analysis-cell > strong { display: block; color: var(--deep); font-size: 15px; font-variant-numeric: tabular-nums; }
-
-.analysis-cell.analysis-total { border-top: 3px solid var(--accent); }
-.analysis-cell.analysis-total > strong { font-size: 26px; font-weight: 900; letter-spacing: -0.5px; }
 
 .analysis-board .tone-positive { color: #397651; }
 .analysis-board .tone-negative { color: #a3483d; }

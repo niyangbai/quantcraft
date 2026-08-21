@@ -6,21 +6,19 @@ export type PositionLeg = {
 };
 
 /**
- * The position card: label, title, optional description, the leg list
- * (each leg with a LONG/SHORT badge), and an optional signals block.
+ * The position card: label, title, optional description, and the leg list
+ * (each leg with a LONG/SHORT badge).
  */
 export function PositionBook({
   label,
   title,
   description,
   legs,
-  signals,
 }: {
   label: string;
   title?: ReactNode;
   description?: ReactNode;
   legs: PositionLeg[];
-  signals?: ReactNode;
 }) {
   return (
     <article className="position-book">
@@ -35,7 +33,6 @@ export function PositionBook({
           </div>
         ))}
       </div>
-      {signals && <div className="book-signals">{signals}</div>}
     </article>
   );
 }
