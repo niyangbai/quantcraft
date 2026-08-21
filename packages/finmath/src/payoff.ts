@@ -1,7 +1,6 @@
-// payoff.ts — pure payoff mathematics.
-// This module is intentionally free of React, storage, and game state:
-// every function below is a pure function of its inputs. Business rules
-// (question generation, scoring, prompts) live in payoffGame.ts.
+// @quantcraft/finmath · payoff — pure terminal-payoff mathematics.
+// No React, storage, or game state: every function is a pure function of its
+// inputs. Import from "@quantcraft/finmath" or "@quantcraft/finmath/payoff".
 
 export type PayoffSide = "long" | "short";
 export type PayoffOptionType = "call" | "put";

@@ -4,8 +4,8 @@
 // distractors are chosen, and how the AI tutor prompt is assembled.
 // It imports only pure math from ./payoff and never touches React or storage.
 
-import { bookPayoff, breakevens, isContinuousBook, legPayoff, payoffExtremes, signedQuantity } from "./payoff.ts";
-import type { PayoffBarrierType, PayoffKind, PayoffLeg, PayoffSide } from "./payoff.ts";
+import { bookPayoff, breakevens, isContinuousBook, legPayoff, payoffExtremes, signedQuantity } from "@quantcraft/finmath";
+import type { PayoffBarrierType, PayoffKind, PayoffLeg, PayoffSide } from "@quantcraft/finmath";
 
 export type PayoffTier = 1 | 2 | 3 | 4 | 5;
 export type PayoffQuestionType = "payoff" | "maxProfit" | "breakeven";

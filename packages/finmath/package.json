@@ -1,0 +1,45 @@
+{
+  "name": "@quantcraft/finmath",
+  "version": "0.1.0",
+  "description": "Unified financial math: option payoff, max profit, breakevens, Greek risk, best-hedge search",
+  "license": "BSD-3-Clause",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/niyangbai/quantcraft.git",
+    "directory": "packages/finmath"
+  },
+  "homepage": "https://github.com/niyangbai/quantcraft/tree/master/packages/finmath#readme",
+  "bugs": "https://github.com/niyangbai/quantcraft/issues",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./payoff": {
+      "types": "./dist/payoff.d.ts",
+      "import": "./dist/payoff.js"
+    },
+    "./risk": {
+      "types": "./dist/risk.d.ts",
+      "import": "./dist/risk.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "node scripts/clean.mjs && tsc -p tsconfig.json",
+    "test": "npm run build && node --test test/finmath.test.mjs"
+  },
+  "devDependencies": {
+    "typescript": "~6.0.2"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

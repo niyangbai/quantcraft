@@ -102,28 +102,30 @@ npm install
 npm run dev
 ```
 
-`npm run dev` builds the local `@quantcraft/quantlibjs` package and starts Vite.
+`npm run dev` builds the local workspace packages and starts Vite.
 
 ```bash
 npm run build         # production build
-npm test              # payoff math tests + quantlibjs tests
-npm run test:payoff   # payoff math and generator tests (node:test)
+npm test              # finmath + payoff game + quantlibjs tests
+npm run test:finmath  # @quantcraft/finmath package tests
+npm run test:payoff   # payoff game-logic tests (node:test)
 npm run test:quantlib # quantlibjs WASM-backed tests
 npm run lint          # source linting
 npm run preview       # preview the production build
 ```
 
-The Payoff tests are pure node:test suites. `npm run test:payoff` first compiles
-`src/payoff.ts` and `src/payoffGame.ts` into `test/dist/` with relative imports
-rewritten to `.js`, then runs `test/payoff.test.mjs` against that output.
+The Payoff game-logic tests are pure node:test suites. `npm run test:payoff`
+compiles `src/payoffGame.ts` into `test/dist/` and runs `test/payoff.test.mjs`
+against it, importing the math from `@quantcraft/finmath`.
 
 ## Architecture and privacy
 
 - React 19 and TypeScript 6 frontend
 - Vite 8 build and development server
 - Single UI module in [`src/ui`](src/ui) — design tokens (`base.css`), game-mode blocks (`game.css`), page styles (`pages.css`), shared controls (`controls.tsx`), the app shell (`AppShell.tsx`), the page screens (`pages.tsx`), and the game-mode kit (`GameFrame`, `ScenarioCard`, `PositionBook`, `ChoiceGrid`, `RevealBar`). New modes and pages are assembled from existing modules
-- Official QuantLib 1.43 compiled to WebAssembly
-- Local TypeScript wrapper in [`packages/quantlibjs`](packages/quantlibjs)
+- Workspace packages:
+  - [`@quantcraft/finmath`](packages/finmath) — unified financial math with modular exports: `payoff` (terminal payoff, max profit, breakevens) and `risk` (Greek aggregation, risk magnitude, best-hedge search, hedge quality)
+  - [`@quantcraft/quantlibjs`](packages/quantlibjs) — official QuantLib 1.43 compiled to WebAssembly with a TypeScript API
 - Browser Local Storage for optional persistence
 - GitHub Actions deployment to GitHub Pages
 

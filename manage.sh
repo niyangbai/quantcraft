@@ -50,7 +50,7 @@ case "$command" in
   compile)
     require_node
     require_dependencies
-    npm run build:quantlib
+    npm run build:packages
     npm exec -- tsc -b "$@"
     ;;
   test)

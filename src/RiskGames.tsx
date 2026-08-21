@@ -1,21 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { QuantLibRuntime } from "@quantcraft/quantlibjs";
+import { DEFAULT_GREEK_SCALES, GREEK_KEYS, GREEK_LABELS, addRisk, bestHedge, hedgeQuality } from "@quantcraft/finmath";
+import type { GreekRisk } from "@quantcraft/finmath";
 import { AiPromptModal, RoundResult, RoundTimer } from "./ui";
 import { between, isoDate, market, secureSeed, seededRandom } from "./game";
 import type { HedgeLeg, QuestionBank, Scoreboard } from "./game";
 import { ChoiceGrid, GameFrame, PositionBook, RevealBar, ScenarioCard } from "./ui";
 
 type GreekDirection = "down" | "unchanged" | "up";
-type GreekRisk = { delta: number; gamma: number; vega: number; theta: number; rho: number };
-type GreekKey = keyof GreekRisk;
-const greekLabels: Record<GreekKey, string> = { delta: "DELTA", gamma: "GAMMA", vega: "VEGA", theta: "THETA", rho: "RHO" };
-const addRisk = (base: GreekRisk, change: GreekRisk): GreekRisk => ({
-  delta: base.delta + change.delta,
-  gamma: base.gamma + change.gamma,
-  vega: base.vega + change.vega,
-  theta: base.theta + change.theta,
-  rho: base.rho + change.rho,
-});
 
 const displayedDirection = (before: number, after: number, precision: number): GreekDirection => {
   const displayedBefore = Number(before.toFixed(precision));
@@ -228,16 +220,10 @@ export function Hedge({ ql, bank, onScore, onBack, scoreboard }: { ql?: QuantLib
       postTheta: preTrade.theta + trade.theta,
       postRho: preTrade.rho + trade.rho,
     }));
-    const greekKeys: GreekKey[] = ["delta", "gamma", "vega", "theta", "rho"];
     const objectiveCount = 1 + Math.floor(rng() * 3);
-    const objectiveKeys = greekKeys.sort(() => rng() - .5).slice(0, objectiveCount);
-    const greekScale: Record<GreekKey, number> = { delta: .35, gamma: .04, vega: 18, theta: 2, rho: 20 };
-    const risk = (greeks: GreekRisk) => Math.hypot(...objectiveKeys.map((key) => greeks[key] / greekScale[key]));
-    const beforeRisk = risk(preTrade);
-    const combinations = Array.from({ length: 1 << trades.length }, (_, mask) => trades.filter((_, index) => mask & (1 << index)));
-    const bestTrades = combinations.sort((a, b) => risk(a.reduce((sum, trade) => addRisk(sum, trade), preTrade)) - risk(b.reduce((sum, trade) => addRisk(sum, trade), preTrade)))[0];
-    const bestGreeks = bestTrades.reduce((sum, trade) => addRisk(sum, trade), preTrade);
-    return { template, shock, maturityDate, beforeSpot, beforeVolatility, spot, volatility, legs, preTrade, trades, objectiveKeys, bestTrades, beforeRisk, bestRisk: risk(bestGreeks), risk };
+    const objectiveKeys = [...GREEK_KEYS].sort(() => rng() - .5).slice(0, objectiveCount);
+    const hedge = bestHedge({ preTrade, trades, scales: DEFAULT_GREEK_SCALES, keys: objectiveKeys });
+    return { template, shock, maturityDate, beforeSpot, beforeVolatility, spot, volatility, legs, preTrade, trades, objectiveKeys, bestTrades: hedge.bestTrades, beforeRisk: hedge.beforeRisk, bestRisk: hedge.bestRisk, risk: hedge.risk };
   }, [ql, roundKey, bank]);
   const settle = (timedOut = false) => {
     if (!round || result || (!selectedTrades.length && !timedOut)) return;
@@ -245,10 +231,8 @@ export function Hedge({ ql, bank, onScore, onBack, scoreboard }: { ql?: QuantLib
     const selected = round.trades.filter((trade) => selectedIds.includes(trade.id));
     const greeks = selected.reduce((sum, trade) => addRisk(sum, trade), round.preTrade);
     const chosenRisk = round.risk(greeks);
-    const availableImprovement = round.beforeRisk - round.bestRisk;
-    const quality = availableImprovement <= .0001
-      ? Number(selectedIds.length === round.bestTrades.length && selectedIds.every((id) => round.bestTrades.some((trade) => trade.id === id)))
-      : Math.max(0, Math.min(1, (round.beforeRisk - chosenRisk) / availableImprovement));
+    const exactMatch = selectedIds.length === round.bestTrades.length && selectedIds.every((id) => round.bestTrades.some((trade) => trade.id === id));
+    const quality = hedgeQuality({ beforeRisk: round.beforeRisk, chosenRisk, bestRisk: round.bestRisk, exactMatch });
     const passed = !timedOut && quality >= .8;
     const score = passed ? Math.round(100 + quality * 40 + secondsLeft * .4) : -50;
     setResult({ passed, score, bestTradeIds: round.bestTrades.map((trade) => trade.id), greeks, timedOut });
@@ -277,7 +261,7 @@ export function Hedge({ ql, bank, onScore, onBack, scoreboard }: { ql?: QuantLib
   const vegaLabel = round.preTrade.vega >= 0 ? "LONG VEGA" : "SHORT VEGA";
   const bestTrades = round.trades.filter((trade) => result?.bestTradeIds.includes(trade.id));
   const bestHedgeLabel = bestTrades.length ? bestTrades.map((trade) => trade.label).join(" + ") : "DO NOTHING";
-  const objectiveLabel = round.objectiveKeys.map((key) => greekLabels[key]).join(" + ");
+  const objectiveLabel = round.objectiveKeys.map((key) => GREEK_LABELS[key]).join(" + ");
   const createHedgePrompt = () => {
     const availableTools = [...round.trades.map((trade) => `${trade.label}: ${trade.detail}`), "DO NOTHING: keep the current book unchanged"].join("\n");
     const selectedLabel = selectedTrades.length ? selectedTrades.map((id) => id === "do-nothing" ? "DO NOTHING" : round.trades.find((trade) => trade.id === id)?.label ?? id).join(" + ") : "No hedge selected";

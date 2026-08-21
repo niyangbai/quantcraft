@@ -5,8 +5,6 @@
     "lib": ["ES2023"],
     "module": "nodenext",
     "moduleResolution": "nodenext",
-    "allowImportingTsExtensions": true,
-    "rewriteRelativeImportExtensions": true,
     "verbatimModuleSyntax": true,
     "moduleDetection": "force",
     "erasableSyntaxOnly": true,
@@ -18,5 +16,5 @@
     "rootDir": "../src",
     "outDir": "./dist"
   },
-  "include": ["../src/payoff.ts", "../src/payoffGame.ts"]
+  "include": ["../src/payoffGame.ts"]
 }
