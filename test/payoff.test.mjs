@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { bookPayoff, breakevens, payoffExtremes } from "@quantcraft/finmath";
-import { generatePayoffQuestion, levelForProgress, decisionDurationMs } from "./dist/payoffGame.js";
+import { generatePayoffQuestion, levelForProgress, decisionDurationMs } from "./dist/games/payoff/game.js";
 
 /** Deterministic PRNG (mulberry32) so the generator tests are reproducible. */
 function rng(seed) {

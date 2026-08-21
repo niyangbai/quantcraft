@@ -1,7 +1,10 @@
 import type { QuantLibRuntime } from "@quantcraft/quantlibjs";
-import type { PayoffSeed } from "./payoffGame";
-import { orderBookSeedDefaults } from "./orderbookGame";
-import type { OrderBookSeed } from "./orderbookGame";
+import { payoffSeeds } from "./games/payoff/game";
+import type { PayoffSeed } from "./games/payoff/game";
+import { orderBookSeedDefaults } from "./games/order-book/game";
+import type { OrderBookSeed } from "./games/order-book/game";
+import type { GreekBook, GreekMetric, GreekScenario } from "./games/greek/game";
+import type { HedgeProduct } from "./games/hedge/game";
 
 export type Mode = "landing" | "payoff" | "greek" | "orderbook" | "hedge" | "collection";
 export type RuntimeState = {
@@ -9,11 +12,6 @@ export type RuntimeState = {
   ql?: QuantLibRuntime;
   error?: string;
 };
-export type GreekScenario = { label: string; detail: string; spot: number; vol: number; rate: number; date: string };
-export type GreekBook = { name: string; legs: { type: "call" | "put"; strike: number; qty: number }[] };
-export type GreekMetric = "value" | "delta" | "gamma" | "vega" | "theta" | "rho";
-export type HedgeLeg = { type: "call" | "put"; strike: number; qty: number };
-export type HedgeProduct = { name: string; description: string; extra: string; legs: HedgeLeg[] };
 export type QuestionBank = {
   version: 1;
   payoff: PayoffSeed[];
@@ -78,33 +76,6 @@ export const seededRandom = (seed: number) => {
 export const between = (rng: () => number, min: number, max: number) => min + rng() * (max - min);
 export const isoDate = (date: Date) => date.toISOString().slice(0, 10);
 
-export const payoffSeeds: PayoffSeed[] = [
-  // Level 1 — one long leg
-  { id: "LONG CALL", label: "Long call", legs: [{ kind: "call", strikeOffset: 0 }] },
-  { id: "LONG PUT", label: "Long put", legs: [{ kind: "put", strikeOffset: 0 }] },
-  { id: "LONG FORWARD", label: "Long forward", legs: [{ kind: "forward", strikeOffset: 0 }] },
-  { id: "LONG EQUITY", label: "Long equity", legs: [{ kind: "equity" }] },
-  { id: "LONG DIGITAL CALL", label: "Long digital call", legs: [{ kind: "digital", optionType: "call", strikeOffset: 0, cashPayoff: 10 }] },
-  { id: "LONG DIGITAL PUT", label: "Long digital put", legs: [{ kind: "digital", optionType: "put", strikeOffset: 0, cashPayoff: 10 }] },
-  { id: "LONG BOND", label: "Zero-coupon bond", legs: [{ kind: "bond", faceAmount: 100 }] },
-  { id: "COUPON BOND", label: "Coupon bond", legs: [{ kind: "coupon", faceAmount: 100, couponRate: 5 }] },
-  // Level 2 — two long legs
-  { id: "STRADDLE", label: "Long straddle", legs: [{ kind: "call", strikeOffset: 0 }, { kind: "put", strikeOffset: 0 }] },
-  { id: "STRANGLE", label: "Long strangle", legs: [{ kind: "put", strikeOffset: -5 }, { kind: "call", strikeOffset: 5 }] },
-  { id: "CALL LADDER", label: "Call ladder", legs: [{ kind: "call", strikeOffset: 0 }, { kind: "call", strikeOffset: 15 }] },
-  { id: "PUT LADDER", label: "Put ladder", legs: [{ kind: "put", strikeOffset: -15 }, { kind: "put", strikeOffset: 0 }] },
-  { id: "FORWARD + CALL", label: "Forward plus call", legs: [{ kind: "forward", strikeOffset: 0 }, { kind: "call", strikeOffset: 0 }] },
-  { id: "PROTECTIVE PUT", label: "Protective put", legs: [{ kind: "equity" }, { kind: "put", strikeOffset: -10 }] },
-  { id: "DIGITAL + CALL", label: "Digital plus call", legs: [{ kind: "digital", optionType: "call", strikeOffset: 0, cashPayoff: 10 }, { kind: "call", strikeOffset: 10 }] },
-  { id: "BARRIER CALL", label: "Barrier call", legs: [{ kind: "barrier", optionType: "call", strikeOffset: 0, barrierOffset: -20 }] },
-  // Level 3 — three long legs
-  { id: "LADDER 3", label: "Call ladder", legs: [{ kind: "call", strikeOffset: 0 }, { kind: "call", strikeOffset: 10 }, { kind: "call", strikeOffset: 20 }] },
-  { id: "STRADDLE + FORWARD", label: "Straddle plus forward", legs: [{ kind: "call", strikeOffset: 0 }, { kind: "put", strikeOffset: 0 }, { kind: "forward", strikeOffset: 0 }] },
-  { id: "2 CALLS + PUT", label: "Two calls plus a put", legs: [{ kind: "call", strikeOffset: 0 }, { kind: "call", strikeOffset: 15 }, { kind: "put", strikeOffset: -5 }] },
-  { id: "PUTS + CALL", label: "Two puts plus a call", legs: [{ kind: "put", strikeOffset: -15 }, { kind: "put", strikeOffset: 0 }, { kind: "call", strikeOffset: 10 }] },
-  { id: "EQUITY + PUT + CALL", label: "Equity plus put plus call", legs: [{ kind: "equity" }, { kind: "put", strikeOffset: -10 }, { kind: "call", strikeOffset: 10 }] },
-  { id: "BARRIER MIX", label: "Barrier, call and put", legs: [{ kind: "barrier", optionType: "call", strikeOffset: 0, barrierOffset: -20 }, { kind: "call", strikeOffset: 15 }, { kind: "put", strikeOffset: -15 }] },
-];
 
 export const exampleQuestionBank: QuestionBank = {
   version: 1,

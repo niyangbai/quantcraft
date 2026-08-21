@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { AiPromptModal, RoundResult, RoundTimer } from "./ui";
-import { secureSeed, seededRandom } from "./game";
-import type { Scoreboard } from "./game";
-import { buildPayoffPrompt, decisionDurationMs, generatePayoffQuestion, legDetailText, levelForProgress, levelLabel } from "./payoffGame";
-import type { PayoffSeed, PayoffTier } from "./payoffGame";
-import { ChoiceGrid, GameFrame, PositionBook, RevealBar, ScenarioCard } from "./ui";
+import { AiPromptModal, RoundResult, RoundTimer } from "../../ui";
+import { secureSeed, seededRandom } from "../../game";
+import type { Scoreboard } from "../../game";
+import { buildPayoffPrompt, decisionDurationMs, generatePayoffQuestion, legDetailText, levelForProgress, levelLabel } from "./game";
+import type { PayoffSeed, PayoffTier } from "./game";
+import { ChoiceGrid, GameFrame, PositionBook, RevealBar, ScenarioCard } from "../../ui";
 
 export function Payoff({
   seeds,

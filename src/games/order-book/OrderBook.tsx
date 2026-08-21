@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { bestAsk, bestBid, spread } from "@quantcraft/finmath";
 import type { OrderBook as Book } from "@quantcraft/finmath";
-import { AiPromptModal, RoundResult, RoundTimer } from "./ui";
-import { secureSeed, seededRandom } from "./game";
-import type { Scoreboard } from "./game";
-import { applyEvent, buildOrderbookPrompt, formatPrice, generateInitialBook, generateQuestion, isBookHealthy } from "./orderbookGame";
-import type { OrderBookSeed, OrderbookQuestion } from "./orderbookGame";
-import { ChoiceGrid, GameFrame, OrderBookCard, RevealBar, ScenarioCard } from "./ui";
+import { AiPromptModal, RoundResult, RoundTimer } from "../../ui";
+import { secureSeed, seededRandom } from "../../game";
+import type { Scoreboard } from "../../game";
+import { applyEvent, buildOrderbookPrompt, formatPrice, generateInitialBook, generateQuestion, isBookHealthy } from "./game";
+import type { OrderBookSeed, OrderbookQuestion } from "./game";
+import { ChoiceGrid, GameFrame, OrderBookCard, RevealBar, ScenarioCard } from "../../ui";
 
 export function OrderBook({
   seeds,

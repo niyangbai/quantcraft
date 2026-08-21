@@ -9,7 +9,7 @@ import {
   generateQuestion,
   isBookHealthy,
   orderBookSeedDefaults,
-} from "./dist/orderbookGame.js";
+} from "./dist/games/order-book/game.js";
 
 function rng(seed) {
   let s = seed >>> 0;

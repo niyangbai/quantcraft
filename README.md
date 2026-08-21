@@ -131,7 +131,8 @@ against it, importing the math from `@quantcraft/finmath`.
 
 - React 19 and TypeScript 6 frontend
 - Vite 8 build and development server
-- Single UI module in [`src/ui`](src/ui) — design tokens (`base.css`), game-mode blocks (`game.css`), page styles (`pages.css`), shared controls (`controls.tsx`), the app shell (`AppShell.tsx`), the page screens (`pages.tsx`), and the game-mode kit (`GameFrame`, `ScenarioCard`, `PositionBook`, `ChoiceGrid`, `RevealBar`). New modes and pages are assembled from existing modules
+- Single UI module in [`src/ui`](src/ui) — design tokens (`base.css`), game-mode blocks (`game.css`), page styles (`pages.css`), shared controls (`controls.tsx`), the app shell (`AppShell.tsx`), the page screens (`pages.tsx`), and the game-mode kit (`GameFrame`, `ScenarioCard`, `PositionBook`, `OrderBookCard`, `ChoiceGrid`, `RevealBar`). New modes and pages are assembled from existing modules
+- One folder per game in [`src/games`](src/games) with a uniform shape: `game.ts` (logic, no React) + `<Mode>.tsx` (component) + `index.ts` (public surface). See [`src/games/README.md`](src/games/README.md) for the convention
 - Workspace packages:
   - [`@quantcraft/finmath`](packages/finmath) — unified financial math with modular exports: `payoff` (terminal payoff, max profit, breakevens), `risk` (Greek aggregation, risk magnitude, best-hedge search, hedge quality), and `orderbook` (price-time-priority market-order matching, best quotes, spread, depth)
   - [`@quantcraft/quantlibjs`](packages/quantlibjs) — official QuantLib 1.43 compiled to WebAssembly with a TypeScript API

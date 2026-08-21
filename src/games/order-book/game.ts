@@ -1,4 +1,4 @@
-// orderbookGame.ts — business logic for the Order Book drill.
+// games/order-book/game.ts — business logic for the Order Book drill.
 // The deterministic matching math lives in @quantcraft/finmath (orderbook);
 // this module owns the book templates, event generation, question building,
 // distractor selection, and the AI tutor prompt. No React, no storage.

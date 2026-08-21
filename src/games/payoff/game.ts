@@ -1,8 +1,8 @@
-// payoffGame.ts — business logic for the Payoff drill.
-// This module owns how questions are generated, how difficulty ramps
-// (1 leg -> 2 legs -> 3 legs -> quantity -> long/short mixed), how
-// distractors are chosen, and how the AI tutor prompt is assembled.
-// It imports only pure math from ./payoff and never touches React or storage.
+// games/payoff/game.ts — business logic for the Payoff drill.
+// This module owns the question seeds, how questions are generated, how
+// difficulty ramps (1 leg -> 2 legs -> 3 legs -> quantity -> long/short
+// mixed), how distractors are chosen, and the AI tutor prompt. The payoff
+// math itself lives in @quantcraft/finmath (payoff). No React, no storage.
 
 import { bookPayoff, breakevens, isContinuousBook, legPayoff, payoffExtremes, signedQuantity } from "@quantcraft/finmath";
 import type { PayoffBarrierType, PayoffKind, PayoffLeg, PayoffSide } from "@quantcraft/finmath";
@@ -458,3 +458,35 @@ export const buildPayoffPrompt = (question: PayoffQuestion, difficulty: string):
     `Working: ${question.explanation}`,
     "Give a short, level-appropriate rule for reading a position's terminal payoff, max profit, or breakeven instantly.",
   ].join("\n");
+
+/* ------------------------------------------------------------------ */
+/* Default question seeds (also the bank defaults)                     */
+/* ------------------------------------------------------------------ */
+
+export const payoffSeeds: PayoffSeed[] = [
+  // Level 1 — one long leg
+  { id: "LONG CALL", label: "Long call", legs: [{ kind: "call", strikeOffset: 0 }] },
+  { id: "LONG PUT", label: "Long put", legs: [{ kind: "put", strikeOffset: 0 }] },
+  { id: "LONG FORWARD", label: "Long forward", legs: [{ kind: "forward", strikeOffset: 0 }] },
+  { id: "LONG EQUITY", label: "Long equity", legs: [{ kind: "equity" }] },
+  { id: "LONG DIGITAL CALL", label: "Long digital call", legs: [{ kind: "digital", optionType: "call", strikeOffset: 0, cashPayoff: 10 }] },
+  { id: "LONG DIGITAL PUT", label: "Long digital put", legs: [{ kind: "digital", optionType: "put", strikeOffset: 0, cashPayoff: 10 }] },
+  { id: "LONG BOND", label: "Zero-coupon bond", legs: [{ kind: "bond", faceAmount: 100 }] },
+  { id: "COUPON BOND", label: "Coupon bond", legs: [{ kind: "coupon", faceAmount: 100, couponRate: 5 }] },
+  // Level 2 — two long legs
+  { id: "STRADDLE", label: "Long straddle", legs: [{ kind: "call", strikeOffset: 0 }, { kind: "put", strikeOffset: 0 }] },
+  { id: "STRANGLE", label: "Long strangle", legs: [{ kind: "put", strikeOffset: -5 }, { kind: "call", strikeOffset: 5 }] },
+  { id: "CALL LADDER", label: "Call ladder", legs: [{ kind: "call", strikeOffset: 0 }, { kind: "call", strikeOffset: 15 }] },
+  { id: "PUT LADDER", label: "Put ladder", legs: [{ kind: "put", strikeOffset: -15 }, { kind: "put", strikeOffset: 0 }] },
+  { id: "FORWARD + CALL", label: "Forward plus call", legs: [{ kind: "forward", strikeOffset: 0 }, { kind: "call", strikeOffset: 0 }] },
+  { id: "PROTECTIVE PUT", label: "Protective put", legs: [{ kind: "equity" }, { kind: "put", strikeOffset: -10 }] },
+  { id: "DIGITAL + CALL", label: "Digital plus call", legs: [{ kind: "digital", optionType: "call", strikeOffset: 0, cashPayoff: 10 }, { kind: "call", strikeOffset: 10 }] },
+  { id: "BARRIER CALL", label: "Barrier call", legs: [{ kind: "barrier", optionType: "call", strikeOffset: 0, barrierOffset: -20 }] },
+  // Level 3 — three long legs
+  { id: "LADDER 3", label: "Call ladder", legs: [{ kind: "call", strikeOffset: 0 }, { kind: "call", strikeOffset: 10 }, { kind: "call", strikeOffset: 20 }] },
+  { id: "STRADDLE + FORWARD", label: "Straddle plus forward", legs: [{ kind: "call", strikeOffset: 0 }, { kind: "put", strikeOffset: 0 }, { kind: "forward", strikeOffset: 0 }] },
+  { id: "2 CALLS + PUT", label: "Two calls plus a put", legs: [{ kind: "call", strikeOffset: 0 }, { kind: "call", strikeOffset: 15 }, { kind: "put", strikeOffset: -5 }] },
+  { id: "PUTS + CALL", label: "Two puts plus a call", legs: [{ kind: "put", strikeOffset: -15 }, { kind: "put", strikeOffset: 0 }, { kind: "call", strikeOffset: 10 }] },
+  { id: "EQUITY + PUT + CALL", label: "Equity plus put plus call", legs: [{ kind: "equity" }, { kind: "put", strikeOffset: -10 }, { kind: "call", strikeOffset: 10 }] },
+  { id: "BARRIER MIX", label: "Barrier, call and put", legs: [{ kind: "barrier", optionType: "call", strikeOffset: 0, barrierOffset: -20 }, { kind: "call", strikeOffset: 15 }, { kind: "put", strikeOffset: -15 }] },
+];

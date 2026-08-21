@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { getQuantLib } from "./quantlib";
-import { Payoff } from "./Payoff";
-import { OrderBook } from "./OrderBook";
-import { Greek, Hedge } from "./RiskGames";
+import { Payoff } from "./games/payoff";
+import { OrderBook } from "./games/order-book";
+import { Greek } from "./games/greek";
+import { Hedge } from "./games/hedge";
 import { AppShell, GameOverScreen, Collection, Landing, Onboarding } from "./ui";
 
 import { difficultyLives, emptyScoreboard, exampleQuestionBank, parseQuestionBank } from "./game";
