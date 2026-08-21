@@ -84,7 +84,7 @@ Requirements: Node.js 18 or newer and npm.
 Use the management script for common workflows:
 
 ```bash
-./manage.sh compile      # build the kernel and type-check the app
+./manage.sh compile      # build the quantlibjs package and type-check the app
 ./manage.sh build        # production build
 ./manage.sh run          # development server
 ```
@@ -102,15 +102,15 @@ npm install
 npm run dev
 ```
 
-`npm run dev` builds the local market kernel and starts Vite.
+`npm run dev` builds the local `@quantcraft/quantlibjs` package and starts Vite.
 
 ```bash
-npm run build        # production build
-npm test             # payoff math tests + market-kernel tests
-npm run test:payoff  # payoff math and generator tests (node:test)
-npm run test:kernel  # market-kernel tests
-npm run lint         # source linting
-npm run preview      # preview the production build
+npm run build         # production build
+npm test              # payoff math tests + quantlibjs tests
+npm run test:payoff   # payoff math and generator tests (node:test)
+npm run test:quantlib # quantlibjs WASM-backed tests
+npm run lint          # source linting
+npm run preview       # preview the production build
 ```
 
 The Payoff tests are pure node:test suites. `npm run test:payoff` first compiles
@@ -123,7 +123,7 @@ rewritten to `.js`, then runs `test/payoff.test.mjs` against that output.
 - Vite 8 build and development server
 - Single UI module in [`src/ui`](src/ui) — design tokens (`base.css`), game-mode blocks (`game.css`), page styles (`pages.css`), shared controls (`controls.tsx`), the app shell (`AppShell.tsx`), the page screens (`pages.tsx`), and the game-mode kit (`GameFrame`, `ScenarioCard`, `PositionBook`, `ChoiceGrid`, `RevealBar`). New modes and pages are assembled from existing modules
 - Official QuantLib 1.43 compiled to WebAssembly
-- Local TypeScript wrapper in [`packages/market-kernel`](packages/market-kernel)
+- Local TypeScript wrapper in [`packages/quantlibjs`](packages/quantlibjs)
 - Browser Local Storage for optional persistence
 - GitHub Actions deployment to GitHub Pages
 
@@ -141,4 +141,4 @@ When reporting a problem, include the mode, difficulty, browser, and reproductio
 
 ## License
 
-The application is licensed under [AGPL-3.0](LICENSE). The `@quantcraft/market-kernel` package is licensed separately under BSD-3-Clause.
+The application is licensed under [AGPL-3.0](LICENSE). The `@quantcraft/quantlibjs` package is licensed separately under BSD-3-Clause.

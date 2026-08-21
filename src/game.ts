@@ -1,4 +1,4 @@
-import type { QuantLibRuntime } from "@quantcraft/market-kernel";
+import type { QuantLibRuntime } from "@quantcraft/quantlibjs";
 import type { PayoffSeed } from "./payoffGame";
 
 export type Mode = "landing" | "payoff" | "greekthon" | "hedge" | "collection";

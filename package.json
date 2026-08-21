@@ -6,17 +6,17 @@
   "type": "module",
   "workspaces": ["packages/*"],
   "scripts": {
-    "dev": "npm run build:kernel && vite",
-    "build": "npm run build:kernel && tsc -b && vite build",
-    "build:kernel": "npm run build --workspace @quantcraft/market-kernel",
-    "test": "npm run test:payoff && npm run test:kernel",
+    "dev": "npm run build:quantlib && vite",
+    "build": "npm run build:quantlib && tsc -b && vite build",
+    "build:quantlib": "npm run build --workspace @quantcraft/quantlibjs",
+    "test": "npm run test:payoff && npm run test:quantlib",
     "test:payoff": "tsc -p test/tsconfig.json && node --test test/payoff.test.mjs",
-    "test:kernel": "npm run test --workspace @quantcraft/market-kernel",
+    "test:quantlib": "npm run test --workspace @quantcraft/quantlibjs",
     "lint": "oxlint",
     "preview": "vite preview"
   },
   "dependencies": {
-    "@quantcraft/market-kernel": "workspace:*",
+    "@quantcraft/quantlibjs": "workspace:*",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },

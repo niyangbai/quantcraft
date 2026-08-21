@@ -1,4 +1,4 @@
-name: Package market kernel
+name: Package quantlibjs
 
 on:
   release:
@@ -32,13 +32,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Test market kernel
-        run: npm run test:kernel
+      - name: Test quantlibjs
+        run: npm run test:quantlib
 
       - name: Build installable package
         run: |
           mkdir -p artifacts
-          npm pack --workspace @quantcraft/market-kernel --pack-destination artifacts
+          npm pack --workspace @quantcraft/quantlibjs --pack-destination artifacts
 
       - name: Attach package to release
         env:

@@ -25,9 +25,9 @@ coverage/
 /.wasm-toolchain/
 
 # QuantLib WASM runtime artifacts are distributable package files.
-!packages/market-kernel/wasm/
-!packages/market-kernel/wasm/quantlib.mjs
-!packages/market-kernel/wasm/quantlib.wasm
+!packages/quantlibjs/wasm/
+!packages/quantlibjs/wasm/quantlib.mjs
+!packages/quantlibjs/wasm/quantlib.wasm
 
 # Editor directories and files
 .vscode/*

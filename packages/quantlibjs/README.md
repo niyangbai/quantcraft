@@ -1,4 +1,4 @@
-# @quantcraft/market-kernel
+# @quantcraft/quantlibjs
 
 QuantLib 1.43 compiled to WebAssembly with an asynchronous TypeScript API for Node.js and browsers.
 
@@ -10,16 +10,16 @@ QuantLib 1.43 compiled to WebAssembly with an asynchronous TypeScript API for No
 
 ## Installation
 
-Download `quantcraft-market-kernel-<version>.tgz` from the GitHub Release or workflow artifact, then install it from disk:
+Download `quantcraft-quantlibjs-<version>.tgz` from the GitHub Release or workflow artifact, then install it from disk:
 
 ```bash
-npm install ./quantcraft-market-kernel-0.1.0.tgz
+npm install ./quantcraft-quantlibjs-0.1.0.tgz
 ```
 
 ## Usage
 
 ```ts
-import { QuantLibRuntime } from "@quantcraft/market-kernel";
+import { QuantLibRuntime } from "@quantcraft/quantlibjs";
 
 const ql = await QuantLibRuntime.create();
 
@@ -97,13 +97,13 @@ const ql = await QuantLibRuntime.create({
 Build the TypeScript package:
 
 ```bash
-npm run build --workspace @quantcraft/market-kernel
+npm run build --workspace @quantcraft/quantlibjs
 ```
 
 Run the WASM-backed unit tests:
 
 ```bash
-npm run test:kernel
+npm run test:quantlib
 ```
 
 The reproducible WASM build is pinned to QuantLib 1.43 and Emscripten 4.0.10:
@@ -113,7 +113,7 @@ EMSDK_ROOT=/path/to/emsdk \
 QUANTLIB_SOURCE=/path/to/QuantLib-1.43 \
 QUANTLIB_BUILD=/path/to/quantlib-wasm-build \
 BOOST_ROOT=/path/to/boost_1_88_0 \
-npm run build:wasm --workspace @quantcraft/market-kernel
+npm run build:wasm --workspace @quantcraft/quantlibjs
 ```
 
 ## License

@@ -1,14 +1,14 @@
 {
-  "name": "@quantcraft/market-kernel",
+  "name": "@quantcraft/quantlibjs",
   "version": "0.1.0",
   "description": "Official QuantLib 1.43 compiled to WebAssembly with a TypeScript API",
   "license": "BSD-3-Clause",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/niyangbai/quantcraft.git",
-    "directory": "packages/market-kernel"
+    "directory": "packages/quantlibjs"
   },
-  "homepage": "https://github.com/niyangbai/quantcraft/tree/master/packages/market-kernel#readme",
+  "homepage": "https://github.com/niyangbai/quantcraft/tree/master/packages/quantlibjs#readme",
   "bugs": "https://github.com/niyangbai/quantcraft/issues",
   "type": "module",
   "sideEffects": false,

@@ -9,10 +9,10 @@ usage() {
 Usage: ./manage.sh <command> [options]
 
 Commands:
-  compile        Compile the market kernel and type-check the application
-  test           Run the payoff math tests and the market-kernel tests
+  compile        Compile the quantlibjs package and type-check the application
+  test           Run the payoff math tests and the quantlibjs tests
   build          Create a production build in dist/
-  run            Build the kernel and start the Vite development server
+  run            Build the quantlibjs package and start the Vite development server
   help           Show this help
 
 Extra options after run are passed to Vite, for example:
@@ -50,7 +50,7 @@ case "$command" in
   compile)
     require_node
     require_dependencies
-    npm run build:kernel
+    npm run build:quantlib
     npm exec -- tsc -b "$@"
     ;;
   test)

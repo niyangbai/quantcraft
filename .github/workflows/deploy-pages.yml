@@ -33,8 +33,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Test market kernel
-        run: npm run test:kernel
+      - name: Test quantlibjs
+        run: npm run test:quantlib
 
       - name: Lint
         run: npm run lint

@@ -1,6 +1,6 @@
-import { QuantLibRuntime } from "@quantcraft/market-kernel";
-import moduleUrl from "../packages/market-kernel/wasm/quantlib.mjs?url";
-import wasmUrl from "../packages/market-kernel/wasm/quantlib.wasm?url";
+import { QuantLibRuntime } from "@quantcraft/quantlibjs";
+import moduleUrl from "../packages/quantlibjs/wasm/quantlib.mjs?url";
+import wasmUrl from "../packages/quantlibjs/wasm/quantlib.wasm?url";
 
 let runtimePromise: Promise<QuantLibRuntime> | undefined;
 
