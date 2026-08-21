@@ -10,6 +10,7 @@ Usage: ./manage.sh <command> [options]
 
 Commands:
   compile        Compile the market kernel and type-check the application
+  test           Run the payoff math tests and the market-kernel tests
   build          Create a production build in dist/
   run            Build the kernel and start the Vite development server
   help           Show this help
@@ -51,6 +52,11 @@ case "$command" in
     require_dependencies
     npm run build:kernel
     npm exec -- tsc -b "$@"
+    ;;
+  test)
+    require_node
+    require_dependencies
+    npm test
     ;;
   build)
     require_node

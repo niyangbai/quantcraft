@@ -18,27 +18,25 @@
 
 > QuantCraft is a browser-based financial-markets game. It has no backend dependency: pricing runs locally through QuantLib WebAssembly.
 
-Practice product structuring, Greek intuition, and hedging judgment under time pressure. All three modes share one score, one life pool, and one local player record.
+Practice payoff reflexes, Greek intuition, and hedging judgment under time pressure. All three modes share one score, one life pool, and one local player record.
 
 ## At a glance
 
 | | Focus | Core decision |
 | --- | --- | --- |
-| **Craft** | Product structuring | Build a book that meets the client mandate |
+| **Payoff** | Terminal payoff reflex | Call the payoff, max profit, or breakeven of a position |
 | **Greekthon** | Greek intuition | Call the direction of value or a Greek |
 | **Hedge** | Risk management | Choose tools that reduce dealer exposure |
 
 ## Game modes
 
-### ✣ Craft · Structure the product
+### ∑ Payoff · Call the payoff
 
-A client arrives with a mandate: protect capital, retain upside, include a required instrument, and respect a target budget.
+A position flashes onto the screen with a terminal spot. Read the book and answer in one shot: the terminal payoff, the maximum profit, or the breakeven spot.
 
-Build one leg at a time. Go long or short, set position sizes, choose strikes and maturities, and tune bond face values or coupon rates. Every instrument has a live market price, and the book updates as you edit it.
+Questions ramp through five levels: **1 leg → 2 legs → 3 legs → quantity → long/short mixed**. Instruments cover equity, forward, call, put, digital, barrier, bond, and coupon legs. Every payoff is exact arithmetic — `Payoff = Σ quantity × signed instrument payoff` — no pricing engine is involved.
 
-Your structure must satisfy every hard requirement before time expires. Overspending is allowed, but every excess makes the deal less efficient and costs points.
-
-The strongest structures are not merely valid. They are efficient.
+Correct answers score points and extend your streak; each two consecutive-correct milestone unlocks the next level. Wrong answers and timeouts show the per-leg working so the reflex sticks.
 
 ### Δ Greekthon · Read the shock
 
@@ -58,7 +56,7 @@ The dealer's objective is to reduce the selected Delta, Gamma, Vega, Theta, and 
 
 ## Difficulty and scoring
 
-Craft, Greekthon, and Hedge share the same score and life pool. A failed mandate, wrong risk call, poor hedge response, or expired timer can cost a life. When the last life is gone, the run ends and the result is recorded in Collection.
+Payoff, Greekthon, and Hedge share the same score and life pool. A wrong payoff, wrong risk call, poor hedge response, or expired timer can cost a life. When the last life is gone, the run ends and the result is recorded in Collection.
 
 Choose the pressure level before starting:
 
@@ -75,7 +73,7 @@ Collection records the combined score, per-mode results, accuracy, streaks, best
 
 ## Shared question bank
 
-All three modes draw from one validated JSON question bank. Download the example bank, customize the Craft mandates, Greekthon scenarios, option books and metrics, or Hedge product templates, then upload it in the app.
+All three modes draw from one validated JSON question bank. Download the example bank, customize the Payoff position seeds, Greekthon scenarios, option books and metrics, or Hedge product templates, then upload it in the app.
 
 When local storage is enabled, the player profile, scoreboard, and uploaded question bank stay in that browser. QuantCraft uses no advertising or tracking cookies.
 
@@ -108,10 +106,16 @@ npm run dev
 
 ```bash
 npm run build        # production build
-npm run lint         # source linting
+npm test             # payoff math tests + market-kernel tests
+npm run test:payoff  # payoff math and generator tests (node:test)
 npm run test:kernel  # market-kernel tests
+npm run lint         # source linting
 npm run preview      # preview the production build
 ```
+
+The Payoff tests are pure node:test suites. `npm run test:payoff` first compiles
+`src/payoff.ts` and `src/payoffGame.ts` into `test/dist/` with relative imports
+rewritten to `.js`, then runs `test/payoff.test.mjs` against that output.
 
 ## Architecture and privacy
 

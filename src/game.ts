@@ -1,84 +1,49 @@
 import type { QuantLibRuntime } from "@quantcraft/market-kernel";
+import type { PayoffSeed } from "./payoffGame";
 
-export type Mode = "landing" | "craft" | "greekthon" | "hedge" | "collection";
-export type IngredientId = "equity" | "bond" | "call" | "put" | "digital" | "barrier" | "coupon";
+export type Mode = "landing" | "payoff" | "greekthon" | "hedge" | "collection";
 export type RuntimeState = {
   status: "loading" | "ready" | "error";
   ql?: QuantLibRuntime;
   error?: string;
 };
-export type Side = "long" | "short";
-export type CraftLeg = {
-  uid: number;
-  kind: IngredientId;
-  side: Side;
-  quantity: number;
-  strike: number;
-  faceAmount: number;
-  couponRate: number;
-  maturityDate: string;
-  cashPayoff: number;
-  barrier: number;
-  barrierType: "down-in" | "up-in" | "down-out" | "up-out";
-  optionType: "call" | "put";
+export type GreekScenario = { label: string; detail: string; spot: number; vol: number; rate: number; date: string };
+export type GreekBook = { name: string; legs: { type: "call" | "put"; strike: number; qty: number }[] };
+export type GreekMetric = "value" | "delta" | "gamma" | "vega" | "theta" | "rho";
+export type HedgeLeg = { type: "call" | "put"; strike: number; qty: number };
+export type HedgeProduct = { name: string; description: string; extra: string; legs: HedgeLeg[] };
+export type QuestionBank = {
+  version: 1;
+  payoff: PayoffSeed[];
+  greekthon: { scenarios: GreekScenario[]; books: GreekBook[]; metrics: GreekMetric[] };
+  hedge: { products: HedgeProduct[] };
 };
-export const ingredients: {
-  id: IngredientId;
-  label: string;
-  detail: string;
-  color: string;
-  symbol: string;
-}[] = [
-  {
-    id: "equity",
-    label: "SX5E Equity",
-    detail: "Spot position",
-    color: "mint",
-    symbol: "EQ",
-  },
-  {
-    id: "bond",
-    label: "Zero Bond",
-    detail: "Principal protection",
-    color: "sand",
-    symbol: "B",
-  },
-  {
-    id: "call",
-    label: "Call",
-    detail: "Analytic European",
-    color: "coral",
-    symbol: "↗",
-  },
-  {
-    id: "put",
-    label: "Put",
-    detail: "Analytic European",
-    color: "mint",
-    symbol: "↘",
-  },
-  {
-    id: "digital",
-    label: "Digital",
-    detail: "Cash-or-nothing",
-    color: "blue",
-    symbol: "01",
-  },
-  {
-    id: "barrier",
-    label: "Barrier",
-    detail: "Knock-in / knock-out",
-    color: "coral",
-    symbol: "│",
-  },
-  {
-    id: "coupon",
-    label: "Coupon Bond",
-    detail: "FixedRateBond cash flows",
-    color: "blue",
-    symbol: "%",
-  },
-];
+export type Settlement = { game: "Payoff" | "Greekthon" | "Hedge"; label: string; score: number; at: string };
+export type PlayerProfile = { name: string; storage: boolean };
+export type Difficulty = "intern" | "analyst" | "associate" | "vp" | "director" | "md";
+export const difficultyLives: Record<Difficulty, number | null> = { intern: null, analyst: 5, associate: 4, vp: 3, director: 2, md: 1 };
+export type Scoreboard = {
+  difficulty: Difficulty;
+  maxLives: number;
+  lives: number;
+  streak: number;
+  gameOver: boolean;
+  payoff: { score: number; answers: number; correct: number; bestStreak: number };
+  greekthon: { score: number; answers: number; correct: number; bestStreak: number };
+  hedge: { score: number; rounds: number; passed: number; best: number };
+  recent: Settlement[];
+};
+export const emptyScoreboard: Scoreboard = {
+  difficulty: "intern",
+  maxLives: 0,
+  lives: 0,
+  streak: 0,
+  gameOver: false,
+  payoff: { score: 0, answers: 0, correct: 0, bestStreak: 0 },
+  greekthon: { score: 0, answers: 0, correct: 0, bestStreak: 0 },
+  hedge: { score: 0, rounds: 0, passed: 0, best: 0 },
+  recent: [],
+};
 
 export const market = {
   evaluationDate: "2025-01-02",
@@ -90,7 +55,6 @@ export const market = {
   dividend: 0.015,
   volatility: 0.2,
 };
-export const money = (n: number) => n.toFixed(2);
 export const secureSeed = () => {
   const value = new Uint32Array(1);
   crypto.getRandomValues(value);
@@ -109,56 +73,37 @@ export const seededRandom = (seed: number) => {
 export const between = (rng: () => number, min: number, max: number) => min + rng() * (max - min);
 export const isoDate = (date: Date) => date.toISOString().slice(0, 10);
 
-export type CraftMission = {
-  id: string; title: string; client: string; market: typeof market;
-  budget: number; protection: number; minDelta: number;
-  requiredKind: IngredientId; requiredLabel: string;
-};
-export type GreekScenario = { label: string; detail: string; spot: number; vol: number; rate: number; date: string };
-export type GreekBook = { name: string; legs: { type: "call" | "put"; strike: number; qty: number }[] };
-export type GreekMetric = "value" | "delta" | "gamma" | "vega" | "theta" | "rho";
-export type HedgeLeg = { type: "call" | "put"; strike: number; qty: number };
-export type HedgeProduct = { name: string; description: string; extra: string; legs: HedgeLeg[] };
-export type QuestionBank = {
-  version: 1;
-  craft: CraftMission[];
-  greekthon: { scenarios: GreekScenario[]; books: GreekBook[]; metrics: GreekMetric[] };
-  hedge: { products: HedgeProduct[] };
-};
-export type Settlement = { game: "Craft" | "Greekthon" | "Hedge"; label: string; score: number; at: string };
-export type PlayerProfile = { name: string; storage: boolean };
-export type Difficulty = "intern" | "analyst" | "associate" | "vp" | "director" | "md";
-export const difficultyLives: Record<Difficulty, number | null> = { intern: null, analyst: 5, associate: 4, vp: 3, director: 2, md: 1 };
-export type Scoreboard = {
-  difficulty: Difficulty;
-  maxLives: number;
-  lives: number;
-  streak: number;
-  gameOver: boolean;
-  craft: { score: number; rounds: number; wins: number; best: number };
-  greekthon: { score: number; answers: number; correct: number; bestStreak: number };
-  hedge: { score: number; rounds: number; passed: number; best: number };
-  recent: Settlement[];
-};
-export const emptyScoreboard: Scoreboard = {
-  difficulty: "intern",
-  maxLives: 0,
-  lives: 0,
-  streak: 0,
-  gameOver: false,
-  craft: { score: 0, rounds: 0, wins: 0, best: 0 },
-  greekthon: { score: 0, answers: 0, correct: 0, bestStreak: 0 },
-  hedge: { score: 0, rounds: 0, passed: 0, best: 0 },
-  recent: [],
-};
-export const craftMissions: CraftMission[] = [
-  { id: "NERVOUS BULL", title: "The Nervous Bull", client: "Protect the capital while keeping meaningful SX5E upside.", market, budget: 100.5, protection: 100, minDelta: 0.05, requiredKind: "call", requiredLabel: "Include a long call" },
-  { id: "CAUTIOUS CLIMBER", title: "The Cautious Climber", client: "Rates are higher. Lock in redemption and retain some equity participation.", market: { ...market, evaluationDate: "2026-03-16", maturityDate: "2030-03-18", spot: 112, strike: 112, rate: 0.04, expectedReturn: 0.065, dividend: 0.018, volatility: 0.24 }, budget: 100, protection: 100, minDelta: 0.08, requiredKind: "bond", requiredLabel: "Include a zero bond" },
-  { id: "INCOME ARCHITECT", title: "The Income Architect", client: "Build a protected investment with contractual fixed coupons and positive equity delta.", market: { ...market, evaluationDate: "2027-09-01", maturityDate: "2032-09-01", spot: 94, strike: 94, rate: 0.032, expectedReturn: 0.085, dividend: 0.012, volatility: 0.28 }, budget: 106, protection: 100, minDelta: 0.03, requiredKind: "coupon", requiredLabel: "Include a coupon bond" },
+export const payoffSeeds: PayoffSeed[] = [
+  // Level 1 — one long leg
+  { id: "LONG CALL", label: "Long call", legs: [{ kind: "call", strikeOffset: 0 }] },
+  { id: "LONG PUT", label: "Long put", legs: [{ kind: "put", strikeOffset: 0 }] },
+  { id: "LONG FORWARD", label: "Long forward", legs: [{ kind: "forward", strikeOffset: 0 }] },
+  { id: "LONG EQUITY", label: "Long equity", legs: [{ kind: "equity" }] },
+  { id: "LONG DIGITAL CALL", label: "Long digital call", legs: [{ kind: "digital", optionType: "call", strikeOffset: 0, cashPayoff: 10 }] },
+  { id: "LONG DIGITAL PUT", label: "Long digital put", legs: [{ kind: "digital", optionType: "put", strikeOffset: 0, cashPayoff: 10 }] },
+  { id: "LONG BOND", label: "Zero-coupon bond", legs: [{ kind: "bond", faceAmount: 100 }] },
+  { id: "COUPON BOND", label: "Coupon bond", legs: [{ kind: "coupon", faceAmount: 100, couponRate: 5 }] },
+  // Level 2 — two long legs
+  { id: "STRADDLE", label: "Long straddle", legs: [{ kind: "call", strikeOffset: 0 }, { kind: "put", strikeOffset: 0 }] },
+  { id: "STRANGLE", label: "Long strangle", legs: [{ kind: "put", strikeOffset: -5 }, { kind: "call", strikeOffset: 5 }] },
+  { id: "CALL LADDER", label: "Call ladder", legs: [{ kind: "call", strikeOffset: 0 }, { kind: "call", strikeOffset: 15 }] },
+  { id: "PUT LADDER", label: "Put ladder", legs: [{ kind: "put", strikeOffset: -15 }, { kind: "put", strikeOffset: 0 }] },
+  { id: "FORWARD + CALL", label: "Forward plus call", legs: [{ kind: "forward", strikeOffset: 0 }, { kind: "call", strikeOffset: 0 }] },
+  { id: "PROTECTIVE PUT", label: "Protective put", legs: [{ kind: "equity" }, { kind: "put", strikeOffset: -10 }] },
+  { id: "DIGITAL + CALL", label: "Digital plus call", legs: [{ kind: "digital", optionType: "call", strikeOffset: 0, cashPayoff: 10 }, { kind: "call", strikeOffset: 10 }] },
+  { id: "BARRIER CALL", label: "Barrier call", legs: [{ kind: "barrier", optionType: "call", strikeOffset: 0, barrierOffset: -20 }] },
+  // Level 3 — three long legs
+  { id: "LADDER 3", label: "Call ladder", legs: [{ kind: "call", strikeOffset: 0 }, { kind: "call", strikeOffset: 10 }, { kind: "call", strikeOffset: 20 }] },
+  { id: "STRADDLE + FORWARD", label: "Straddle plus forward", legs: [{ kind: "call", strikeOffset: 0 }, { kind: "put", strikeOffset: 0 }, { kind: "forward", strikeOffset: 0 }] },
+  { id: "2 CALLS + PUT", label: "Two calls plus a put", legs: [{ kind: "call", strikeOffset: 0 }, { kind: "call", strikeOffset: 15 }, { kind: "put", strikeOffset: -5 }] },
+  { id: "PUTS + CALL", label: "Two puts plus a call", legs: [{ kind: "put", strikeOffset: -15 }, { kind: "put", strikeOffset: 0 }, { kind: "call", strikeOffset: 10 }] },
+  { id: "EQUITY + PUT + CALL", label: "Equity plus put plus call", legs: [{ kind: "equity" }, { kind: "put", strikeOffset: -10 }, { kind: "call", strikeOffset: 10 }] },
+  { id: "BARRIER MIX", label: "Barrier, call and put", legs: [{ kind: "barrier", optionType: "call", strikeOffset: 0, barrierOffset: -20 }, { kind: "call", strikeOffset: 15 }, { kind: "put", strikeOffset: -15 }] },
 ];
+
 export const exampleQuestionBank: QuestionBank = {
   version: 1,
-  craft: craftMissions,
+  payoff: payoffSeeds,
   greekthon: {
     scenarios: [
       { label: "Spot rallies", detail: "SX5E 100 → 118", spot: 118, vol: .2, rate: .025, date: "2025-01-02" },
@@ -187,21 +132,26 @@ export const exampleQuestionBank: QuestionBank = {
     ],
   },
 };
+
 export const parseQuestionBank = (input: unknown): QuestionBank => {
   if (!input || typeof input !== "object") throw new Error("Root must be a JSON object");
   const bank = input as Partial<QuestionBank>;
   if (bank.version !== 1) throw new Error("version must be 1");
-  if (!Array.isArray(bank.craft) || bank.craft.length === 0) throw new Error("craft must contain at least one question");
+  if (!Array.isArray(bank.payoff) || bank.payoff.length === 0) throw new Error("payoff must contain at least one position seed");
   if (!bank.greekthon || !Array.isArray(bank.greekthon.scenarios) || !bank.greekthon.scenarios.length || !Array.isArray(bank.greekthon.books) || !bank.greekthon.books.length || !Array.isArray(bank.greekthon.metrics) || !bank.greekthon.metrics.length) throw new Error("greekthon requires scenarios, books, and metrics");
   if (!bank.hedge || !Array.isArray(bank.hedge.products) || !bank.hedge.products.length) throw new Error("hedge.products must contain at least one product");
   const iso = /^\d{4}-\d{2}-\d{2}$/;
-  bank.craft.forEach((q, i) => {
-    if (!q.id || !q.title || !q.client || !q.requiredLabel || !q.market || !iso.test(q.market.evaluationDate) || !iso.test(q.market.maturityDate) || q.market.maturityDate <= q.market.evaluationDate) throw new Error(`craft[${i}] has invalid text, market, or dates`);
-    if (![q.budget, q.protection, q.minDelta, q.market.spot, q.market.rate, q.market.expectedReturn, q.market.dividend, q.market.volatility].every(Number.isFinite)) throw new Error(`craft[${i}] has invalid numbers`);
-    if (q.budget <= 0 || q.protection < 0 || q.market.spot <= 0 || q.market.volatility <= 0) throw new Error(`craft[${i}] has values outside the pricing domain`);
-    if (!ingredients.some((x) => x.id === q.requiredKind)) throw new Error(`craft[${i}].requiredKind is unsupported`);
+  const payoffKinds = ["equity", "forward", "call", "put", "digital", "barrier", "bond", "coupon"];
+  bank.payoff.forEach((seed, i) => {
+    if (!seed.id || !seed.label || !Array.isArray(seed.legs) || !seed.legs.length) throw new Error(`payoff[${i}] requires id, label, and at least one leg`);
+    seed.legs.forEach((leg, j) => {
+      if (!payoffKinds.includes(leg.kind)) throw new Error(`payoff[${i}].legs[${j}].kind is unsupported`);
+      if (leg.strikeOffset !== undefined && !Number.isInteger(leg.strikeOffset)) throw new Error(`payoff[${i}].legs[${j}].strikeOffset must be an integer`);
+      if (leg.kind === "digital" && !Number.isFinite(leg.cashPayoff)) throw new Error(`payoff[${i}].legs[${j}] digital legs need a numeric cashPayoff`);
+      if (leg.kind === "barrier" && !Number.isFinite(leg.barrierOffset)) throw new Error(`payoff[${i}].legs[${j}] barrier legs need a numeric barrierOffset`);
+    });
   });
-  if (new Set(bank.craft.map((x) => x.id)).size !== bank.craft.length) throw new Error("craft question ids must be unique");
+  if (new Set(bank.payoff.map((x) => x.id)).size !== bank.payoff.length) throw new Error("payoff question ids must be unique");
   bank.greekthon.scenarios.forEach((q, i) => {
     if (!q.label || !q.detail || !iso.test(q.date) || q.date >= market.maturityDate || ![q.spot, q.vol, q.rate].every(Number.isFinite) || q.spot <= 0 || q.vol <= 0) throw new Error(`greekthon.scenarios[${i}] is invalid`);
   });
@@ -215,31 +165,4 @@ export const parseQuestionBank = (input: unknown): QuestionBank => {
   });
   return bank as QuestionBank;
 };
-export const randomizeMission = (template: CraftMission) => {
-  const rng = seededRandom(secureSeed());
-  const evaluation = new Date(Date.UTC(2025 + Math.floor(rng() * 5), Math.floor(rng() * 12), 2 + Math.floor(rng() * 18)));
-  const maturity = new Date(evaluation);
-  maturity.setUTCFullYear(maturity.getUTCFullYear() + 2 + Math.floor(rng() * 5));
-  const spot = Math.round(between(rng, 75, 135));
-  return {
-    ...template,
-    market: {
-      ...template.market,
-      evaluationDate: isoDate(evaluation),
-      maturityDate: isoDate(maturity),
-      spot,
-      strike: spot,
-      rate: Number(between(rng, .005, .06).toFixed(4)),
-      expectedReturn: Number(between(rng, .035, .12).toFixed(4)),
-      dividend: Number(between(rng, 0, .035).toFixed(4)),
-      volatility: Number(between(rng, .12, .42).toFixed(4)),
-    },
-    budget: Math.round((template.budget + between(rng, 0, 3)) * 2) / 2,
-    minDelta: Number(between(rng, .03, .15).toFixed(2)),
-  };
-};
-export const randomMission = (missions: CraftMission[], previous?: string) => {
-  const choices = missions.filter((x) => x.id !== previous);
-  const template = choices[Math.floor((secureSeed() / 4294967296) * choices.length)] ?? missions[0];
-  return randomizeMission(template);
-};
+

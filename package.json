@@ -9,6 +9,8 @@
     "dev": "npm run build:kernel && vite",
     "build": "npm run build:kernel && tsc -b && vite build",
     "build:kernel": "npm run build --workspace @quantcraft/market-kernel",
+    "test": "npm run test:payoff && npm run test:kernel",
+    "test:payoff": "tsc -p test/tsconfig.json && node --test test/payoff.test.mjs",
     "test:kernel": "npm run test --workspace @quantcraft/market-kernel",
     "lint": "oxlint",
     "preview": "vite preview"

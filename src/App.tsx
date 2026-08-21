@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { getQuantLib } from "./quantlib";
-import { Craft } from "./Craft";
+import { Payoff } from "./Payoff";
 import { Greekthon, Hedge } from "./RiskGames";
 import { Collection, Landing, Onboarding } from "./Shell";
 import "./Core.css";
@@ -51,7 +51,7 @@ function App() {
         lives: typeof parsed.lives === "number" ? parsed.lives : defaultLives,
         streak: typeof parsed.streak === "number" ? parsed.streak : 0,
         gameOver: parsed.gameOver === true,
-        craft: { ...emptyScoreboard.craft, ...parsed.craft },
+        payoff: { ...emptyScoreboard.payoff, ...parsed.payoff },
         greekthon: { ...emptyScoreboard.greekthon, ...parsed.greekthon },
         hedge: { ...emptyScoreboard.hedge, ...parsed.hedge },
         recent: Array.isArray(parsed.recent) ? parsed.recent : [],
@@ -100,11 +100,11 @@ function App() {
     const earnsLife = current.difficulty !== "intern" && streak % 3 === 0 && current.lives < current.maxLives;
     return { streak, lives: current.lives + Number(earnsLife), gameOver: false };
   };
-  const recordCraft = (score: number, passed: boolean, label: string) => setScoreboard((current) => ({
+  const recordPayoff = (score: number, correct: boolean, streak: number, label: string) => setScoreboard((current) => ({
     ...current,
-    ...nextRunState(current, passed),
-    craft: { score: current.craft.score + score, rounds: current.craft.rounds + 1, wins: current.craft.wins + Number(passed), best: Math.max(current.craft.best, score) },
-    recent: [{ game: "Craft" as const, label, score, at: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) }, ...current.recent].slice(0, 8),
+    ...nextRunState(current, correct),
+    payoff: { score: current.payoff.score + score, answers: current.payoff.answers + 1, correct: current.payoff.correct + Number(correct), bestStreak: Math.max(current.payoff.bestStreak, streak) },
+    recent: [{ game: "Payoff" as const, label, score, at: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) }, ...current.recent].slice(0, 8),
   }));
   const recordGreekthon = (score: number, correct: boolean, streak: number, label: string) => setScoreboard((current) => ({
     ...current,
@@ -118,7 +118,7 @@ function App() {
     hedge: { score: current.hedge.score + score, rounds: current.hedge.rounds + 1, passed: current.hedge.passed + Number(passed), best: Math.max(current.hedge.best, score) },
     recent: [{ game: "Hedge" as const, label, score, at: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) }, ...current.recent].slice(0, 8),
   }));
-  const totalScore = scoreboard.craft.score + scoreboard.greekthon.score + scoreboard.hedge.score;
+  const totalScore = scoreboard.payoff.score + scoreboard.greekthon.score + scoreboard.hedge.score;
   const newRun = () => {
     setShowGameOver(false);
     setScoreboard((current) => ({ ...emptyScoreboard, difficulty: current.difficulty, maxLives: current.maxLives, lives: current.maxLives, recent: [] }));
@@ -170,8 +170,8 @@ function App() {
       <main className="main-content">
         <div className="page-transition" key={mode}>
           {mode === "landing" && <Landing scoreboard={scoreboard} bank={questionBank} onInstallBank={installQuestionBank} onDifficulty={selectDifficulty} onSelect={setMode} />}
-          {mode === "craft" && !showGameOver && (
-            <Craft ql={runtime.ql} missions={questionBank.craft} onScore={recordCraft} onBack={() => setMode("landing")} scoreboard={scoreboard} />
+          {mode === "payoff" && !showGameOver && (
+            <Payoff seeds={questionBank.payoff} onScore={recordPayoff} onBack={() => setMode("landing")} scoreboard={scoreboard} />
           )}
           {mode === "greekthon" && !showGameOver && <Greekthon ql={runtime.ql} bank={questionBank.greekthon} onScore={recordGreekthon} onBack={() => setMode("landing")} scoreboard={scoreboard} />}
           {mode === "hedge" && !showGameOver && <Hedge ql={runtime.ql} bank={questionBank.hedge} onScore={recordHedge} onBack={() => setMode("landing")} scoreboard={scoreboard} />}

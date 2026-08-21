@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Scoreboard } from "./game";
 
-type GameMode = "craft" | "greekthon" | "hedge";
+type GameMode = "payoff" | "greekthon" | "hedge";
 
 export function RoundResult({ passed, status, score, actionLabel, onNext, onAskAI }: { passed: boolean; status: string; score: number; actionLabel: string; onNext: () => void; onAskAI?: () => void }) {
   return (
@@ -38,9 +38,9 @@ export function AiPromptModal({ prompt, onClose }: { prompt: string; onClose: ()
 
 export function GameScoreboard({ scoreboard, mode }: { scoreboard: Scoreboard; mode: GameMode }) {
   const [feedback, setFeedback] = useState<"success" | "failure" | "life">();
-  const totalScore = scoreboard.craft.score + scoreboard.greekthon.score + scoreboard.hedge.score;
-  const modeStats = mode === "craft"
-    ? { score: scoreboard.craft.score, rounds: scoreboard.craft.rounds, successes: scoreboard.craft.wins }
+  const totalScore = scoreboard.payoff.score + scoreboard.greekthon.score + scoreboard.hedge.score;
+  const modeStats = mode === "payoff"
+    ? { score: scoreboard.payoff.score, rounds: scoreboard.payoff.answers, successes: scoreboard.payoff.correct }
     : mode === "greekthon"
       ? { score: scoreboard.greekthon.score, rounds: scoreboard.greekthon.answers, successes: scoreboard.greekthon.correct }
       : { score: scoreboard.hedge.score, rounds: scoreboard.hedge.rounds, successes: scoreboard.hedge.passed };
@@ -75,46 +75,6 @@ export function GameScoreboard({ scoreboard, mode }: { scoreboard: Scoreboard; m
   );
 }
 
-export function Slider({
-  label,
-  value,
-  min,
-  max,
-  step = 1,
-  suffix,
-  onChange,
-  disabled,
-}: {
-  label: string;
-  value: number;
-  min: number;
-  max: number;
-  step?: number;
-  suffix: string;
-  onChange: (n: number) => void;
-  disabled?: boolean;
-}) {
-  return (
-    <label className={disabled ? "slider-row disabled" : "slider-row"}>
-      <span>
-        {label}
-        <strong>
-          {value}
-          {suffix}
-        </strong>
-      </span>
-      <input
-        disabled={disabled}
-        type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-      />
-    </label>
-  );
-}
 export function RoundTimer({
   label,
   value,
