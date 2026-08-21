@@ -6,7 +6,7 @@ export type ChoiceItem = {
   detail?: ReactNode;
   /** Span the full grid row (e.g. "DO NOTHING"). */
   wide?: boolean;
-  /** Direction tint for directional drills (e.g. Greekthon). */
+  /** Direction tint for directional drills (e.g. Greek). */
   tone?: "down" | "flat" | "up";
 };
 

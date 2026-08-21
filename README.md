@@ -25,7 +25,7 @@ Practice payoff reflexes, Greek intuition, and hedging judgment under time press
 | | Focus | Core decision |
 | --- | --- | --- |
 | **Payoff** | Terminal payoff reflex | Call the payoff, max profit, or breakeven of a position |
-| **Greekthon** | Greek intuition | Call the direction of value or a Greek |
+| **Greek** | Greek intuition | Call the direction of value or a Greek |
 | **Hedge** | Risk management | Choose tools that reduce dealer exposure |
 
 ## Game modes
@@ -38,7 +38,7 @@ Questions ramp through five levels: **1 leg → 2 legs → 3 legs → quantity �
 
 Correct answers score points and extend your streak; each two consecutive-correct milestone unlocks the next level. Wrong answers and timeouts show the per-leg working so the reflex sticks.
 
-### Δ Greekthon · Read the shock
+### Δ Greek · Read the shock
 
 A position flashes onto the screen. Then the market changes. Decide whether fair value, delta, gamma, vega, theta, or rho goes **up**, stays **unchanged**, or goes **down**.
 
@@ -56,7 +56,7 @@ The dealer's objective is to reduce the selected Delta, Gamma, Vega, Theta, and 
 
 ## Difficulty and scoring
 
-Payoff, Greekthon, and Hedge share the same score and life pool. A wrong payoff, wrong risk call, poor hedge response, or expired timer can cost a life. When the last life is gone, the run ends and the result is recorded in Collection.
+Payoff, Greek, and Hedge share the same score and life pool. A wrong payoff, wrong risk call, poor hedge response, or expired timer can cost a life. When the last life is gone, the run ends and the result is recorded in Collection.
 
 Choose the pressure level before starting:
 
@@ -73,7 +73,7 @@ Collection records the combined score, per-mode results, accuracy, streaks, best
 
 ## Shared question bank
 
-All three modes draw from one validated JSON question bank. Download the example bank, customize the Payoff position seeds, Greekthon scenarios, option books and metrics, or Hedge product templates, then upload it in the app.
+All three modes draw from one validated JSON question bank. Download the example bank, customize the Payoff position seeds, Greek scenarios, option books and metrics, or Hedge product templates, then upload it in the app.
 
 When local storage is enabled, the player profile, scoreboard, and uploaded question bank stay in that browser. QuantCraft uses no advertising or tracking cookies.
 

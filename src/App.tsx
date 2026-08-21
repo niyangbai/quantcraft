@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { getQuantLib } from "./quantlib";
 import { Payoff } from "./Payoff";
-import { Greekthon, Hedge } from "./RiskGames";
+import { Greek, Hedge } from "./RiskGames";
 import { AppShell, GameOverScreen, Collection, Landing, Onboarding } from "./ui";
 
 import { difficultyLives, emptyScoreboard, exampleQuestionBank, parseQuestionBank } from "./game";
@@ -39,7 +39,7 @@ function App() {
       if (!profile?.storage) return emptyScoreboard;
       const saved = localStorage.getItem("quantcraft.scoreboard");
       if (!saved) return emptyScoreboard;
-      const parsed = JSON.parse(saved) as Partial<Scoreboard>;
+      const parsed = JSON.parse(saved) as Partial<Scoreboard> & { greekthon?: Scoreboard["greek"] };
       const difficulty = parsed.difficulty ?? emptyScoreboard.difficulty;
       const defaultLives = difficultyLives[difficulty] ?? 0;
       return {
@@ -51,7 +51,7 @@ function App() {
         streak: typeof parsed.streak === "number" ? parsed.streak : 0,
         gameOver: parsed.gameOver === true,
         payoff: { ...emptyScoreboard.payoff, ...parsed.payoff },
-        greekthon: { ...emptyScoreboard.greekthon, ...parsed.greekthon },
+        greek: { ...emptyScoreboard.greek, ...(parsed.greek ?? parsed.greekthon) }, // legacy scoreboards used the "greekthon" key
         hedge: { ...emptyScoreboard.hedge, ...parsed.hedge },
         recent: Array.isArray(parsed.recent) ? parsed.recent : [],
       };
@@ -105,11 +105,11 @@ function App() {
     payoff: { score: current.payoff.score + score, answers: current.payoff.answers + 1, correct: current.payoff.correct + Number(correct), bestStreak: Math.max(current.payoff.bestStreak, streak) },
     recent: [{ game: "Payoff" as const, label, score, at: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) }, ...current.recent].slice(0, 8),
   }));
-  const recordGreekthon = (score: number, correct: boolean, streak: number, label: string) => setScoreboard((current) => ({
+  const recordGreek = (score: number, correct: boolean, streak: number, label: string) => setScoreboard((current) => ({
     ...current,
     ...nextRunState(current, correct),
-    greekthon: { score: current.greekthon.score + score, answers: current.greekthon.answers + 1, correct: current.greekthon.correct + Number(correct), bestStreak: Math.max(current.greekthon.bestStreak, streak) },
-    recent: [{ game: "Greekthon" as const, label, score, at: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) }, ...current.recent].slice(0, 8),
+    greek: { score: current.greek.score + score, answers: current.greek.answers + 1, correct: current.greek.correct + Number(correct), bestStreak: Math.max(current.greek.bestStreak, streak) },
+    recent: [{ game: "Greek" as const, label, score, at: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) }, ...current.recent].slice(0, 8),
   }));
   const recordHedge = (score: number, passed: boolean, label: string) => setScoreboard((current) => ({
     ...current,
@@ -117,7 +117,7 @@ function App() {
     hedge: { score: current.hedge.score + score, rounds: current.hedge.rounds + 1, passed: current.hedge.passed + Number(passed), best: Math.max(current.hedge.best, score) },
     recent: [{ game: "Hedge" as const, label, score, at: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) }, ...current.recent].slice(0, 8),
   }));
-  const totalScore = scoreboard.payoff.score + scoreboard.greekthon.score + scoreboard.hedge.score;
+  const totalScore = scoreboard.payoff.score + scoreboard.greek.score + scoreboard.hedge.score;
   const newRun = () => {
     setShowGameOver(false);
     setScoreboard((current) => ({ ...emptyScoreboard, difficulty: current.difficulty, maxLives: current.maxLives, lives: current.maxLives, recent: [] }));
@@ -140,7 +140,7 @@ function App() {
       {mode === "payoff" && !showGameOver && (
         <Payoff seeds={questionBank.payoff} onScore={recordPayoff} onBack={() => setMode("landing")} scoreboard={scoreboard} />
       )}
-      {mode === "greekthon" && !showGameOver && <Greekthon ql={runtime.ql} bank={questionBank.greekthon} onScore={recordGreekthon} onBack={() => setMode("landing")} scoreboard={scoreboard} />}
+      {mode === "greek" && !showGameOver && <Greek ql={runtime.ql} bank={questionBank.greek} onScore={recordGreek} onBack={() => setMode("landing")} scoreboard={scoreboard} />}
       {mode === "hedge" && !showGameOver && <Hedge ql={runtime.ql} bank={questionBank.hedge} onScore={recordHedge} onBack={() => setMode("landing")} scoreboard={scoreboard} />}
       {mode === "collection" && <Collection name={profile?.name ?? "Player"} scoreboard={scoreboard} onRename={renamePlayer} onResetScore={newRun} onBack={() => setMode("landing")} />}
       {showGameOver && mode !== "landing" && mode !== "collection" && <GameOverScreen difficulty={scoreboard.difficulty} totalScore={totalScore} onCollection={() => setMode("collection")} onNewRun={newRun} />}

@@ -37,7 +37,7 @@ const greekLines = (greeks: GreekRisk) => (
   </>
 );
 
-export function Greekthon({ ql, bank, onScore, onBack, scoreboard }: { ql?: QuantLibRuntime; bank: QuestionBank["greekthon"]; onScore: (score: number, correct: boolean, streak: number, label: string) => void; onBack: () => void; scoreboard: Scoreboard }) {
+export function Greek({ ql, bank, onScore, onBack, scoreboard }: { ql?: QuantLibRuntime; bank: QuestionBank["greek"]; onScore: (score: number, correct: boolean, streak: number, label: string) => void; onBack: () => void; scoreboard: Scoreboard }) {
   const REVIEW_DURATION_MS = 3000;
   const [seed, setSeed] = useState(0);
   const [randomKey, setRandomKey] = useState(secureSeed);
@@ -102,8 +102,8 @@ export function Greekthon({ ql, bank, onScore, onBack, scoreboard }: { ql?: Quan
   }, [question, answered, duration, onScore]);
   return (
     <GameFrame
-      mode="greekthon"
-      eyebrow={`GREEKTHON · FLASH ROUND · STREAK ×${scoreboard.streak}`}
+      mode="greek"
+      eyebrow={`GREEK · FLASH ROUND · STREAK ×${scoreboard.streak}`}
       title="Up, flat, or down?"
       intro="Read the market shock, the position, and the requested metric. No calculator. Just direction."
       onBack={onBack}

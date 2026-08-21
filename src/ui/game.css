@@ -2,10 +2,10 @@
    Page chrome (back-home, game-scoreboard, mode-header, round-timer,
    round-result, action-row) lives in base.css. Modes assemble the blocks
    below from the src/ui component kit and may add mode-specific hooks
-   (.payoff / .greekthon / .hedge) in their own small stylesheet. */
+   (.payoff / .greek / .hedge) in their own small stylesheet. */
 
 .mode-view.game-page.payoff,
-.mode-view.game-page.greekthon,
+.mode-view.game-page.greek,
 .mode-view.game-page.hedge { max-width: 980px; }
 
 /* ------------------------------------------------------------------ */
@@ -82,7 +82,7 @@
 .choice-grid button.correct { border-color: #4f8a61; background: #e2efe5; color: #2f5e3e; transform: translateY(-1px); box-shadow: 4px 4px 0 #a7d1ad, 0 10px 24px #24383a20; }
 .choice-grid button.wrong { border-color: #c15e4e; background: #f8e1dc; color: #a3483d; box-shadow: 4px 4px 0 #f0aaa0, 0 10px 24px #24383a20; }
 
-/* Three-column choice grids (e.g. Greekthon direction buttons). */
+/* Three-column choice grids (e.g. Greek direction buttons). */
 .choice-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
 .choice-grid button.tone-down { background: #f7dcd5; color: #a3483d; }
 .choice-grid button.tone-flat { background: #eee9d9; color: var(--deep); }

@@ -1,7 +1,7 @@
 import type { QuantLibRuntime } from "@quantcraft/quantlibjs";
 import type { PayoffSeed } from "./payoffGame";
 
-export type Mode = "landing" | "payoff" | "greekthon" | "hedge" | "collection";
+export type Mode = "landing" | "payoff" | "greek" | "hedge" | "collection";
 export type RuntimeState = {
   status: "loading" | "ready" | "error";
   ql?: QuantLibRuntime;
@@ -15,10 +15,10 @@ export type HedgeProduct = { name: string; description: string; extra: string; l
 export type QuestionBank = {
   version: 1;
   payoff: PayoffSeed[];
-  greekthon: { scenarios: GreekScenario[]; books: GreekBook[]; metrics: GreekMetric[] };
+  greek: { scenarios: GreekScenario[]; books: GreekBook[]; metrics: GreekMetric[] };
   hedge: { products: HedgeProduct[] };
 };
-export type Settlement = { game: "Payoff" | "Greekthon" | "Hedge"; label: string; score: number; at: string };
+export type Settlement = { game: "Payoff" | "Greek" | "Hedge"; label: string; score: number; at: string };
 export type PlayerProfile = { name: string; storage: boolean };
 export type Difficulty = "intern" | "analyst" | "associate" | "vp" | "director" | "md";
 export const difficultyLives: Record<Difficulty, number | null> = { intern: null, analyst: 5, associate: 4, vp: 3, director: 2, md: 1 };
@@ -29,7 +29,7 @@ export type Scoreboard = {
   streak: number;
   gameOver: boolean;
   payoff: { score: number; answers: number; correct: number; bestStreak: number };
-  greekthon: { score: number; answers: number; correct: number; bestStreak: number };
+  greek: { score: number; answers: number; correct: number; bestStreak: number };
   hedge: { score: number; rounds: number; passed: number; best: number };
   recent: Settlement[];
 };
@@ -40,7 +40,7 @@ export const emptyScoreboard: Scoreboard = {
   streak: 0,
   gameOver: false,
   payoff: { score: 0, answers: 0, correct: 0, bestStreak: 0 },
-  greekthon: { score: 0, answers: 0, correct: 0, bestStreak: 0 },
+  greek: { score: 0, answers: 0, correct: 0, bestStreak: 0 },
   hedge: { score: 0, rounds: 0, passed: 0, best: 0 },
   recent: [],
 };
@@ -104,7 +104,7 @@ export const payoffSeeds: PayoffSeed[] = [
 export const exampleQuestionBank: QuestionBank = {
   version: 1,
   payoff: payoffSeeds,
-  greekthon: {
+  greek: {
     scenarios: [
       { label: "Spot rallies", detail: "SX5E 100 → 118", spot: 118, vol: .2, rate: .025, date: "2025-01-02" },
       { label: "Spot crashes", detail: "SX5E 100 → 76", spot: 76, vol: .2, rate: .025, date: "2025-01-02" },
@@ -135,10 +135,11 @@ export const exampleQuestionBank: QuestionBank = {
 
 export const parseQuestionBank = (input: unknown): QuestionBank => {
   if (!input || typeof input !== "object") throw new Error("Root must be a JSON object");
-  const bank = input as Partial<QuestionBank>;
+  const bank = input as Partial<QuestionBank> & { greekthon?: QuestionBank["greek"] };
+  if (bank.greekthon && !bank.greek) bank.greek = bank.greekthon; // legacy banks used the "greekthon" key
   if (bank.version !== 1) throw new Error("version must be 1");
   if (!Array.isArray(bank.payoff) || bank.payoff.length === 0) throw new Error("payoff must contain at least one position seed");
-  if (!bank.greekthon || !Array.isArray(bank.greekthon.scenarios) || !bank.greekthon.scenarios.length || !Array.isArray(bank.greekthon.books) || !bank.greekthon.books.length || !Array.isArray(bank.greekthon.metrics) || !bank.greekthon.metrics.length) throw new Error("greekthon requires scenarios, books, and metrics");
+  if (!bank.greek || !Array.isArray(bank.greek.scenarios) || !bank.greek.scenarios.length || !Array.isArray(bank.greek.books) || !bank.greek.books.length || !Array.isArray(bank.greek.metrics) || !bank.greek.metrics.length) throw new Error("greek requires scenarios, books, and metrics");
   if (!bank.hedge || !Array.isArray(bank.hedge.products) || !bank.hedge.products.length) throw new Error("hedge.products must contain at least one product");
   const iso = /^\d{4}-\d{2}-\d{2}$/;
   const payoffKinds = ["equity", "forward", "call", "put", "digital", "barrier", "bond", "coupon"];
@@ -152,13 +153,13 @@ export const parseQuestionBank = (input: unknown): QuestionBank => {
     });
   });
   if (new Set(bank.payoff.map((x) => x.id)).size !== bank.payoff.length) throw new Error("payoff question ids must be unique");
-  bank.greekthon.scenarios.forEach((q, i) => {
-    if (!q.label || !q.detail || !iso.test(q.date) || q.date >= market.maturityDate || ![q.spot, q.vol, q.rate].every(Number.isFinite) || q.spot <= 0 || q.vol <= 0) throw new Error(`greekthon.scenarios[${i}] is invalid`);
+  bank.greek.scenarios.forEach((q, i) => {
+    if (!q.label || !q.detail || !iso.test(q.date) || q.date >= market.maturityDate || ![q.spot, q.vol, q.rate].every(Number.isFinite) || q.spot <= 0 || q.vol <= 0) throw new Error(`greek.scenarios[${i}] is invalid`);
   });
-  bank.greekthon.books.forEach((q, i) => {
-    if (!q.name || !Array.isArray(q.legs) || !q.legs.length || q.legs.some((leg) => !["call", "put"].includes(leg.type) || !Number.isFinite(leg.strike) || leg.strike <= 0 || !Number.isFinite(leg.qty) || leg.qty === 0)) throw new Error(`greekthon.books[${i}] is invalid`);
+  bank.greek.books.forEach((q, i) => {
+    if (!q.name || !Array.isArray(q.legs) || !q.legs.length || q.legs.some((leg) => !["call", "put"].includes(leg.type) || !Number.isFinite(leg.strike) || leg.strike <= 0 || !Number.isFinite(leg.qty) || leg.qty === 0)) throw new Error(`greek.books[${i}] is invalid`);
   });
-  if (bank.greekthon.metrics.some((x) => !["value", "delta", "gamma", "vega", "theta", "rho"].includes(x))) throw new Error("greekthon.metrics contains an unsupported KPI");
+  if (bank.greek.metrics.some((x) => !["value", "delta", "gamma", "vega", "theta", "rho"].includes(x))) throw new Error("greek.metrics contains an unsupported KPI");
   bank.hedge.products.forEach((product, i) => {
     if (!product.name || !product.description || !product.extra || !Array.isArray(product.legs) || !product.legs.length) throw new Error(`hedge.products[${i}] requires text and at least one option leg`);
     if (product.legs.some((leg) => !["call", "put"].includes(leg.type) || !Number.isFinite(leg.strike) || leg.strike <= 0 || !Number.isFinite(leg.qty) || leg.qty === 0)) throw new Error(`hedge.products[${i}].legs is invalid`);
