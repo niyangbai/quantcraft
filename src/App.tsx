@@ -6,6 +6,8 @@ import { Greek } from "./games/greek";
 import { Hedge } from "./games/hedge";
 import { MakeMarket } from "./games/make-market";
 import { Volatility } from "./games/volatility";
+import { Curve } from "./games/curve";
+import { Exotic } from "./games/exotic";
 import { AppShell, GameOverScreen, Collection, Landing, Onboarding } from "./ui";
 
 import { difficultyLives, emptyScoreboard, exampleQuestionBank, parseQuestionBank } from "./game";
@@ -60,6 +62,8 @@ function App() {
         hedge: { ...emptyScoreboard.hedge, ...parsed.hedge },
         makemarket: { ...emptyScoreboard.makemarket, ...parsed.makemarket },
         volatility: { ...emptyScoreboard.volatility, ...parsed.volatility },
+        curve: { ...emptyScoreboard.curve, ...parsed.curve },
+        exotic: { ...emptyScoreboard.exotic, ...parsed.exotic },
         recent: Array.isArray(parsed.recent) ? parsed.recent : [],
       };
     } catch { return emptyScoreboard; }
@@ -142,7 +146,19 @@ function App() {
     volatility: { score: current.volatility.score + score, answers: current.volatility.answers + 1, correct: current.volatility.correct + Number(correct), bestStreak: Math.max(current.volatility.bestStreak, streak) },
     recent: [{ game: "Volatility" as const, label, score, at: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) }, ...current.recent].slice(0, 8),
   }));
-  const totalScore = scoreboard.payoff.score + scoreboard.greek.score + scoreboard.orderbook.score + scoreboard.hedge.score + scoreboard.makemarket.score + scoreboard.volatility.score;
+  const recordCurve = (score: number, correct: boolean, streak: number, label: string) => setScoreboard((current) => ({
+    ...current,
+    ...nextRunState(current, correct),
+    curve: { score: current.curve.score + score, answers: current.curve.answers + 1, correct: current.curve.correct + Number(correct), bestStreak: Math.max(current.curve.bestStreak, streak) },
+    recent: [{ game: "Curve" as const, label, score, at: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) }, ...current.recent].slice(0, 8),
+  }));
+  const recordExotic = (score: number, correct: boolean, streak: number, label: string) => setScoreboard((current) => ({
+    ...current,
+    ...nextRunState(current, correct),
+    exotic: { score: current.exotic.score + score, answers: current.exotic.answers + 1, correct: current.exotic.correct + Number(correct), bestStreak: Math.max(current.exotic.bestStreak, streak) },
+    recent: [{ game: "Exotic" as const, label, score, at: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) }, ...current.recent].slice(0, 8),
+  }));
+  const totalScore = scoreboard.payoff.score + scoreboard.greek.score + scoreboard.orderbook.score + scoreboard.hedge.score + scoreboard.makemarket.score + scoreboard.volatility.score + scoreboard.curve.score + scoreboard.exotic.score;
   const newRun = () => {
     setShowGameOver(false);
     setScoreboard((current) => ({ ...emptyScoreboard, difficulty: current.difficulty, maxLives: current.maxLives, lives: current.maxLives, recent: [] }));
@@ -170,6 +186,8 @@ function App() {
       {mode === "hedge" && !showGameOver && <Hedge ql={runtime.ql} bank={questionBank.hedge} onScore={recordHedge} onBack={() => setMode("landing")} scoreboard={scoreboard} />}
       {mode === "makemarket" && !showGameOver && <MakeMarket ql={runtime.ql} params={questionBank.makemarket} onScore={recordMakeMarket} onBack={() => setMode("landing")} scoreboard={scoreboard} />}
       {mode === "volatility" && !showGameOver && <Volatility ql={runtime.ql} params={questionBank.volatility} onScore={recordVolatility} onBack={() => setMode("landing")} scoreboard={scoreboard} />}
+      {mode === "curve" && !showGameOver && <Curve ql={runtime.ql} params={questionBank.curve} onScore={recordCurve} onBack={() => setMode("landing")} scoreboard={scoreboard} />}
+      {mode === "exotic" && !showGameOver && <Exotic ql={runtime.ql} params={questionBank.exotic} onScore={recordExotic} onBack={() => setMode("landing")} scoreboard={scoreboard} />}
       {mode === "collection" && <Collection name={profile?.name ?? "Player"} scoreboard={scoreboard} onRename={renamePlayer} onResetScore={newRun} onBack={() => setMode("landing")} />}
       {showGameOver && mode !== "landing" && mode !== "collection" && <GameOverScreen difficulty={scoreboard.difficulty} totalScore={totalScore} onCollection={() => setMode("collection")} onNewRun={newRun} />}
       {!profile && <Onboarding onFinish={finishOnboarding} />}

@@ -18,7 +18,7 @@
 
 > QuantCraft is a browser-based financial-markets game. It has no backend dependency: pricing runs locally through QuantLib WebAssembly.
 
-Practice payoff reflexes, market-microstructure intuition, Greek intuition, hedging judgment, market-making, and vol-surface reading under time pressure. All six modes share one score, one life pool, and one local player record.
+Practice payoff reflexes, market-microstructure intuition, Greek intuition, hedging judgment, market-making, vol-surface reading, yield-curve P&L, and exotic-state repricing under time pressure. All eight modes share one score, one life pool, and one local player record.
 
 ## At a glance
 
@@ -30,6 +30,8 @@ Practice payoff reflexes, market-microstructure intuition, Greek intuition, hedg
 | **Hedge** | Risk management | Choose tools that reduce dealer exposure |
 | **Make Market** | Market making | Pick the quote the synthetic model scores best |
 | **Volatility** | Vol-surface reading | Find the position the surface shock pays |
+| **Curve** | Yield-curve shock | Call the bond position the curve move pays |
+| **Exotic** | Market shock | Call the exotic position that loses the most |
 
 ## Game modes
 
@@ -77,9 +79,21 @@ An implied-volatility surface and a parameterized shock flash onto the screen. T
 
 Each round builds a base surface (`ATM`, skew, smile, term structure), applies one of six parameterized shocks — skew steepening/flattening, front- or back-end vol up, smile curvature up/down — and scores every position as `qty × vega × ΔIV`. The surface and the shocks are closed forms in `@quantcraft/finmath` (`volsurface` module): Vega is the analytic Black–Scholes–Merton vega, ΔIV comes straight from the rebuilt surface, so the machine always knows the answer — and the reveal shows exactly which factor (location, vega, size, or side) decided it.
 
+### ∿ Curve · Read the move
+
+A yield curve flashes onto the screen — 2Y / 5Y / 10Y — with a parameterized shock. Three bond positions follow (long or short, different notionals). Which one has the largest P&L?
+
+Each round builds a base curve and applies one of nine shocks — parallel up/down, front- or back-end up/down, steepening, flattening, or a butterfly — then scores every position as `side × (price after − price before)` through QuantLib. The machine builds two zero curves, reprices each bond between them, and reads the parallel DV01, so the answer always reflects key-rate exposure, coupon, and notional exactly. The reflex to drill: which part of the curve moved, where is the duration, and long or short.
+
+### ◈ Exotic · Read the state
+
+A market shock flashes onto the screen — spot and volatility both move. Four exotic positions follow. Which one loses the most value?
+
+Each round draws four positions from a universe of barrier, digital, Asian, worst-of, autocall, and vanilla payoffs, then reprices every position through QuantLib before and after the shock. The answer is the worst P&L, so the machine always knows it. The reflex to drill: find the state that matters — the barrier, the digital strike, the running average, the weakest asset, the autocall knockout — and find the pain.
+
 ## Difficulty and scoring
 
-Payoff, Order Book, Greek, Hedge, Make Market, and Volatility share the same score and life pool. A wrong payoff, wrong book read, wrong risk call, poor hedge response, bad quote, missed vol P&L, or expired timer can cost a life. When the last life is gone, the run ends and the result is recorded in Collection.
+Payoff, Order Book, Greek, Hedge, Make Market, Volatility, Curve, and Exotic share the same score and life pool. A wrong payoff, wrong book read, wrong risk call, poor hedge response, bad quote, missed vol P&L, missed curve P&L, missed exotic P&L, or expired timer can cost a life. When the last life is gone, the run ends and the result is recorded in Collection.
 
 Choose the pressure level before starting:
 
@@ -96,7 +110,7 @@ Collection records the combined score, per-mode results, accuracy, streaks, best
 
 ## Shared question bank
 
-All six modes draw from one validated JSON question bank. Download the example bank, customize the Payoff position seeds, Order Book ladder templates, Greek scenarios, option books and metrics, Hedge product templates, or the Make Market and Volatility model parameters, then upload it in the app.
+All eight modes draw from one validated JSON question bank. Download the example bank, customize the Payoff position seeds, Order Book ladder templates, Greek scenarios, option books and metrics, Hedge product templates, or the Make Market, Volatility, Curve, and Exotic model parameters, then upload it in the app.
 
 When local storage is enabled, the player profile, scoreboard, and uploaded question bank stay in that browser. QuantCraft uses no advertising or tracking cookies.
 
@@ -129,19 +143,21 @@ npm run dev
 
 ```bash
 npm run build         # production build
-npm test              # finmath + payoff + orderbook + makemarket + volatility + quantlibjs tests
+npm test              # finmath + payoff + orderbook + makemarket + volatility + curve + exotic + quantlibjs tests
 npm run test:finmath  # @quantcraft/finmath package tests
 npm run test:payoff   # payoff game-logic tests (node:test)
 npm run test:orderbook# order-book game-logic tests (node:test)
 npm run test:makemarket # make-market game-logic tests (node:test)
 npm run test:volatility # volatility game-logic tests (node:test)
+npm run test:curve    # curve game-logic tests (node:test)
+npm run test:exotic   # exotic game-logic tests (node:test)
 npm run test:quantlib # quantlibjs WASM-backed tests
 npm run lint          # source linting
 npm run preview       # preview the production build
 ```
 
 The game-logic tests are pure node:test suites. `npm run test:payoff` (and the
-order-book, make-market, and volatility siblings) compile the corresponding
+order-book, make-market, volatility, curve, and exotic siblings) compile the corresponding
 `src/games/*/game.ts` into `test/dist/` and run `test/*.test.mjs` against it,
 importing the math from `@quantcraft/finmath`.
 

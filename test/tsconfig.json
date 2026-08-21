@@ -16,5 +16,5 @@
     "rootDir": "../src",
     "outDir": "./dist"
   },
-  "include": ["../src/games/payoff/game.ts", "../src/games/order-book/game.ts", "../src/games/make-market/game.ts", "../src/games/volatility/game.ts"]
+  "include": ["../src/games/payoff/game.ts", "../src/games/order-book/game.ts", "../src/games/make-market/game.ts", "../src/games/volatility/game.ts", "../src/games/curve/game.ts", "../src/games/exotic/game.ts"]
 }

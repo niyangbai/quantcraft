@@ -54,6 +54,9 @@ console.log(ql.version()); // "1.43"
 | `priceEuropean(input)` | NPV and delta, gamma, vega, theta, rho |
 | `priceDigital(input)` | Cash-or-nothing option NPV and Greeks |
 | `priceBarrier(input)` | Analytic barrier-option NPV |
+| `priceAsian(input)` | Discrete geometric-average price Asian NPV with a running average |
+| `priceWorstOf(input)` | Two-asset worst-of (minimum) basket NPV via the Stulz formula |
+| `priceAutocall(input)` | Autocallable-note NPV via deterministic Monte Carlo (fixed seed) |
 | `priceFixedRateBond(input)` | NPV, settlement value, clean price, dirty price, accrued amount, cashflow count |
 | `priceZeroCouponBond(input)` | NPV, settlement value, clean price, dirty price |
 | `createZeroCurve(input)` | Build a reusable interpolated QuantLib zero curve and return a handle |

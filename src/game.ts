@@ -7,10 +7,14 @@ import { makeMarketParamDefaults } from "./games/make-market/game";
 import type { MakeMarketParams } from "./games/make-market/game";
 import { volatilityParamDefaults } from "./games/volatility/game";
 import type { VolatilityParams } from "./games/volatility/game";
+import { curveParamDefaults } from "./games/curve/game";
+import type { CurveParams } from "./games/curve/game";
+import { exoticParamDefaults } from "./games/exotic/game";
+import type { ExoticParams } from "./games/exotic/game";
 import type { GreekBook, GreekMetric, GreekScenario } from "./games/greek/game";
 import type { HedgeProduct } from "./games/hedge/game";
 
-export type Mode = "landing" | "payoff" | "greek" | "orderbook" | "hedge" | "makemarket" | "volatility" | "collection";
+export type Mode = "landing" | "payoff" | "greek" | "orderbook" | "hedge" | "makemarket" | "volatility" | "curve" | "exotic" | "collection";
 export type RuntimeState = {
   status: "loading" | "ready" | "error";
   ql?: QuantLibRuntime;
@@ -24,8 +28,10 @@ export type QuestionBank = {
   hedge: { products: HedgeProduct[] };
   makemarket: MakeMarketParams;
   volatility: VolatilityParams;
+  curve: CurveParams;
+  exotic: ExoticParams;
 };
-export type Settlement = { game: "Payoff" | "Greek" | "Order Book" | "Hedge" | "Make Market" | "Volatility"; label: string; score: number; at: string };
+export type Settlement = { game: "Payoff" | "Greek" | "Order Book" | "Hedge" | "Make Market" | "Volatility" | "Curve" | "Exotic"; label: string; score: number; at: string };
 export type PlayerProfile = { name: string; storage: boolean };
 export type Difficulty = "intern" | "analyst" | "associate" | "vp" | "director" | "md";
 export const difficultyLives: Record<Difficulty, number | null> = { intern: null, analyst: 5, associate: 4, vp: 3, director: 2, md: 1 };
@@ -41,6 +47,8 @@ export type Scoreboard = {
   hedge: { score: number; rounds: number; passed: number; best: number };
   makemarket: { score: number; answers: number; correct: number; bestStreak: number };
   volatility: { score: number; answers: number; correct: number; bestStreak: number };
+  curve: { score: number; answers: number; correct: number; bestStreak: number };
+  exotic: { score: number; answers: number; correct: number; bestStreak: number };
   recent: Settlement[];
 };
 export const emptyScoreboard: Scoreboard = {
@@ -55,6 +63,8 @@ export const emptyScoreboard: Scoreboard = {
   hedge: { score: 0, rounds: 0, passed: 0, best: 0 },
   makemarket: { score: 0, answers: 0, correct: 0, bestStreak: 0 },
   volatility: { score: 0, answers: 0, correct: 0, bestStreak: 0 },
+  curve: { score: 0, answers: 0, correct: 0, bestStreak: 0 },
+  exotic: { score: 0, answers: 0, correct: 0, bestStreak: 0 },
   recent: [],
 };
 
@@ -112,6 +122,8 @@ export const exampleQuestionBank: QuestionBank = {
   orderbook: orderBookSeedDefaults,
   makemarket: makeMarketParamDefaults,
   volatility: volatilityParamDefaults,
+  curve: curveParamDefaults,
+  exotic: exoticParamDefaults,
   hedge: {
     products: [
       { name: "Capital Protected Note", description: "Zero bond + long participation call", extra: "100 face zero bond", legs: [{ type: "call", strike: 100, qty: 1 }] },
@@ -143,6 +155,18 @@ export const parseQuestionBank = (input: unknown): QuestionBank => {
     : { ...volatilityParamDefaults };
   bank.volatility = volatility;
   if (!["riskFreeRate", "dividendYield"].every((key) => Number.isFinite(volatility[key as keyof VolatilityParams]))) throw new Error("volatility model parameters must be finite numbers");
+  // curve holds the evaluation date the rates drill anchors to; legacy banks predate the mode
+  const curve: Required<CurveParams> = bank.curve && typeof bank.curve === "object"
+    ? { ...curveParamDefaults, ...bank.curve }
+    : { ...curveParamDefaults };
+  bank.curve = curve;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(curve.evaluationDate)) throw new Error("curve evaluationDate must be an ISO YYYY-MM-DD date");
+  // exotic holds the fixed market rates for the exotic-repricing model; legacy banks predate the mode
+  const exotic: Required<ExoticParams> = bank.exotic && typeof bank.exotic === "object"
+    ? { ...exoticParamDefaults, ...bank.exotic }
+    : { ...exoticParamDefaults };
+  bank.exotic = exotic;
+  if (!["riskFreeRate", "dividendYield"].every((key) => Number.isFinite(exotic[key as keyof ExoticParams]))) throw new Error("exotic model parameters must be finite numbers");
   const iso = /^\d{4}-\d{2}-\d{2}$/;
   const payoffKinds = ["equity", "forward", "call", "put", "digital", "barrier", "bond", "coupon"];
   bank.payoff.forEach((seed, i) => {

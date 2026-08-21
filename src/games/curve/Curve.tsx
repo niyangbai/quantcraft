@@ -1,0 +1,148 @@
+import { useEffect, useMemo, useState } from "react";
+import { AiPromptModal, ChoiceGrid, GameFrame, RevealBar, RoundResult, RoundTimer, ScenarioCard } from "../../ui";
+import { secureSeed, seededRandom } from "../../game";
+import type { Scoreboard } from "../../game";
+import type { QuantLibRuntime } from "@quantcraft/quantlibjs";
+import { buildCurvePrompt, curveDurationMs, generateCurveRound, positionDetail, positionLabel, signedBpText } from "./game";
+import type { CurveParams } from "./game";
+
+const bpTone = (value: number): "positive" | "negative" | "flat" => (value === 0 ? "flat" : value > 0 ? "positive" : "negative");
+
+export function Curve({
+  ql,
+  params,
+  onScore,
+  onBack,
+  scoreboard,
+}: {
+  ql?: QuantLibRuntime;
+  params: CurveParams;
+  onScore: (score: number, correct: boolean, streak: number, label: string) => void;
+  onBack: () => void;
+  scoreboard: Scoreboard;
+}) {
+  const [roundKey, setRoundKey] = useState(secureSeed);
+  const [round, setRound] = useState(1);
+  const [answered, setAnswered] = useState(false);
+  const [feedback, setFeedback] = useState<"correct" | "wrong" | "timeout">();
+  const [selectedIndex, setSelectedIndex] = useState<number>();
+  const [lastScore, setLastScore] = useState(0);
+  const [aiPrompt, setAiPrompt] = useState<string>();
+
+  const duration = curveDurationMs(scoreboard.streak);
+  const question = useMemo(() => {
+    if (!ql) return undefined;
+    const rng = seededRandom(roundKey);
+    return generateCurveRound(rng, ql, params);
+  }, [roundKey, ql, params]);
+
+  const next = () => {
+    setRoundKey(secureSeed());
+    setRound((value) => value + 1);
+    setAnswered(false);
+    setFeedback(undefined);
+    setSelectedIndex(undefined);
+    setAiPrompt(undefined);
+  };
+
+  const submit = (index: number) => {
+    if (!question || answered) return;
+    const correct = index === question.answerIndex;
+    const nextStreak = correct ? scoreboard.streak + 1 : 0;
+    const points = correct ? 100 + scoreboard.streak * 10 : -50;
+    setAnswered(true);
+    setFeedback(correct ? "correct" : "wrong");
+    setSelectedIndex(index);
+    setLastScore(points);
+    onScore(points, correct, nextStreak, `${question.answerText} · ${question.shockLabel}`);
+  };
+
+  useEffect(() => {
+    if (!question || answered) return;
+    const timer = window.setTimeout(() => {
+      setAnswered(true);
+      setFeedback("timeout");
+      setSelectedIndex(undefined);
+      setLastScore(-50);
+      onScore(-50, false, 0, `${question.answerText} · ${question.shockLabel} · Time out`);
+    }, duration);
+    return () => window.clearTimeout(timer);
+  }, [question, answered, duration, onScore]);
+
+  const winner = question ? question.analysis[question.answerIndex] : undefined;
+  const statusText = feedback === "correct"
+    ? "P&L SPOTTED"
+    : feedback === "timeout"
+      ? "DECISION WINDOW CLOSED"
+      : scoreboard.difficulty === "intern" ? "WRONG POSITION" : "WRONG POSITION · −1 LIFE";
+
+  return (
+    <GameFrame
+      mode="curve"
+      eyebrow={`CURVE TRADER · FLASH DRILL · ROUND ${round}`}
+      title="Read the curve move. Find the P&L."
+      onBack={onBack}
+      scoreboard={scoreboard}
+      tools={<RoundTimer label="DECISION WINDOW" value={`${(duration / 1000).toFixed(0)}s`} durationMs={duration} resetKey={roundKey} />}
+    >
+      {question && winner ? (
+        <>
+          <ScenarioCard
+            label="YIELD CURVE SHOCK"
+            title={question.questionText}
+            description={question.scenarioText}
+            largeTitle
+            metrics={[
+              { label: "SHOCK", value: question.shockLabel },
+              ...question.nodes.map((node) => ({ label: node.label, value: signedBpText(node.deltaBp), tone: bpTone(node.deltaBp) })),
+            ]}
+          />
+          <div className="game-layout">
+            <article className="game-panel">
+              <h2>YOUR READ</h2>
+              <p className="choice-note">P&L ≈ −DV01 × Δyield for a long; the sign flips when short. Read which maturities moved, then weigh each position's duration and direction.</p>
+              <ChoiceGrid
+                columns={3}
+                items={question.positions.map((position) => ({
+                  key: position.id,
+                  label: positionLabel(position),
+                  detail: positionDetail(position),
+                }))}
+                selected={selectedIndex !== undefined ? [selectedIndex] : []}
+                revealed={answered}
+                answerIndex={question.answerIndex}
+                onToggle={(index) => submit(index)}
+              />
+            </article>
+          </div>
+          {answered && (
+            <RevealBar
+              cells={[
+                { label: "RESULT", value: feedback === "correct" ? "CORRECT" : feedback === "timeout" ? "TIME'S UP" : "WRONG", tone: feedback === "correct" ? "positive" : "negative" },
+                { label: "WINNER", value: question.answerText },
+                { label: "P&L", value: `${winner.pnl >= 0 ? "+" : ""}${winner.pnl.toFixed(0)}`, tone: winner.pnl >= 0 ? "positive" : "negative" },
+                { label: "DV01", value: winner.dv01.toFixed(1) },
+                { label: "ΔYIELD", value: signedBpText(winner.deltaYieldBp), tone: winner.deltaYieldBp === 0 ? undefined : winner.deltaYieldBp > 0 ? "positive" : "negative" },
+                { label: "SHOCK", value: question.shockLabel },
+              ]}
+              note={question.explanation}
+            />
+          )}
+          {answered && (
+            <RoundResult
+              passed={feedback === "correct"}
+              status={statusText}
+              score={lastScore}
+              actionLabel="NEXT ROUND"
+              onNext={next}
+              onAskAI={feedback === "correct" ? undefined : () => setAiPrompt(buildCurvePrompt(question, scoreboard.difficulty))}
+            />
+          )}
+          {aiPrompt && <AiPromptModal prompt={aiPrompt} onClose={() => setAiPrompt(undefined)} />}
+        </>
+      ) : (
+        <div className="drop-zone">{ql ? "Building the curve…" : "Loading the QuantLib engine…"}</div>
+      )}
+    </GameFrame>
+  );
+}

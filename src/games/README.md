@@ -14,7 +14,7 @@ src/games/<mode-id>/
                   export * from "./game";`
 ```
 
-Folder names are kebab-case (`order-book`, `payoff`, `greek`, `hedge`, `make-market`, `volatility`) and
+Folder names are kebab-case (`order-book`, `payoff`, `greek`, `hedge`, `make-market`, `volatility`, `curve`, `exotic`) and
 match the `Mode` union values in `src/game.ts`. Component files are
 PascalCase; logic files are always named `game.ts`.
 

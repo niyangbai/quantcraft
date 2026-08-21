@@ -20,7 +20,9 @@
 #include <ql/cashflow.hpp>
 #include <ql/cashflows/iborcoupon.hpp>
 
+#include <ql/instruments/asianoption.hpp>
 #include <ql/instruments/barrieroption.hpp>
+#include <ql/instruments/basketoption.hpp>
 #include <ql/instruments/bond.hpp>
 #include <ql/instruments/bonds/fixedratebond.hpp>
 #include <ql/instruments/bonds/zerocouponbond.hpp>
@@ -39,7 +41,9 @@
 #include <ql/methods/lattices/binomialtree.hpp>
 #include <ql/models/shortrate/onefactormodels/hullwhite.hpp>
 
+#include <ql/pricingengines/asian/analytic_discr_geom_av_price.hpp>
 #include <ql/pricingengines/barrier/analyticbarrierengine.hpp>
+#include <ql/pricingengines/basket/stulzengine.hpp>
 #include <ql/pricingengines/bond/discountingbondengine.hpp>
 #include <ql/pricingengines/capfloor/blackcapfloorengine.hpp>
 #include <ql/pricingengines/swap/discountingswapengine.hpp>
@@ -78,6 +82,7 @@
 #include <cmath>
 #include <cstdio>
 #include <limits>
+#include <random>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -491,8 +496,63 @@ namespace
             auto div = ext::make_shared<FlatForward>(today, q, dc);
             auto v = ext::make_shared<BlackConstantVol>(today, TARGET(), vol, dc);
             auto process = ext::make_shared<BlackScholesMertonProcess>(Handle<Quote>(s), Handle<YieldTermStructure>(div), Handle<YieldTermStructure>(rf), Handle<BlackVolTermStructure>(v));
-            BarrierOption option(static_cast<Barrier::Type>(barrierType), barrierLevel, rebate, ext::make_shared<PlainVanillaPayoff>(call ? Option::Call : Option::Put, strike), ext::make_shared<EuropeanExercise>(maturity));
+            val out = val::object();
+            out.set("ok", true);
+            const Barrier::Type btype = static_cast<Barrier::Type>(barrierType);
+            const bool down = (btype == Barrier::DownIn || btype == Barrier::DownOut);
+            const bool touched = down ? (spot <= barrierLevel) : (spot >= barrierLevel);
+            if (touched && (btype == Barrier::DownOut || btype == Barrier::UpOut))
+            {
+                // Already knocked out at the evaluation date: worth only the rebate.
+                out.set("value", rebate);
+                return out;
+            }
+            if (touched && (btype == Barrier::DownIn || btype == Barrier::UpIn))
+            {
+                // Already knocked in at the evaluation date: a plain vanilla.
+                VanillaOption vanilla(ext::make_shared<PlainVanillaPayoff>(call ? Option::Call : Option::Put, strike), ext::make_shared<EuropeanExercise>(maturity));
+                vanilla.setPricingEngine(ext::make_shared<AnalyticEuropeanEngine>(process));
+                out.set("value", vanilla.NPV());
+                return out;
+            }
+            BarrierOption option(btype, barrierLevel, rebate, ext::make_shared<PlainVanillaPayoff>(call ? Option::Call : Option::Put, strike), ext::make_shared<EuropeanExercise>(maturity));
             option.setPricingEngine(ext::make_shared<AnalyticBarrierEngine>(process));
+            out.set("value", option.NPV());
+            return out;
+        }
+        catch (const std::exception &e)
+        {
+            return failure(e);
+        }
+    }
+    val priceAsian(int ey, int em, int ed, int my, int mm, int md, double spot, double strike,
+                   double r, double q, double vol, bool call, double avgSoFar, int pastFixings, int futureFixings)
+    {
+        try
+        {
+            evaluation(ey, em, ed);
+            QL_REQUIRE(avgSoFar > 0.0 && pastFixings > 0 && futureFixings > 0, "asian option needs positive average-so-far, past and future fixings");
+            Date today = qd(ey, em, ed), maturity = qd(my, mm, md);
+            DayCounter dc = Actual365Fixed();
+            auto s = ext::make_shared<SimpleQuote>(spot);
+            auto rf = ext::make_shared<FlatForward>(today, r, dc);
+            auto div = ext::make_shared<FlatForward>(today, q, dc);
+            auto v = ext::make_shared<BlackConstantVol>(today, TARGET(), vol, dc);
+            auto process = ext::make_shared<BlackScholesMertonProcess>(Handle<Quote>(s), Handle<YieldTermStructure>(div), Handle<YieldTermStructure>(rf), Handle<BlackVolTermStructure>(v));
+
+            std::vector<Date> fixingDates;
+            fixingDates.reserve(static_cast<Size>(futureFixings));
+            for (int i = 1; i <= futureFixings; ++i)
+                fixingDates.push_back(today + Period(i, Months));
+            fixingDates.back() = maturity; // pin the final fixing to maturity
+
+            // Geometric-average running product: avgSoFar over `pastFixings` fixings.
+            const Real runningProduct = std::pow(avgSoFar, static_cast<Real>(pastFixings));
+            DiscreteAveragingAsianOption option(Average::Geometric, runningProduct, static_cast<Size>(pastFixings),
+                                                fixingDates,
+                                                ext::make_shared<PlainVanillaPayoff>(call ? Option::Call : Option::Put, strike),
+                                                ext::make_shared<EuropeanExercise>(maturity));
+            option.setPricingEngine(ext::make_shared<AnalyticDiscreteGeometricAveragePriceAsianEngine>(process));
             val out = val::object();
             out.set("ok", true);
             out.set("value", option.NPV());
@@ -503,6 +563,109 @@ namespace
             return failure(e);
         }
     }
+
+    val priceWorstOf(int ey, int em, int ed, int my, int mm, int md, double spot1, double spot2,
+                     double r, double q1, double q2, double vol1, double vol2, double correlation,
+                     double strike, bool call)
+    {
+        try
+        {
+            evaluation(ey, em, ed);
+            QL_REQUIRE(correlation > -1.0 && correlation < 1.0, "correlation must be in (-1, 1)");
+            Date today = qd(ey, em, ed), maturity = qd(my, mm, md);
+            DayCounter dc = Actual365Fixed();
+            auto rf = ext::make_shared<FlatForward>(today, r, dc);
+            auto makeProcess = [&](double spot, double q, double vol)
+            {
+                auto s = ext::make_shared<SimpleQuote>(spot);
+                auto div = ext::make_shared<FlatForward>(today, q, dc);
+                auto v = ext::make_shared<BlackConstantVol>(today, TARGET(), vol, dc);
+                return ext::make_shared<BlackScholesMertonProcess>(Handle<Quote>(s), Handle<YieldTermStructure>(div), Handle<YieldTermStructure>(rf), Handle<BlackVolTermStructure>(v));
+            };
+            auto p1 = makeProcess(spot1, q1, vol1);
+            auto p2 = makeProcess(spot2, q2, vol2);
+            BasketOption option(ext::make_shared<MinBasketPayoff>(ext::make_shared<PlainVanillaPayoff>(call ? Option::Call : Option::Put, strike)),
+                                ext::make_shared<EuropeanExercise>(maturity));
+            option.setPricingEngine(ext::make_shared<StulzEngine>(p1, p2, correlation));
+            val out = val::object();
+            out.set("ok", true);
+            out.set("value", option.NPV());
+            return out;
+        }
+        catch (const std::exception &e)
+        {
+            return failure(e);
+        }
+    }
+
+    val priceAutocall(int ey, int em, int ed, int my, int mm, int md, double spot, double initialSpot,
+                      double r, double q, double vol, double coupon, double callLevel, double barrierLevel,
+                      double notional, int observationMonths, int paths)
+    {
+        try
+        {
+            evaluation(ey, em, ed);
+            QL_REQUIRE(initialSpot > 0.0 && spot > 0.0 && vol > 0.0 && notional > 0.0, "invalid autocall terms");
+            QL_REQUIRE(barrierLevel > 0.0 && barrierLevel < callLevel, "autocall barriers must satisfy 0 < barrier < call");
+            QL_REQUIRE(coupon >= 0.0, "autocall coupon must be non-negative");
+            QL_REQUIRE(observationMonths > 0 && paths > 0 && paths <= 200000, "invalid autocall simulation parameters");
+            Date today = qd(ey, em, ed), maturity = qd(my, mm, md);
+            DayCounter dc = Actual365Fixed();
+
+            std::vector<double> obsTimes;
+            Date d = today;
+            while (d < maturity)
+            {
+                d = d + Period(observationMonths, Months);
+                if (d >= maturity) d = maturity;
+                obsTimes.push_back(dc.yearFraction(today, d));
+                if (d == maturity) break;
+            }
+            QL_REQUIRE(obsTimes.size() >= 1, "autocall needs at least one observation date");
+
+            // Risk-neutral GBM simulation with a fixed seed: deterministic in,
+            // deterministic out, so the machine always knows the answer.
+            const double drift = r - q - 0.5 * vol * vol;
+            std::mt19937 gen(1234567u);
+            std::normal_distribution<double> normal(0.0, 1.0);
+
+            double sum = 0.0;
+            for (int p = 0; p < paths; ++p)
+            {
+                double logS = std::log(spot);
+                double tPrev = 0.0;
+                double payoff = 0.0;
+                for (std::size_t k = 0; k < obsTimes.size(); ++k)
+                {
+                    const double dt = obsTimes[k] - tPrev;
+                    logS += drift * dt + vol * std::sqrt(dt) * normal(gen);
+                    tPrev = obsTimes[k];
+                    const double S = std::exp(logS);
+                    const bool last = (k + 1 == obsTimes.size());
+                    if (last)
+                    {
+                        const double redemption = (S >= barrierLevel) ? (notional + coupon) : (notional * S / initialSpot);
+                        payoff = redemption * std::exp(-r * obsTimes[k]);
+                    }
+                    else if (S >= callLevel)
+                    {
+                        payoff = (notional + coupon) * std::exp(-r * obsTimes[k]);
+                        break;
+                    }
+                }
+                sum += payoff;
+            }
+            val out = val::object();
+            out.set("ok", true);
+            out.set("value", sum / static_cast<double>(paths));
+            return out;
+        }
+        catch (const std::exception &e)
+        {
+            return failure(e);
+        }
+    }
+
     val fixedBond(int ey, int em, int ed, int iy, int im, int id, int my, int mm, int md, int settlementDays, double face, double coupon, int freq, double redemption, double rate)
     {
         try
@@ -1229,6 +1392,9 @@ EMSCRIPTEN_BINDINGS(quantcraft_quantlib)
     emscripten::function("priceDigital", &digital);
     emscripten::function("equityMoveProbabilities", &equityMoveProbabilities);
     emscripten::function("priceBarrier", &barrier);
+    emscripten::function("priceAsian", &priceAsian);
+    emscripten::function("priceWorstOf", &priceWorstOf);
+    emscripten::function("priceAutocall", &priceAutocall);
     emscripten::function("priceFixedRateBond", &fixedBond);
     emscripten::function("priceZeroCouponBond", &zeroBond);
     emscripten::function("scheduleDates", &scheduleDates);

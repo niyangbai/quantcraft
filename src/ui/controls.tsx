@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Scoreboard } from "../game";
 
-export type GameMode = "payoff" | "greek" | "orderbook" | "hedge" | "makemarket" | "volatility";
+export type GameMode = "payoff" | "greek" | "orderbook" | "hedge" | "makemarket" | "volatility" | "curve" | "exotic";
 
 export function RoundResult({ passed, status, score, actionLabel, onNext, onAskAI }: { passed: boolean; status: string; score: number; actionLabel: string; onNext: () => void; onAskAI?: () => void }) {
   return (
@@ -38,7 +38,7 @@ export function AiPromptModal({ prompt, onClose }: { prompt: string; onClose: ()
 
 export function GameScoreboard({ scoreboard, mode }: { scoreboard: Scoreboard; mode: GameMode }) {
   const [feedback, setFeedback] = useState<"success" | "failure" | "life">();
-  const totalScore = scoreboard.payoff.score + scoreboard.greek.score + scoreboard.orderbook.score + scoreboard.hedge.score + scoreboard.makemarket.score + scoreboard.volatility.score;
+  const totalScore = scoreboard.payoff.score + scoreboard.greek.score + scoreboard.orderbook.score + scoreboard.hedge.score + scoreboard.makemarket.score + scoreboard.volatility.score + scoreboard.curve.score + scoreboard.exotic.score;
   const modeStats = mode === "payoff"
     ? { score: scoreboard.payoff.score, rounds: scoreboard.payoff.answers, successes: scoreboard.payoff.correct }
     : mode === "greek"
@@ -49,7 +49,11 @@ export function GameScoreboard({ scoreboard, mode }: { scoreboard: Scoreboard; m
           ? { score: scoreboard.makemarket.score, rounds: scoreboard.makemarket.answers, successes: scoreboard.makemarket.correct }
           : mode === "volatility"
             ? { score: scoreboard.volatility.score, rounds: scoreboard.volatility.answers, successes: scoreboard.volatility.correct }
-            : { score: scoreboard.hedge.score, rounds: scoreboard.hedge.rounds, successes: scoreboard.hedge.passed };
+            : mode === "curve"
+              ? { score: scoreboard.curve.score, rounds: scoreboard.curve.answers, successes: scoreboard.curve.correct }
+              : mode === "exotic"
+                ? { score: scoreboard.exotic.score, rounds: scoreboard.exotic.answers, successes: scoreboard.exotic.correct }
+                : { score: scoreboard.hedge.score, rounds: scoreboard.hedge.rounds, successes: scoreboard.hedge.passed };
   const previous = useRef({ rounds: modeStats.rounds, successes: modeStats.successes, lives: scoreboard.lives });
   const infiniteLives = scoreboard.difficulty === "intern";
   const lives = infiniteLives
