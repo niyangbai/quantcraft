@@ -18,7 +18,7 @@
 
 > QuantCraft is a browser-based financial-markets game. It has no backend dependency: pricing runs locally through QuantLib WebAssembly.
 
-Practice payoff reflexes, market-microstructure intuition, Greek intuition, and hedging judgment under time pressure. All four modes share one score, one life pool, and one local player record.
+Practice payoff reflexes, market-microstructure intuition, Greek intuition, hedging judgment, market-making, and vol-surface reading under time pressure. All six modes share one score, one life pool, and one local player record.
 
 ## At a glance
 
@@ -28,6 +28,8 @@ Practice payoff reflexes, market-microstructure intuition, Greek intuition, and 
 | **Order Book** | Market microstructure | Call how a market order moves the ladder |
 | **Greek** | Greek intuition | Call the direction of value or a Greek |
 | **Hedge** | Risk management | Choose tools that reduce dealer exposure |
+| **Make Market** | Market making | Pick the quote the synthetic model scores best |
+| **Volatility** | Vol-surface reading | Find the position the surface shock pays |
 
 ## Game modes
 
@@ -63,9 +65,21 @@ Each round presents a selloff, rally, volatility shock, or volatility crush. Rea
 
 The dealer's objective is to reduce the selected Delta, Gamma, Vega, Theta, and Rho exposure, not to predict the market. Exact Greeks stay hidden while you decide; QuantLib reveals the before-and-after values after submission.
 
+### ⇄ Make Market · Make the market
+
+A fair value, an inventory position, and an uncertainty level flash onto the screen. Pick the bid/ask quote that maximizes **expected utility** under a deterministic synthetic market model: fill probability, spread capture, adverse selection, and an inventory risk penalty.
+
+The model lives in `@quantcraft/finmath` (`marketmaking` module) and scores every candidate in closed form, so the machine always knows the best quote — wide quotes stop adverse selection, large positions lean toward de-risking, and uncertainty sets the optimal spread.
+
+### σ Volatility · Read the surface
+
+An implied-volatility surface and a parameterized shock flash onto the screen. Three option positions follow. Which one has the largest **positive vol P&L**?
+
+Each round builds a base surface (`ATM`, skew, smile, term structure), applies one of six parameterized shocks — skew steepening/flattening, front- or back-end vol up, smile curvature up/down — and scores every position as `qty × vega × ΔIV`. The surface and the shocks are closed forms in `@quantcraft/finmath` (`volsurface` module): Vega is the analytic Black–Scholes–Merton vega, ΔIV comes straight from the rebuilt surface, so the machine always knows the answer — and the reveal shows exactly which factor (location, vega, size, or side) decided it.
+
 ## Difficulty and scoring
 
-Payoff, Order Book, Greek, and Hedge share the same score and life pool. A wrong payoff, wrong book read, wrong risk call, poor hedge response, or expired timer can cost a life. When the last life is gone, the run ends and the result is recorded in Collection.
+Payoff, Order Book, Greek, Hedge, Make Market, and Volatility share the same score and life pool. A wrong payoff, wrong book read, wrong risk call, poor hedge response, bad quote, missed vol P&L, or expired timer can cost a life. When the last life is gone, the run ends and the result is recorded in Collection.
 
 Choose the pressure level before starting:
 
@@ -82,7 +96,7 @@ Collection records the combined score, per-mode results, accuracy, streaks, best
 
 ## Shared question bank
 
-All four modes draw from one validated JSON question bank. Download the example bank, customize the Payoff position seeds, Order Book ladder templates, Greek scenarios, option books and metrics, or Hedge product templates, then upload it in the app.
+All six modes draw from one validated JSON question bank. Download the example bank, customize the Payoff position seeds, Order Book ladder templates, Greek scenarios, option books and metrics, Hedge product templates, or the Make Market and Volatility model parameters, then upload it in the app.
 
 When local storage is enabled, the player profile, scoreboard, and uploaded question bank stay in that browser. QuantCraft uses no advertising or tracking cookies.
 
@@ -115,17 +129,21 @@ npm run dev
 
 ```bash
 npm run build         # production build
-npm test              # finmath + payoff game + quantlibjs tests
+npm test              # finmath + payoff + orderbook + makemarket + volatility + quantlibjs tests
 npm run test:finmath  # @quantcraft/finmath package tests
 npm run test:payoff   # payoff game-logic tests (node:test)
+npm run test:orderbook# order-book game-logic tests (node:test)
+npm run test:makemarket # make-market game-logic tests (node:test)
+npm run test:volatility # volatility game-logic tests (node:test)
 npm run test:quantlib # quantlibjs WASM-backed tests
 npm run lint          # source linting
 npm run preview       # preview the production build
 ```
 
-The Payoff game-logic tests are pure node:test suites. `npm run test:payoff`
-compiles `src/payoffGame.ts` into `test/dist/` and runs `test/payoff.test.mjs`
-against it, importing the math from `@quantcraft/finmath`.
+The game-logic tests are pure node:test suites. `npm run test:payoff` (and the
+order-book, make-market, and volatility siblings) compile the corresponding
+`src/games/*/game.ts` into `test/dist/` and run `test/*.test.mjs` against it,
+importing the math from `@quantcraft/finmath`.
 
 ## Architecture and privacy
 
@@ -134,7 +152,7 @@ against it, importing the math from `@quantcraft/finmath`.
 - Single UI module in [`src/ui`](src/ui) — design tokens (`base.css`), game-mode blocks (`game.css`), page styles (`pages.css`), shared controls (`controls.tsx`), the app shell (`AppShell.tsx`), the page screens (`pages.tsx`), and the game-mode kit (`GameFrame`, `ScenarioCard`, `PositionBook`, `OrderBookCard`, `ChoiceGrid`, `RevealBar`). New modes and pages are assembled from existing modules
 - One folder per game in [`src/games`](src/games) with a uniform shape: `game.ts` (logic, no React) + `<Mode>.tsx` (component) + `index.ts` (public surface). See [`src/games/README.md`](src/games/README.md) for the convention
 - Workspace packages:
-  - [`@quantcraft/finmath`](packages/finmath) — unified financial math with modular exports: `payoff` (terminal payoff, max profit, breakevens), `risk` (Greek aggregation, risk magnitude, best-hedge search, hedge quality), and `orderbook` (price-time-priority market-order matching, best quotes, spread, depth)
+  - [`@quantcraft/finmath`](packages/finmath) — unified financial math with modular exports: `payoff` (terminal payoff, max profit, breakevens), `risk` (Greek aggregation, risk magnitude, best-hedge search, hedge quality), `orderbook` (price-time-priority market-order matching, best quotes, spread, depth), `marketmaking` (synthetic market model: fill probability, spread capture, adverse selection, inventory penalty → expected utility), and `volsurface` (parametric implied-vol surface, parameterized shocks, delta IV, analytic BSM vega, vol-only P&L)
   - [`@quantcraft/quantlibjs`](packages/quantlibjs) — official QuantLib 1.43 compiled to WebAssembly with a TypeScript API
 - Browser Local Storage for optional persistence
 - GitHub Actions deployment to GitHub Pages

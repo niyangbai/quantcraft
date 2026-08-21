@@ -7,7 +7,9 @@
 .mode-view.game-page.payoff,
 .mode-view.game-page.greek,
 .mode-view.game-page.orderbook,
-.mode-view.game-page.hedge { max-width: 980px; }
+.mode-view.game-page.hedge,
+.mode-view.game-page.makemarket,
+.mode-view.game-page.volatility { max-width: 980px; }
 
 /* ------------------------------------------------------------------ */
 /* Scenario card (market event / drill question)                       */
@@ -93,6 +95,12 @@
 .choice-grid.large button { min-height: 84px; display: grid; align-content: center; justify-items: center; text-align: center; }
 .choice-grid.large strong { font-size: 26px; font-weight: 900; font-variant-numeric: tabular-nums; letter-spacing: -0.5px; }
 
+/* Volatility position cards: three option lines side by side, with the option
+   text getting more presence than the generic 9px choice label. */
+.mode-view.game-page.volatility .choice-grid button { min-height: 84px; display: grid; align-content: center; justify-items: center; text-align: center; }
+.mode-view.game-page.volatility .choice-grid strong { font-size: 14px; font-weight: 900; letter-spacing: .4px; font-variant-numeric: tabular-nums; }
+.mode-view.game-page.volatility .choice-grid small { font-size: 10px; letter-spacing: .4px; }
+
 /* ------------------------------------------------------------------ */
 /* Reveal bar                                                          */
 /* ------------------------------------------------------------------ */
@@ -154,6 +162,7 @@
   .scenario-card.large-title > strong { font-size: 24px; }
   .choice-grid.large button { min-height: 72px; }
   .choice-grid.large strong { font-size: 22px; }
+  .mode-view.game-page.volatility .choice-grid.cols-3 { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 560px) {

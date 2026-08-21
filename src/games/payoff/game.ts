@@ -5,7 +5,8 @@
 // math itself lives in @quantcraft/finmath (payoff). No React, no storage.
 
 import { bookPayoff, breakevens, isContinuousBook, legPayoff, payoffExtremes, signedQuantity } from "@quantcraft/finmath";
-import type { PayoffBarrierType, PayoffKind, PayoffLeg, PayoffSide } from "@quantcraft/finmath";
+import type { PayoffBarrierType, PayoffExtremes, PayoffKind, PayoffLeg, PayoffSide } from "@quantcraft/finmath";
+import type { QuantLibRuntime, TerminalPayoffInput } from "@quantcraft/quantlibjs";
 
 export type PayoffTier = 1 | 2 | 3 | 4 | 5;
 export type PayoffQuestionType = "payoff" | "maxProfit" | "breakeven";
@@ -44,6 +45,46 @@ export type PayoffQuestion = {
   answerIndex: number;
   answerText: string;
   explanation: string;
+};
+
+/* ------------------------------------------------------------------ */
+/* QuantLib-backed payoff math                                         */
+/* ------------------------------------------------------------------ */
+/* The terminal-payoff / extremes / breakevens math runs in the QuantLib
+   layer (C++ bindings). When a runtime is available the drill routes every
+   number through it; the pure-TypeScript finmath versions are the fallback. */
+
+export const toTerminalLeg = (leg: PayoffLeg): TerminalPayoffInput => ({
+  kind: leg.kind,
+  quantity: signedQuantity(leg),
+  strike: leg.strike,
+  call: leg.optionType === "call",
+  cashPayoff: leg.cashPayoff,
+  redemption: leg.faceAmount,
+  couponRate: leg.couponRate / 100,
+  rebate: leg.rebate,
+  barrierTouched: leg.barrierTouched,
+  barrierType: leg.barrierType,
+});
+
+const qlPayoffExtremes = (ql: QuantLibRuntime, legs: PayoffLeg[]): PayoffExtremes | undefined => {
+  try {
+    const result = ql.payoffExtremes(legs.map(toTerminalLeg));
+    return {
+      min: result.boundedBelow ? result.min : "unbounded",
+      max: result.boundedAbove ? result.max : "unbounded",
+    };
+  } catch {
+    return undefined;
+  }
+};
+
+const qlPayoffBreakevens = (ql: QuantLibRuntime, legs: PayoffLeg[]): number[] => {
+  try {
+    return ql.payoffBreakevens(legs.map(toTerminalLeg));
+  } catch {
+    return [];
+  }
 };
 
 /* ------------------------------------------------------------------ */
@@ -188,9 +229,9 @@ const payoffFormula = (leg: PayoffLeg, spot: number): string => {
   }
 };
 
-const explainPayoff = (legs: PayoffLeg[], spot: number, answer: number): string =>
+const explainPayoff = (legs: PayoffLeg[], spot: number, answer: number, valueForLeg: (leg: PayoffLeg) => number): string =>
   `${legs.map((leg) => {
-    const value = legPayoff(leg, spot);
+    const value = valueForLeg(leg);
     return `${legSideText(leg)} ${legDetailText(leg)} → ${payoffFormula(leg, spot)} = ${value}`;
   }).join("   ·   ")}   TOTAL = ${answer}`;
 
@@ -214,7 +255,7 @@ const explainBreakeven = (legs: PayoffLeg[], root: number): string => {
 const distinctChoices = (choices: PayoffChoice[]): boolean =>
   new Set(choices.map((choice) => choice.label)).size === choices.length;
 
-const payoffChoices = (rng: () => number, legs: PayoffLeg[], spot: number, answer: number): PayoffChoice[] => {
+const payoffChoices = (rng: () => number, legs: PayoffLeg[], spot: number, answer: number, valueForLeg: (leg: PayoffLeg) => number, valueForBook: () => number): PayoffChoice[] => {
   const candidates = new Set<number>();
   const add = (value: number) => {
     const rounded = Math.round(value);
@@ -231,10 +272,10 @@ const payoffChoices = (rng: () => number, legs: PayoffLeg[], spot: number, answe
   add(spot - answer);
   add(answer - spot);
   for (const leg of legs) {
-    add(legPayoff(leg, spot)); // single-leg payoff
+    add(valueForLeg(leg)); // single-leg payoff
     if (leg.kind === "call" || leg.kind === "put") add(Math.abs(spot - leg.strike)); // raw intrinsic
     if (leg.quantity > 1) add(Math.round(answer / leg.quantity)); // forgot quantity
-    add(bookPayoff(legs, spot) - legPayoff(leg, spot)); // forgot one leg
+    add(valueForBook() - valueForLeg(leg)); // forgot one leg
   }
   const distractors = shuffle(rng, [...candidates]).slice(0, 3);
   while (distractors.length < 3) {
@@ -361,7 +402,7 @@ const makeQuestion = (
   };
 };
 
-const tryGenerate = (rng: () => number, seeds: PayoffSeed[], tier: PayoffTier): PayoffQuestion | undefined => {
+const tryGenerate = (rng: () => number, seeds: PayoffSeed[], tier: PayoffTier, ql?: QuantLibRuntime): PayoffQuestion | undefined => {
   const pool = seeds.filter((seed) => {
     const count = seed.legs.length;
     if (tier === 1) return count === 1;
@@ -379,7 +420,7 @@ const tryGenerate = (rng: () => number, seeds: PayoffSeed[], tier: PayoffTier): 
   let type = pickType(rng, tier);
   if (type === "breakeven") {
     if (continuous) {
-      const roots = breakevens(legs);
+      const roots = ql ? qlPayoffBreakevens(ql, legs) : breakevens(legs);
       if (roots.length === 1 && Number.isInteger(roots[0])) {
         const root = roots[0];
         const choices = breakevenChoices(rng, legs, spot, root);
@@ -391,7 +432,7 @@ const tryGenerate = (rng: () => number, seeds: PayoffSeed[], tier: PayoffTier): 
     type = "payoff";
   } else if (type === "maxProfit") {
     if (continuous) {
-      const extremes = payoffExtremes(legs);
+      const extremes = ql ? qlPayoffExtremes(ql, legs) : payoffExtremes(legs);
       if (extremes) {
         const valid = extremes.max === "unbounded" || Number.isInteger(extremes.max);
         if (valid) {
@@ -405,10 +446,14 @@ const tryGenerate = (rng: () => number, seeds: PayoffSeed[], tier: PayoffTier): 
     type = "payoff";
   }
 
-  const answer = bookPayoff(legs, spot);
-  const choices = payoffChoices(rng, legs, spot, answer);
+  const valueForLeg = (leg: PayoffLeg) => ql
+    ? ql.terminalPayoff(toTerminalLeg(leg), spot)
+    : legPayoff(leg, spot);
+  const valueForBook = () => legs.reduce((sum, leg) => sum + valueForLeg(leg), 0);
+  const answer = valueForBook();
+  const choices = payoffChoices(rng, legs, spot, answer, valueForLeg, valueForBook);
   if (!distinctChoices(choices)) return undefined;
-  return makeQuestion(seed, tier, type, legs, spot, choices, choices.findIndex((c) => c.value === answer), `${answer}`, explainPayoff(legs, spot, answer));
+  return makeQuestion(seed, tier, type, legs, spot, choices, choices.findIndex((c) => c.value === answer), `${answer}`, explainPayoff(legs, spot, answer, valueForLeg));
 };
 
 /** Fallback that can never fail: the classic long call example. */
@@ -431,13 +476,13 @@ const fallbackQuestion = (rng: () => number): PayoffQuestion => {
     choices,
     choices.findIndex((choice) => choice.value === answer),
     `${answer}`,
-    explainPayoff(legs, spot, answer),
+    explainPayoff(legs, spot, answer, (leg) => legPayoff(leg, spot)),
   );
 };
 
-export function generatePayoffQuestion(rng: () => number, seeds: PayoffSeed[], tier: PayoffTier): PayoffQuestion {
+export function generatePayoffQuestion(rng: () => number, seeds: PayoffSeed[], tier: PayoffTier, ql?: QuantLibRuntime): PayoffQuestion {
   for (let attempt = 0; attempt < 40; attempt += 1) {
-    const question = tryGenerate(rng, seeds, tier);
+    const question = tryGenerate(rng, seeds, tier, ql);
     if (question) return question;
   }
   return fallbackQuestion(rng);

@@ -16,6 +16,8 @@ npm install @quantcraft/finmath
 | `payoff` | `@quantcraft/finmath/payoff` | Exact terminal payoff, max/min profit, breakevens |
 | `risk` | `@quantcraft/finmath/risk` | Greek aggregation, risk magnitude, best-hedge search, hedge quality |
 | `orderbook` | `@quantcraft/finmath/orderbook` | Price-time-priority market-order matching, best quotes, spread, depth |
+| `marketmaking` | `@quantcraft/finmath/marketmaking` | Synthetic market model: fill probability, spread capture, adverse selection, inventory penalty, expected utility |
+| `volsurface` | `@quantcraft/finmath/volsurface` | Parametric implied-vol surface, parameterized shocks, delta IV, analytic BSM vega, vol-only P&L |
 
 ```ts
 // Barrel: everything in one import.
@@ -85,6 +87,76 @@ const result = matchMarketOrder(book, "buy", 200);
 bestAsk(result.book); // 100.06
 depthAt(result.book, "ask", 100.06); // 150
 result.averagePrice; // 100.045 (VWAP)
+```
+
+## marketmaking
+
+A synthetic market-making model that scores any two-sided quote on four
+closed-form components and returns an expected utility. The model is
+deterministic, so the best quote is always the maximum-utility one.
+
+- **Fill probability** — `p = λ · exp(−κ·δ/σ)` per side, where `δ` is the
+  distance of the quote from fair value; every `σ` of distance cuts the fill
+  probability by `e^κ`.
+- **Spread capture** — `p_sell·(ask−fair) + p_buy·(fair−bid)`, the expected
+  gross edge earned on fills.
+- **Adverse selection** — a fraction `A` of fills is informed; conditional on
+  one, the value has moved through the quote by `σ · Mills(z)` (truncated-
+  normal mean), so the cost is `p · A · σ · Mills(z)`.
+- **Inventory penalty** — a trade moves the position to `q ∓ 1`, changing its
+  variance by `[(q∓1)² − q²]·σ²·T`; the mean-variance score subtracts
+  `γ/2` times that excess variance (negative for a long that sells — a
+  de-risking rebate).
+
+Expected utility = spread capture − adverse selection − inventory penalty.
+
+```ts
+import { analyzeQuote, bestQuote } from "@quantcraft/finmath/marketmaking";
+
+const context = { fairValue: 100, inventory: 40, uncertainty: 0.15, riskAversion: 0.2 };
+const candidates = [
+  { bid: 99.94, ask: 100.06 },
+  { bid: 99.96, ask: 100.04 },
+  { bid: 99.92, ask: 100.08 },
+  { bid: 99.95, ask: 100.07 },
+];
+
+const { quote, analysis, rankings } = bestQuote(candidates, context);
+// quote = { bid: 99.92, ask: 100.08 }  (highest expected utility)
+analysis.fillProbability;   // 0.264
+analysis.expectedEdge;      // 0.0211
+analysis.adverseSelection;  // 0.0092
+analysis.inventoryPenalty;  // 0.0006
+```
+
+## volsurface
+
+A deterministic implied-volatility surface with parameterized shocks and the
+vol-only P&L of an option position under a shock.
+
+- **Surface** — `σ(t,K) = atm(t) + skew·m + curvature·m²` with
+  `m = ln(K/S)` and `atm(t) = atmLevel + termSlope·t`. Every shock rebuilds the
+  surface, so `ΔIV` between the base and shocked surface is exact.
+- **Shocks** — skew steepening/flattening, front- or back-end vol up (a term
+  bump that fades with maturity or builds toward it), smile curvature up/down.
+- **Vega** — the analytic Black–Scholes–Merton vega per 1 vol point (calls and
+  puts agree), exactly what an analytic European engine reports for a flat vol
+  equal to the surface's `blackVol` at the option's own strike and expiry.
+
+```ts
+import { applyVolShock, blackVol, analyzeVolPnl } from "@quantcraft/finmath/volsurface";
+
+const base = { spot: 100, riskFreeRate: 0.025, dividendYield: 0.015, atmLevel: 0.22, termSlope: 0.05, skew: -0.5, curvature: 0.9 };
+const shocked = applyVolShock(base, { type: "skew-steepen", magnitude: 0.15 });
+
+blackVol(base, 0.25, 85);   // 0.338 (33.8%)
+blackVol(shocked, 0.25, 85); // 0.362 — the low strike just gained 2.4 pts
+
+const put = analyzeVolPnl(base, shocked, { kind: "put", strike: 85, maturity: 0.25, side: "long", qty: 1 });
+// put.deltaIVPoints = 2.44 · put.vegaPerPoint = 0.113 · put.pnl = +0.276
+
+const atmCall = analyzeVolPnl(base, shocked, { kind: "call", strike: 100, maturity: 0.25, side: "long", qty: 1 });
+// atmCall.deltaIVPoints = 0 · atmCall.pnl = 0 (a skew pivot leaves ATM alone)
 ```
 
 ## Development

@@ -3,10 +3,14 @@ import { payoffSeeds } from "./games/payoff/game";
 import type { PayoffSeed } from "./games/payoff/game";
 import { orderBookSeedDefaults } from "./games/order-book/game";
 import type { OrderBookSeed } from "./games/order-book/game";
+import { makeMarketParamDefaults } from "./games/make-market/game";
+import type { MakeMarketParams } from "./games/make-market/game";
+import { volatilityParamDefaults } from "./games/volatility/game";
+import type { VolatilityParams } from "./games/volatility/game";
 import type { GreekBook, GreekMetric, GreekScenario } from "./games/greek/game";
 import type { HedgeProduct } from "./games/hedge/game";
 
-export type Mode = "landing" | "payoff" | "greek" | "orderbook" | "hedge" | "collection";
+export type Mode = "landing" | "payoff" | "greek" | "orderbook" | "hedge" | "makemarket" | "volatility" | "collection";
 export type RuntimeState = {
   status: "loading" | "ready" | "error";
   ql?: QuantLibRuntime;
@@ -18,8 +22,10 @@ export type QuestionBank = {
   greek: { scenarios: GreekScenario[]; books: GreekBook[]; metrics: GreekMetric[] };
   orderbook: OrderBookSeed[];
   hedge: { products: HedgeProduct[] };
+  makemarket: MakeMarketParams;
+  volatility: VolatilityParams;
 };
-export type Settlement = { game: "Payoff" | "Greek" | "Order Book" | "Hedge"; label: string; score: number; at: string };
+export type Settlement = { game: "Payoff" | "Greek" | "Order Book" | "Hedge" | "Make Market" | "Volatility"; label: string; score: number; at: string };
 export type PlayerProfile = { name: string; storage: boolean };
 export type Difficulty = "intern" | "analyst" | "associate" | "vp" | "director" | "md";
 export const difficultyLives: Record<Difficulty, number | null> = { intern: null, analyst: 5, associate: 4, vp: 3, director: 2, md: 1 };
@@ -33,6 +39,8 @@ export type Scoreboard = {
   greek: { score: number; answers: number; correct: number; bestStreak: number };
   orderbook: { score: number; answers: number; correct: number; bestStreak: number };
   hedge: { score: number; rounds: number; passed: number; best: number };
+  makemarket: { score: number; answers: number; correct: number; bestStreak: number };
+  volatility: { score: number; answers: number; correct: number; bestStreak: number };
   recent: Settlement[];
 };
 export const emptyScoreboard: Scoreboard = {
@@ -45,6 +53,8 @@ export const emptyScoreboard: Scoreboard = {
   greek: { score: 0, answers: 0, correct: 0, bestStreak: 0 },
   orderbook: { score: 0, answers: 0, correct: 0, bestStreak: 0 },
   hedge: { score: 0, rounds: 0, passed: 0, best: 0 },
+  makemarket: { score: 0, answers: 0, correct: 0, bestStreak: 0 },
+  volatility: { score: 0, answers: 0, correct: 0, bestStreak: 0 },
   recent: [],
 };
 
@@ -100,6 +110,8 @@ export const exampleQuestionBank: QuestionBank = {
     metrics: ["value", "delta", "gamma", "vega", "theta", "rho"],
   },
   orderbook: orderBookSeedDefaults,
+  makemarket: makeMarketParamDefaults,
+  volatility: volatilityParamDefaults,
   hedge: {
     products: [
       { name: "Capital Protected Note", description: "Zero bond + long participation call", extra: "100 face zero bond", legs: [{ type: "call", strike: 100, qty: 1 }] },
@@ -119,6 +131,18 @@ export const parseQuestionBank = (input: unknown): QuestionBank => {
   if (!bank.greek || !Array.isArray(bank.greek.scenarios) || !bank.greek.scenarios.length || !Array.isArray(bank.greek.books) || !bank.greek.books.length || !Array.isArray(bank.greek.metrics) || !bank.greek.metrics.length) throw new Error("greek requires scenarios, books, and metrics");
   if (!Array.isArray(bank.orderbook) || !bank.orderbook.length) bank.orderbook = orderBookSeedDefaults; // legacy banks predate orderbook templates
   if (!bank.hedge || !Array.isArray(bank.hedge.products) || !bank.hedge.products.length) throw new Error("hedge.products must contain at least one product");
+  // makemarket holds the synthetic market model parameters; legacy banks predate the mode
+  const makemarket: MakeMarketParams = bank.makemarket && typeof bank.makemarket === "object"
+    ? { ...makeMarketParamDefaults, ...bank.makemarket }
+    : { ...makeMarketParamDefaults };
+  bank.makemarket = makemarket;
+  if (!["riskAversion", "arrival", "fillSensitivity", "adverseFraction"].every((key) => Number.isFinite(makemarket[key as keyof MakeMarketParams]))) throw new Error("makemarket model parameters must be finite numbers");
+  // volatility holds the fixed market rates for the vol-surface model; legacy banks predate the mode
+  const volatility: VolatilityParams = bank.volatility && typeof bank.volatility === "object"
+    ? { ...volatilityParamDefaults, ...bank.volatility }
+    : { ...volatilityParamDefaults };
+  bank.volatility = volatility;
+  if (!["riskFreeRate", "dividendYield"].every((key) => Number.isFinite(volatility[key as keyof VolatilityParams]))) throw new Error("volatility model parameters must be finite numbers");
   const iso = /^\d{4}-\d{2}-\d{2}$/;
   const payoffKinds = ["equity", "forward", "call", "put", "digital", "barrier", "bond", "coupon"];
   bank.payoff.forEach((seed, i) => {

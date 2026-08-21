@@ -14,7 +14,7 @@ src/games/<mode-id>/
                   export * from "./game";`
 ```
 
-Folder names are kebab-case (`order-book`, `payoff`, `greek`, `hedge`) and
+Folder names are kebab-case (`order-book`, `payoff`, `greek`, `hedge`, `make-market`, `volatility`) and
 match the `Mode` union values in `src/game.ts`. Component files are
 PascalCase; logic files are always named `game.ts`.
 
@@ -26,6 +26,10 @@ PascalCase; logic files are always named `game.ts`.
 3. Register the mode:
    - `src/game.ts` — add the id to `Mode`, a stats block to `Scoreboard`,
      a key to `QuestionBank`, and validate/default it in `parseQuestionBank`.
+     The bank entry can be a seed array (payoff/orderbook) or a params object
+     (`make-market` stores the synthetic model's `riskAversion`, `arrival`,
+     `fillSensitivity`, `adverseFraction`; `volatility` stores the fixed
+     `riskFreeRate` and `dividendYield` of the vol-surface model).
    - `src/App.tsx` — route + `record*` handler.
    - `src/ui/controls.tsx` — `GameMode` union + scoreboard branch.
    - `src/ui/pages.tsx` — landing card + collection settlement card.

@@ -30,6 +30,14 @@
     "./orderbook": {
       "types": "./dist/orderbook.d.ts",
       "import": "./dist/orderbook.js"
+    },
+    "./marketmaking": {
+      "types": "./dist/marketmaking.d.ts",
+      "import": "./dist/marketmaking.js"
+    },
+    "./volsurface": {
+      "types": "./dist/volsurface.d.ts",
+      "import": "./dist/volsurface.js"
     }
   },
   "files": [

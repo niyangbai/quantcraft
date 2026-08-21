@@ -1,46 +1,42 @@
 import { useEffect, useMemo, useState } from "react";
-import { AiPromptModal, RoundResult, RoundTimer } from "../../ui";
+import { AiPromptModal, ChoiceGrid, GameFrame, RevealBar, RoundResult, RoundTimer, ScenarioCard } from "../../ui";
 import { secureSeed, seededRandom } from "../../game";
 import type { Scoreboard } from "../../game";
-import { buildPayoffPrompt, decisionDurationMs, generatePayoffQuestion, legDetailText, levelForProgress, levelLabel } from "./game";
-import type { PayoffSeed, PayoffTier } from "./game";
 import type { QuantLibRuntime } from "@quantcraft/quantlibjs";
-import { ChoiceGrid, GameFrame, PositionBook, RevealBar, ScenarioCard } from "../../ui";
+import { buildVolatilityPrompt, generateVolatilityRound, positionDetail, positionLabel, volatilityDurationMs } from "./game";
+import type { VolatilityParams } from "./game";
 
-export function Payoff({
-  seeds,
+export function Volatility({
+  ql,
+  params,
   onScore,
   onBack,
   scoreboard,
-  ql,
 }: {
-  seeds: PayoffSeed[];
+  ql?: QuantLibRuntime;
+  params: VolatilityParams;
   onScore: (score: number, correct: boolean, streak: number, label: string) => void;
   onBack: () => void;
   scoreboard: Scoreboard;
-  ql?: QuantLibRuntime;
 }) {
   const [roundKey, setRoundKey] = useState(secureSeed);
   const [round, setRound] = useState(1);
-  const [correctCount, setCorrectCount] = useState(0);
-  const [roundLevel, setRoundLevel] = useState<PayoffTier>(1);
   const [answered, setAnswered] = useState(false);
   const [feedback, setFeedback] = useState<"correct" | "wrong" | "timeout">();
   const [selectedIndex, setSelectedIndex] = useState<number>();
   const [lastScore, setLastScore] = useState(0);
   const [aiPrompt, setAiPrompt] = useState<string>();
 
-  const level = levelForProgress(correctCount);
-  const duration = decisionDurationMs(roundLevel, scoreboard.streak);
+  const duration = volatilityDurationMs(scoreboard.streak);
   const question = useMemo(() => {
+    if (!ql) return undefined;
     const rng = seededRandom(roundKey);
-    return generatePayoffQuestion(rng, seeds, roundLevel, ql);
-  }, [roundKey, seeds, roundLevel, ql]);
+    return generateVolatilityRound(rng, ql, params);
+  }, [roundKey, ql, params]);
 
   const next = () => {
     setRoundKey(secureSeed());
     setRound((value) => value + 1);
-    setRoundLevel(level);
     setAnswered(false);
     setFeedback(undefined);
     setSelectedIndex(undefined);
@@ -56,8 +52,7 @@ export function Payoff({
     setFeedback(correct ? "correct" : "wrong");
     setSelectedIndex(index);
     setLastScore(points);
-    if (correct) setCorrectCount((value) => value + 1);
-    onScore(points, correct, nextStreak, `${question.typeLabel} · ${question.seed.label}`);
+    onScore(points, correct, nextStreak, `${question.answerText} · ${question.shockLabel}`);
   };
 
   useEffect(() => {
@@ -67,54 +62,55 @@ export function Payoff({
       setFeedback("timeout");
       setSelectedIndex(undefined);
       setLastScore(-50);
-      onScore(-50, false, 0, `${question.typeLabel} · ${question.seed.label} · Time out`);
+      onScore(-50, false, 0, `${question.answerText} · ${question.shockLabel} · Time out`);
     }, duration);
     return () => window.clearTimeout(timer);
   }, [question, answered, duration, onScore]);
 
-  if (!seeds.length) {
-    return <GameFrame mode="payoff" eyebrow="PAYOFF" title="Call the payoff." onBack={onBack} scoreboard={scoreboard}><div className="drop-zone">No payoff position seeds loaded.</div></GameFrame>;
-  }
+  const winner = question ? question.analysis[question.answerIndex] : undefined;
+  const statusText = feedback === "correct"
+    ? "VOL P&L SPOTTED"
+    : feedback === "timeout"
+      ? "DECISION WINDOW CLOSED"
+      : scoreboard.difficulty === "intern" ? "WRONG POSITION" : "WRONG POSITION · −1 LIFE";
 
   return (
     <GameFrame
-      mode="payoff"
-      eyebrow={`PAYOFF · FLASH DRILL · ROUND ${round} · ${levelLabel(roundLevel)}`}
-      title="Call the payoff."
+      mode="volatility"
+      eyebrow={`VOLATILITY · FLASH DRILL · ROUND ${round}`}
+      title="Read the surface. Find the vol P&L."
       onBack={onBack}
       scoreboard={scoreboard}
       tools={<RoundTimer label="DECISION WINDOW" value={`${(duration / 1000).toFixed(0)}s`} durationMs={duration} resetKey={roundKey} />}
     >
-      {question ? (
+      {question && winner ? (
         <>
           <ScenarioCard
-            label={`SCENARIO · ${question.typeLabel}`}
+            label="SURFACE SHOCK"
             title={question.questionText}
             description={question.scenarioText}
             largeTitle
             metrics={[
-              { label: "TERMINAL SPOT S(T)", value: question.type === "payoff" ? question.spot : "?" },
-              { label: "POSITION", value: question.bookSummary },
-              { label: "LEVEL", value: question.levelLabel },
+              { label: "SPOT", value: question.spot.toFixed(0) },
+              { label: "BASE SURFACE", value: `ATM ${(question.surface.atmLevel * 100).toFixed(0)}% · SKEW ${question.surface.skew.toFixed(2)}` },
+              { label: "SHOCK", value: question.shockLabel },
             ]}
           />
           <div className="game-layout">
-            <PositionBook
-              label="YOUR POSITION"
-              title={question.seed.label}
-              legs={question.legs.map((leg) => ({ side: leg.side, text: legDetailText(leg) }))}
-              signals={<><small>BOOK PAYOFF</small><strong className="signal-rule">Σ quantity × signed leg payoff</strong></>}
-            />
             <article className="game-panel">
-              <h2>{question.typeLabel}</h2>
+              <h2>YOUR READ</h2>
+              <p className="choice-note">Vol P&L ≈ qty × vega (per 1 vol point) × ΔIV. Read the shock, weigh ΔIV against vega and side, then call the biggest positive one.</p>
               <ChoiceGrid
-                note={question.questionText}
-                items={question.choices.map((choice, index) => ({ key: `${choice.label}-${index}`, label: choice.label, detail: choice.hint }))}
+                columns={3}
+                items={question.positions.map((position) => ({
+                  key: position.id,
+                  label: positionLabel(position),
+                  detail: positionDetail(position),
+                }))}
                 selected={selectedIndex !== undefined ? [selectedIndex] : []}
                 revealed={answered}
                 answerIndex={question.answerIndex}
                 onToggle={(index) => submit(index)}
-                large
               />
             </article>
           </div>
@@ -122,7 +118,11 @@ export function Payoff({
             <RevealBar
               cells={[
                 { label: "RESULT", value: feedback === "correct" ? "CORRECT" : feedback === "timeout" ? "TIME'S UP" : "WRONG", tone: feedback === "correct" ? "positive" : "negative" },
-                { label: "ANSWER", value: question.answerText },
+                { label: "WINNER", value: question.answerText },
+                { label: "VOL P&L", value: `${winner.pnl >= 0 ? "+" : ""}${winner.pnl.toFixed(2)}`, tone: winner.pnl >= 0 ? "positive" : "negative" },
+                { label: "VEGA", value: `${winner.vegaPerPoint.toFixed(3)}/pt` },
+                { label: "ΔIV", value: `${winner.deltaIVPoints >= 0 ? "+" : ""}${winner.deltaIVPoints.toFixed(1)} pts`, tone: winner.deltaIVPoints >= 0 ? "positive" : "negative" },
+                { label: "IV", value: `${(winner.ivBefore * 100).toFixed(1)}% → ${(winner.ivAfter * 100).toFixed(1)}%` },
               ]}
               note={question.explanation}
             />
@@ -130,21 +130,17 @@ export function Payoff({
           {answered && (
             <RoundResult
               passed={feedback === "correct"}
-              status={feedback === "correct"
-                ? "PAYOFF SPOTTED"
-                : feedback === "timeout"
-                  ? "DECISION WINDOW CLOSED"
-                  : scoreboard.difficulty === "intern" ? "WRONG PAYOFF" : "WRONG PAYOFF · −1 LIFE"}
+              status={statusText}
               score={lastScore}
               actionLabel="NEXT ROUND"
               onNext={next}
-              onAskAI={feedback === "correct" ? undefined : () => setAiPrompt(buildPayoffPrompt(question, scoreboard.difficulty))}
+              onAskAI={feedback === "correct" ? undefined : () => setAiPrompt(buildVolatilityPrompt(question, scoreboard.difficulty))}
             />
           )}
           {aiPrompt && <AiPromptModal prompt={aiPrompt} onClose={() => setAiPrompt(undefined)} />}
         </>
       ) : (
-        <div className="drop-zone">Preparing payoff cards…</div>
+        <div className="drop-zone">{ql ? "Building the surface…" : "Loading the QuantLib engine…"}</div>
       )}
     </GameFrame>
   );

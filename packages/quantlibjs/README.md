@@ -56,8 +56,24 @@ console.log(ql.version()); // "1.43"
 | `priceBarrier(input)` | Analytic barrier-option NPV |
 | `priceFixedRateBond(input)` | NPV, settlement value, clean price, dirty price, accrued amount, cashflow count |
 | `priceZeroCouponBond(input)` | NPV, settlement value, clean price, dirty price |
+| `createZeroCurve(input)` | Build a reusable interpolated QuantLib zero curve and return a handle |
+| `curveDiscount(handle, date)` | Discount factor from a QuantLib zero curve |
+| `curveZeroRate(handle, date)` | Compounded annual zero rate from a QuantLib zero curve |
+| `curveForwardRate(handle, from, to)` | Compounded annual forward rate between two dates |
+| `bumpCurveNode(handle, nodeIndex, shift)` | Create a curve with one input zero-rate node shifted by a decimal amount |
+| `priceBondWithCurve(handle, input)` | Fixed-rate bond pricing, DV01, convexity, and bond price fields under a curve |
+| `repriceBondBetweenCurves(beforeHandle, afterHandle, input)` | QuantLib before/after bond prices and P&L under two curves |
+| `repriceBondsBetweenCurves(beforeHandle, afterHandle, evaluationDate, positions)` | Batch QuantLib repricing for fixed-rate bond positions |
+| `destroyCurve(handle)` | Release a zero-curve handle |
+| `impliedVolatility(input)` | Invert a vanilla European option price to implied volatility |
+| `terminalPayoff(leg, underlying)` | QuantLib payoff evaluation for a terminal book leg, including forward, digital, coupon, and barrier state |
 | `equityMoveProbabilities(input)` | GBM terminal up/down probabilities and forward |
 | `minimumBookPayoff(legs)` | Exact minimum payoff and boundedness for supported books |
+| `payoffExtremes(legs)` | Exact minimum/maximum terminal payoff and boundedness for continuous books |
+| `payoffBreakevens(legs)` | Exact breakeven spots of a continuous book's terminal payoff |
+| `normalCdf(x)` | Standard normal CDF (QuantLib `CumulativeNormalDistribution`) |
+| `normalPdf(x)` | Standard normal PDF (QuantLib `NormalDistribution`) |
+| `millsRatio(x)` | Inverse Mills ratio φ(x)/(1−Φ(x)) |
 
 European options use QuantLib's `AnalyticEuropeanEngine`. Bonds use `FixedRateBond` or `ZeroCouponBond` with `DiscountingBondEngine`. Unsupported instruments and invalid inputs throw JavaScript errors instead of falling back to approximations.
 
@@ -115,6 +131,8 @@ QUANTLIB_BUILD=/path/to/quantlib-wasm-build \
 BOOST_ROOT=/path/to/boost_1_88_0 \
 npm run build:wasm --workspace @quantcraft/quantlibjs
 ```
+
+The build script checks the Emscripten compiler, QuantLib static library, and binding source before compiling. After rebuilding, run `npm run test:quantlib` to validate the generated WASM exports.
 
 ## License
 
