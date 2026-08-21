@@ -2,14 +2,12 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
 import { QuantLibRuntime } from "@quantcraft/quantlibjs";
-import { applyVolShock, blackVol, bsmVegaPerPoint } from "@quantcraft/finmath";
+import { applyVolShock } from "@quantcraft/finmath";
 import {
   buildVolGrid,
   buildVolatilityPrompt,
   generateVolatilityRound,
   volatilityDurationMs,
-  VOLATILITY_EVALUATION_DATE,
-  volMaturityYears,
   volSurfaceDate,
 } from "./dist/games/volatility/game.js";
 

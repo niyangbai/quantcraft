@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { totalScore } from "../game";
 import type { Scoreboard } from "../game";
 
 export type GameMode = "payoff" | "greek" | "orderbook" | "hedge" | "makemarket" | "volatility" | "curve" | "exotic";
@@ -38,7 +39,6 @@ export function AiPromptModal({ prompt, onClose }: { prompt: string; onClose: ()
 
 export function GameScoreboard({ scoreboard, mode }: { scoreboard: Scoreboard; mode: GameMode }) {
   const [feedback, setFeedback] = useState<"success" | "failure" | "life">();
-  const totalScore = scoreboard.payoff.score + scoreboard.greek.score + scoreboard.orderbook.score + scoreboard.hedge.score + scoreboard.makemarket.score + scoreboard.volatility.score + scoreboard.curve.score + scoreboard.exotic.score;
   const modeStats = mode === "payoff"
     ? { score: scoreboard.payoff.score, rounds: scoreboard.payoff.answers, successes: scoreboard.payoff.correct }
     : mode === "greek"
@@ -74,7 +74,7 @@ export function GameScoreboard({ scoreboard, mode }: { scoreboard: Scoreboard; m
 
   return (
     <div className={`game-scoreboard ${feedback ?? ""}`} aria-label="Current run scoreboard">
-      <span>TOTAL SCORE<strong>{totalScore}</strong></span>
+      <span>TOTAL SCORE<strong>{totalScore(scoreboard)}</strong></span>
       <span>MODE SCORE<strong>{modeStats.score}</strong></span>
       <span>STREAK<strong>×{scoreboard.streak}</strong></span>
       <span className="scoreboard-lives">LIVES<strong>{lives}</strong></span>

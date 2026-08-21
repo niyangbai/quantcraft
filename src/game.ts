@@ -68,15 +68,12 @@ export const emptyScoreboard: Scoreboard = {
   recent: [],
 };
 
+/** Combined score across every mode. */
+export const totalScore = (scoreboard: Scoreboard): number =>
+  scoreboard.payoff.score + scoreboard.greek.score + scoreboard.orderbook.score + scoreboard.hedge.score + scoreboard.makemarket.score + scoreboard.volatility.score + scoreboard.curve.score + scoreboard.exotic.score;
+
 export const market = {
-  evaluationDate: "2025-01-02",
   maturityDate: "2028-01-03",
-  spot: 100,
-  strike: 100,
-  rate: 0.025,
-  expectedReturn: 0.07,
-  dividend: 0.015,
-  volatility: 0.2,
 };
 export const secureSeed = () => {
   const value = new Uint32Array(1);

@@ -10,7 +10,7 @@ import { Curve } from "./games/curve";
 import { Exotic } from "./games/exotic";
 import { AppShell, GameOverScreen, Collection, Landing, Onboarding } from "./ui";
 
-import { difficultyLives, emptyScoreboard, exampleQuestionBank, parseQuestionBank } from "./game";
+import { difficultyLives, emptyScoreboard, exampleQuestionBank, parseQuestionBank, totalScore } from "./game";
 import type {
   Difficulty,
   Mode,
@@ -19,6 +19,7 @@ import type {
   RuntimeState,
   Scoreboard,
 } from "./game";
+const nowLabel = (): string => new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 function useQuantLib(): RuntimeState {
   const [state, setState] = useState<RuntimeState>({ status: "loading" });
   useEffect(() => {
@@ -114,51 +115,50 @@ function App() {
     ...current,
     ...nextRunState(current, correct),
     payoff: { score: current.payoff.score + score, answers: current.payoff.answers + 1, correct: current.payoff.correct + Number(correct), bestStreak: Math.max(current.payoff.bestStreak, streak) },
-    recent: [{ game: "Payoff" as const, label, score, at: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) }, ...current.recent].slice(0, 8),
+    recent: [{ game: "Payoff" as const, label, score, at: nowLabel() }, ...current.recent].slice(0, 8),
   }));
   const recordGreek = (score: number, correct: boolean, streak: number, label: string) => setScoreboard((current) => ({
     ...current,
     ...nextRunState(current, correct),
     greek: { score: current.greek.score + score, answers: current.greek.answers + 1, correct: current.greek.correct + Number(correct), bestStreak: Math.max(current.greek.bestStreak, streak) },
-    recent: [{ game: "Greek" as const, label, score, at: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) }, ...current.recent].slice(0, 8),
+    recent: [{ game: "Greek" as const, label, score, at: nowLabel() }, ...current.recent].slice(0, 8),
   }));
   const recordOrderBook = (score: number, correct: boolean, streak: number, label: string) => setScoreboard((current) => ({
     ...current,
     ...nextRunState(current, correct),
     orderbook: { score: current.orderbook.score + score, answers: current.orderbook.answers + 1, correct: current.orderbook.correct + Number(correct), bestStreak: Math.max(current.orderbook.bestStreak, streak) },
-    recent: [{ game: "Order Book" as const, label, score, at: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) }, ...current.recent].slice(0, 8),
+    recent: [{ game: "Order Book" as const, label, score, at: nowLabel() }, ...current.recent].slice(0, 8),
   }));
   const recordHedge = (score: number, passed: boolean, label: string) => setScoreboard((current) => ({
     ...current,
     ...nextRunState(current, passed),
     hedge: { score: current.hedge.score + score, rounds: current.hedge.rounds + 1, passed: current.hedge.passed + Number(passed), best: Math.max(current.hedge.best, score) },
-    recent: [{ game: "Hedge" as const, label, score, at: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) }, ...current.recent].slice(0, 8),
+    recent: [{ game: "Hedge" as const, label, score, at: nowLabel() }, ...current.recent].slice(0, 8),
   }));
   const recordMakeMarket = (score: number, correct: boolean, streak: number, label: string) => setScoreboard((current) => ({
     ...current,
     ...nextRunState(current, correct),
     makemarket: { score: current.makemarket.score + score, answers: current.makemarket.answers + 1, correct: current.makemarket.correct + Number(correct), bestStreak: Math.max(current.makemarket.bestStreak, streak) },
-    recent: [{ game: "Make Market" as const, label, score, at: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) }, ...current.recent].slice(0, 8),
+    recent: [{ game: "Make Market" as const, label, score, at: nowLabel() }, ...current.recent].slice(0, 8),
   }));
   const recordVolatility = (score: number, correct: boolean, streak: number, label: string) => setScoreboard((current) => ({
     ...current,
     ...nextRunState(current, correct),
     volatility: { score: current.volatility.score + score, answers: current.volatility.answers + 1, correct: current.volatility.correct + Number(correct), bestStreak: Math.max(current.volatility.bestStreak, streak) },
-    recent: [{ game: "Volatility" as const, label, score, at: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) }, ...current.recent].slice(0, 8),
+    recent: [{ game: "Volatility" as const, label, score, at: nowLabel() }, ...current.recent].slice(0, 8),
   }));
   const recordCurve = (score: number, correct: boolean, streak: number, label: string) => setScoreboard((current) => ({
     ...current,
     ...nextRunState(current, correct),
     curve: { score: current.curve.score + score, answers: current.curve.answers + 1, correct: current.curve.correct + Number(correct), bestStreak: Math.max(current.curve.bestStreak, streak) },
-    recent: [{ game: "Curve" as const, label, score, at: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) }, ...current.recent].slice(0, 8),
+    recent: [{ game: "Curve" as const, label, score, at: nowLabel() }, ...current.recent].slice(0, 8),
   }));
   const recordExotic = (score: number, correct: boolean, streak: number, label: string) => setScoreboard((current) => ({
     ...current,
     ...nextRunState(current, correct),
     exotic: { score: current.exotic.score + score, answers: current.exotic.answers + 1, correct: current.exotic.correct + Number(correct), bestStreak: Math.max(current.exotic.bestStreak, streak) },
-    recent: [{ game: "Exotic" as const, label, score, at: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) }, ...current.recent].slice(0, 8),
+    recent: [{ game: "Exotic" as const, label, score, at: nowLabel() }, ...current.recent].slice(0, 8),
   }));
-  const totalScore = scoreboard.payoff.score + scoreboard.greek.score + scoreboard.orderbook.score + scoreboard.hedge.score + scoreboard.makemarket.score + scoreboard.volatility.score + scoreboard.curve.score + scoreboard.exotic.score;
   const newRun = () => {
     setShowGameOver(false);
     setScoreboard((current) => ({ ...emptyScoreboard, difficulty: current.difficulty, maxLives: current.maxLives, lives: current.maxLives, recent: [] }));
@@ -189,7 +189,7 @@ function App() {
       {mode === "curve" && !showGameOver && <Curve ql={runtime.ql} params={questionBank.curve} onScore={recordCurve} onBack={() => setMode("landing")} scoreboard={scoreboard} />}
       {mode === "exotic" && !showGameOver && <Exotic ql={runtime.ql} params={questionBank.exotic} onScore={recordExotic} onBack={() => setMode("landing")} scoreboard={scoreboard} />}
       {mode === "collection" && <Collection name={profile?.name ?? "Player"} scoreboard={scoreboard} onRename={renamePlayer} onResetScore={newRun} onBack={() => setMode("landing")} />}
-      {showGameOver && mode !== "landing" && mode !== "collection" && <GameOverScreen difficulty={scoreboard.difficulty} totalScore={totalScore} onCollection={() => setMode("collection")} onNewRun={newRun} />}
+      {showGameOver && mode !== "landing" && mode !== "collection" && <GameOverScreen difficulty={scoreboard.difficulty} totalScore={totalScore(scoreboard)} onCollection={() => setMode("collection")} onNewRun={newRun} />}
       {!profile && <Onboarding onFinish={finishOnboarding} />}
     </AppShell>
   );
