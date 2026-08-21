@@ -97,12 +97,6 @@
 .choice-grid.large button { min-height: 84px; display: grid; align-content: center; justify-items: center; text-align: center; }
 .choice-grid.large strong { font-size: 26px; font-weight: 900; font-variant-numeric: tabular-nums; letter-spacing: -0.5px; }
 
-/* Volatility position cards: three option lines side by side, with the option
-   text getting more presence than the generic 9px choice label. */
-.mode-view.game-page.volatility .choice-grid button { min-height: 84px; display: grid; align-content: center; justify-items: center; text-align: center; }
-.mode-view.game-page.volatility .choice-grid strong { font-size: 14px; font-weight: 900; letter-spacing: .4px; font-variant-numeric: tabular-nums; }
-.mode-view.game-page.volatility .choice-grid small { font-size: 10px; letter-spacing: .4px; }
-
 /* ------------------------------------------------------------------ */
 /* Reveal bar                                                          */
 /* ------------------------------------------------------------------ */
@@ -154,6 +148,33 @@
 .order-spread strong { color: var(--deep); font-size: 12px; font-variant-numeric: tabular-nums; }
 
 /* ------------------------------------------------------------------ */
+/* Per-mode accent                                                     */
+/* ------------------------------------------------------------------ */
+/* One muted hue per drill, applied sparingly (scoreboard stripe,       */
+/* scenario label + rule, header eyebrow, the selected answer) so every */
+/* page reads as a distinct desk while the shared warm-paper terminal   */
+/* stays unified.                                                      */
+
+/* Each drill sets its own --accent / --accent-wash in src/games/<mode>/<mode>.css;
+   this is the shared fallback for any game page without one. */
+.mode-view.game-page { --accent: var(--coral); --accent-wash: #fff1eb; }
+
+.game-scoreboard > span:first-child { border-top-color: var(--accent); }
+.mode-view.game-page .mode-header .eyebrow { color: var(--accent); }
+.scenario-card { border-top: 3px solid var(--accent); }
+.scenario-card > small { color: var(--accent); }
+.choice-grid button.selected { border-color: var(--accent); background: var(--accent-wash); }
+
+/* ------------------------------------------------------------------ */
+/* Material polish: a soft resting shadow under the main cards,         */
+/* complementing the hard offset shadow already used on hover.          */
+/* ------------------------------------------------------------------ */
+
+.scenario-card,
+.game-layout article,
+.game-scoreboard { box-shadow: 0 1px 2px rgba(36, 56, 58, 0.05), 0 14px 34px -26px rgba(36, 56, 58, 0.5); }
+
+/* ------------------------------------------------------------------ */
 /* Responsive                                                          */
 /* ------------------------------------------------------------------ */
 
@@ -164,8 +185,6 @@
   .scenario-card.large-title > strong { font-size: 24px; }
   .choice-grid.large button { min-height: 72px; }
   .choice-grid.large strong { font-size: 22px; }
-  .mode-view.game-page.volatility .choice-grid.cols-3,
-  .mode-view.game-page.curve .choice-grid.cols-3 { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 560px) {
@@ -181,6 +200,5 @@
   .choice-grid { gap: 6px; }
   .choice-grid.large button { min-height: 66px; }
   .choice-grid.large strong { font-size: 20px; }
-  .mode-view.game-page.exotic .choice-grid { grid-template-columns: 1fr; }
 }
 

@@ -1,0 +1,6 @@
+/* exotic.css — Exotic drill accent. */
+.mode-view.game-page.exotic { --accent: #c07f20; --accent-wash: #faf2e5; }
+
+@media (max-width: 420px) {
+  .mode-view.game-page.exotic .choice-grid { grid-template-columns: 1fr; }
+}

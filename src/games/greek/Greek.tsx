@@ -1,3 +1,4 @@
+import "./greek.css";
 import { useEffect, useMemo, useState } from "react";
 import type { QuantLibRuntime } from "@quantcraft/quantlibjs";
 import { ChoiceGrid, GameFrame, PositionBook, RevealBar, RoundTimer, ScenarioCard } from "../../ui";

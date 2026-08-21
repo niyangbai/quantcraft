@@ -1,3 +1,4 @@
+import "./hedge.css";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { QuantLibRuntime } from "@quantcraft/quantlibjs";
 import { GREEK_LABELS } from "@quantcraft/finmath";

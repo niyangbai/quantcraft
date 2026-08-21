@@ -1,3 +1,4 @@
+import "./order-book.css";
 import { useEffect, useMemo, useState } from "react";
 import { bestAsk, bestBid, spread } from "@quantcraft/finmath";
 import type { OrderBook as Book } from "@quantcraft/finmath";

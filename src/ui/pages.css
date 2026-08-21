@@ -527,3 +527,13 @@
     animation: none;
   }
 }
+
+/* Material polish: soft resting shadows on the hub cards, complementing the
+   hard offset shadow used on hover. */
+.mode-cards button,
+.settlement-grid article,
+.question-bank-panel,
+.recent-settlements,
+.landing-run {
+  box-shadow: 0 1px 2px rgba(36, 56, 58, 0.05), 0 14px 34px -26px rgba(36, 56, 58, 0.5);
+}

@@ -1,0 +1,6 @@
+/* curve.css — Curve Trader drill accent. */
+.mode-view.game-page.curve { --accent: #3d7fc4; --accent-wash: #ecf3fb; }
+
+@media (max-width: 760px) {
+  .mode-view.game-page.curve .choice-grid.cols-3 { grid-template-columns: 1fr; }
+}

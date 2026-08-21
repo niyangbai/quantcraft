@@ -1,3 +1,4 @@
+import "./payoff.css";
 import { useEffect, useMemo, useState } from "react";
 import { AiPromptModal, RoundResult, RoundTimer } from "../../ui";
 import { secureSeed, seededRandom } from "../../game";

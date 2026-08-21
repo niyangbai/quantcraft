@@ -1,3 +1,4 @@
+import "./volatility.css";
 import { useEffect, useMemo, useState } from "react";
 import { AiPromptModal, ChoiceGrid, GameFrame, RevealBar, RoundResult, RoundTimer, ScenarioCard } from "../../ui";
 import { secureSeed, seededRandom } from "../../game";
