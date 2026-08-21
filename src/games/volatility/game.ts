@@ -104,9 +104,6 @@ export const volSurfaceDate = (expiry: string): string => {
   return date.toISOString().slice(0, 10);
 };
 
-/** Nominal years to a listed expiry (used to sample the parametric grid). */
-export const volMaturityYears = (expiry: string): number => EXPIRY_YEARS[expiry];
-
 const ATM_LEVELS = [0.18, 0.22, 0.26, 0.3] as const;
 const TERM_SLOPES = [0, 0.05, 0.1] as const;
 const SKEWS = [-0.35, -0.5, -0.65] as const;

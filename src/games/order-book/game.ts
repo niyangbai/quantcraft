@@ -39,8 +39,6 @@ export type OrderbookQuestion = {
   explanation: string;
 };
 
-export const TICK = 0.01;
-export const priceToTicks = (price: number): number => Math.round(price / TICK);
 export const formatPrice = (ticks: number): string => (ticks / 100).toFixed(2);
 
 /* ------------------------------------------------------------------ */
