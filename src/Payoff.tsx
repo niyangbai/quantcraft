@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { AiPromptModal, RoundResult, RoundTimer } from "./Controls";
+import { AiPromptModal, RoundResult, RoundTimer } from "./ui";
 import { secureSeed, seededRandom } from "./game";
 import type { Scoreboard } from "./game";
 import { buildPayoffPrompt, decisionDurationMs, generatePayoffQuestion, legDetailText, levelForProgress, levelLabel } from "./payoffGame";

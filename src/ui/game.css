@@ -1,6 +1,6 @@
 /* game.css — the single shared stylesheet for every game mode.
    Page chrome (back-home, game-scoreboard, mode-header, round-timer,
-   round-result, action-row) lives in Core.css. Modes assemble the blocks
+   round-result, action-row) lives in base.css. Modes assemble the blocks
    below from the src/ui component kit and may add mode-specific hooks
    (.payoff / .greekthon / .hedge) in their own small stylesheet. */
 

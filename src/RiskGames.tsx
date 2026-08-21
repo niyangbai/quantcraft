@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { QuantLibRuntime } from "@quantcraft/market-kernel";
-import { AiPromptModal, RoundResult, RoundTimer } from "./Controls";
+import { AiPromptModal, RoundResult, RoundTimer } from "./ui";
 import { between, isoDate, market, secureSeed, seededRandom } from "./game";
 import type { HedgeLeg, QuestionBank, Scoreboard } from "./game";
 import { ChoiceGrid, GameFrame, PositionBook, RevealBar, ScenarioCard } from "./ui";

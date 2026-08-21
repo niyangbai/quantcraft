@@ -1,24 +1,32 @@
-// src/ui — the shared UI kit for game modes.
+// src/ui — the single UI module for the whole app.
 //
-// Every mode composes these blocks: a GameFrame page shell, a ScenarioCard
-// for the market event / question, a PositionBook for the position legs, a
-// ChoiceGrid for answers or tools, and a RevealBar for the settled result.
-// Add a new mode by composing these in a new component and registering the
-// mode in game.ts (Mode union) and App.tsx (route + record* handler).
+// Everything visual lives here: the design tokens and base styles
+// (base.css), the game-mode blocks (game.css), the page styles
+// (pages.css), the shared controls (controls.tsx), the app shell
+// (AppShell.tsx), the page screens (pages.tsx), and the game-mode kit
+// (GameFrame, ScenarioCard, PositionBook, ChoiceGrid, RevealBar).
+//
+// To add a new game mode: compose the kit in a new component, register
+// the mode in game.ts (Mode union) and App.tsx (route + record* handler),
+// and layer any small mode-specific styling under the mode class that
+// GameFrame puts on the page root.
 
+import "./base.css";
 import "./game.css";
+import "./pages.css";
 
 export { GameFrame } from "./GameFrame";
-export type { GameMode } from "./GameFrame";
-
 export { ScenarioCard } from "./ScenarioCard";
 export type { Metric } from "./ScenarioCard";
-
 export { PositionBook } from "./PositionBook";
 export type { PositionLeg } from "./PositionBook";
-
 export { ChoiceGrid } from "./ChoiceGrid";
 export type { ChoiceItem } from "./ChoiceGrid";
-
 export { RevealBar } from "./RevealBar";
 export type { RevealCell } from "./RevealBar";
+
+export { GameScoreboard, RoundTimer, RoundResult, AiPromptModal } from "./controls";
+export type { GameMode } from "./controls";
+
+export { AppShell, GameOverScreen } from "./AppShell";
+export { Onboarding, QuestionBankPanel, Landing, Collection } from "./pages";

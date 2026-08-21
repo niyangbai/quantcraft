@@ -1,8 +1,7 @@
 import type { ReactNode } from "react";
-import { GameScoreboard } from "../Controls";
+import { GameScoreboard } from "./controls";
+import type { GameMode } from "./controls";
 import type { Scoreboard } from "../game";
-
-export type GameMode = "payoff" | "greekthon" | "hedge";
 
 /**
  * Page frame shared by every game mode: back button, scoreboard,

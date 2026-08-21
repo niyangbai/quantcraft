@@ -1,9 +1,6 @@
 import { useState } from "react";
-import { exampleQuestionBank, parseQuestionBank } from "./game";
-import type { Difficulty, Mode, QuestionBank, Scoreboard } from "./game";
-import "./QuestionBank.css";
-import "./Settlement.css";
-import "./Landing.css";
+import { exampleQuestionBank, parseQuestionBank } from "../game";
+import type { Difficulty, Mode, QuestionBank, Scoreboard } from "../game";
 
 export function Onboarding({ onFinish }: { onFinish: (name: string, storage: boolean) => void }) {
   const [name, setName] = useState("");
@@ -11,7 +8,7 @@ export function Onboarding({ onFinish }: { onFinish: (name: string, storage: boo
   return <div className="onboarding-backdrop" role="dialog" aria-modal="true" aria-labelledby="welcome-title"><section className="onboarding-card"><span className="onboarding-mark">QC</span><p className="eyebrow">WELCOME TO QUANTCRAFT</p><h1 id="welcome-title">What should we call you?</h1><label className="name-field"><span>PLAYER NAME</span><input autoFocus maxLength={30} value={name} onChange={(event) => setName(event.target.value)} placeholder="Your name" onKeyDown={(event) => { if (event.key === "Enter" && ready) onFinish(name, true); }} /></label><div className="privacy-note"><strong>COOKIE & STORAGE NOTICE</strong><p>QuantCraft uses no advertising or tracking cookies. With your permission, browser Local Storage keeps your name, score, lives, and uploaded question bank on this device.</p></div><div className="onboarding-actions"><button disabled={!ready} onClick={() => onFinish(name, true)}>SAVE & PLAY</button><button disabled={!ready} onClick={() => onFinish(name, false)}>PLAY THIS SESSION ONLY</button></div><small>You can play without storage; refreshing the page will reset your progress.</small></section></div>;
 }
 
-function QuestionBankPanel({ bank, onInstallBank }: { bank: QuestionBank; onInstallBank: (bank: QuestionBank) => void }) {
+export function QuestionBankPanel({ bank, onInstallBank }: { bank: QuestionBank; onInstallBank: (bank: QuestionBank) => void }) {
   const [bankMessage, setBankMessage] = useState<{ ok: boolean; text: string }>();
   const downloadExample = () => {
     const blob = new Blob([JSON.stringify(exampleQuestionBank, null, 2)], { type: "application/json" });
@@ -83,3 +80,4 @@ export function Collection({ name, scoreboard, onRename, onResetScore, onBack }:
     </section>
   );
 }
+

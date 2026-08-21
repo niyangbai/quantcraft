@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import type { Scoreboard } from "./game";
+import type { Scoreboard } from "../game";
 
-type GameMode = "payoff" | "greekthon" | "hedge";
+export type GameMode = "payoff" | "greekthon" | "hedge";
 
 export function RoundResult({ passed, status, score, actionLabel, onNext, onAskAI }: { passed: boolean; status: string; score: number; actionLabel: string; onNext: () => void; onAskAI?: () => void }) {
   return (
