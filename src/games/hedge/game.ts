@@ -3,8 +3,8 @@
 // builds hedge tools, finds the best hedge via @quantcraft/finmath (risk),
 // and settles the player's chosen hedge. No React, no storage.
 
-import { between, isoDate } from "../../game";
-import type { QuestionBank } from "../../game";
+import { between, isoDate } from "../../game.js";
+import type { QuestionBank } from "../../game.js";
 import type { QuantLibRuntime } from "@quantcraft/quantlibjs";
 import { DEFAULT_GREEK_SCALES, GREEK_KEYS, addRisk, bestHedge, hedgeQuality } from "@quantcraft/finmath";
 import type { GreekKey, GreekRisk } from "@quantcraft/finmath";

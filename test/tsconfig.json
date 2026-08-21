@@ -2,7 +2,7 @@
   "compilerOptions": {
     "tsBuildInfoFile": "../node_modules/.tmp/tsconfig.payoff-test.tsbuildinfo",
     "target": "es2023",
-    "lib": ["ES2023"],
+    "lib": ["ES2023", "DOM"],
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "verbatimModuleSyntax": true,
@@ -16,5 +16,5 @@
     "rootDir": "../src",
     "outDir": "./dist"
   },
-  "include": ["../src/games/payoff/game.ts", "../src/games/order-book/game.ts", "../src/games/make-market/game.ts", "../src/games/volatility/game.ts", "../src/games/curve/game.ts", "../src/games/exotic/game.ts"]
+  "include": ["../src/games/payoff/game.ts", "../src/games/order-book/game.ts", "../src/games/make-market/game.ts", "../src/games/volatility/game.ts", "../src/games/curve/game.ts", "../src/games/exotic/game.ts", "../src/games/greek/game.ts", "../src/games/hedge/game.ts"]
 }

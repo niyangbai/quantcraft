@@ -1,18 +1,18 @@
 import type { QuantLibRuntime } from "@quantcraft/quantlibjs";
-import { payoffSeeds } from "./games/payoff/game";
-import type { PayoffSeed } from "./games/payoff/game";
-import { orderBookSeedDefaults } from "./games/order-book/game";
-import type { OrderBookSeed } from "./games/order-book/game";
-import { makeMarketParamDefaults } from "./games/make-market/game";
-import type { MakeMarketParams } from "./games/make-market/game";
-import { volatilityParamDefaults } from "./games/volatility/game";
-import type { VolatilityParams } from "./games/volatility/game";
-import { curveParamDefaults } from "./games/curve/game";
-import type { CurveParams } from "./games/curve/game";
-import { exoticParamDefaults } from "./games/exotic/game";
-import type { ExoticParams } from "./games/exotic/game";
-import type { GreekBook, GreekMetric, GreekScenario } from "./games/greek/game";
-import type { HedgeProduct } from "./games/hedge/game";
+import { payoffSeeds } from "./games/payoff/game.js";
+import type { PayoffSeed } from "./games/payoff/game.js";
+import { orderBookSeedDefaults } from "./games/order-book/game.js";
+import type { OrderBookSeed } from "./games/order-book/game.js";
+import { makeMarketParamDefaults } from "./games/make-market/game.js";
+import type { MakeMarketParams } from "./games/make-market/game.js";
+import { volatilityParamDefaults } from "./games/volatility/game.js";
+import type { VolatilityParams } from "./games/volatility/game.js";
+import { curveParamDefaults } from "./games/curve/game.js";
+import type { CurveParams } from "./games/curve/game.js";
+import { exoticParamDefaults } from "./games/exotic/game.js";
+import type { ExoticParams } from "./games/exotic/game.js";
+import type { GreekBook, GreekMetric, GreekScenario } from "./games/greek/game.js";
+import type { HedgeProduct } from "./games/hedge/game.js";
 
 export type Mode = "landing" | "payoff" | "greek" | "orderbook" | "hedge" | "makemarket" | "volatility" | "curve" | "exotic" | "collection";
 export type RuntimeState = {

@@ -3,8 +3,8 @@
 // then evaluates it before/after the shock through @quantcraft/quantlibjs.
 // No React, no storage.
 
-import { between, isoDate, market } from "../../game";
-import type { QuestionBank } from "../../game";
+import { between, isoDate, market } from "../../game.js";
+import type { QuestionBank } from "../../game.js";
 import type { QuantLibRuntime } from "@quantcraft/quantlibjs";
 
 export type GreekScenario = { label: string; detail: string; spot: number; vol: number; rate: number; date: string };

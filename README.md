@@ -143,7 +143,7 @@ npm run dev
 
 ```bash
 npm run build         # production build
-npm test              # finmath + payoff + orderbook + makemarket + volatility + curve + exotic + quantlibjs tests
+npm test              # finmath + payoff + orderbook + makemarket + volatility + curve + exotic + greek + hedge + quantlibjs tests
 npm run test:finmath  # @quantcraft/finmath package tests
 npm run test:payoff   # payoff game-logic tests (node:test)
 npm run test:orderbook # order-book game-logic tests (node:test)
@@ -151,15 +151,17 @@ npm run test:makemarket # make-market game-logic tests (node:test)
 npm run test:volatility # volatility game-logic tests (node:test)
 npm run test:curve    # curve game-logic tests (node:test)
 npm run test:exotic   # exotic game-logic tests (node:test)
+npm run test:greek    # greek game-logic tests (node:test)
+npm run test:hedge    # hedge game-logic tests (node:test)
 npm run test:quantlib # quantlibjs WASM-backed tests
 npm run lint          # source linting
 npm run preview       # preview the production build
 ```
 
 The game-logic tests are pure node:test suites. `npm run test:payoff` (and the
-order-book, make-market, volatility, curve, and exotic siblings) compile the corresponding
-`src/games/*/game.ts` into `test/dist/` and run `test/*.test.mjs` against it,
-importing the math from `@quantcraft/finmath`.
+order-book, make-market, volatility, curve, exotic, greek, and hedge siblings)
+compile the corresponding `src/games/*/game.ts` into `test/dist/` and run
+`test/*.test.mjs` against it, importing the math from `@quantcraft/finmath`.
 
 ## Architecture and privacy
 
