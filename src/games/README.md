@@ -9,7 +9,8 @@ src/games/<mode-id>/
 │                 seeds, and the AI prompt. Pure functions, no React.
 ├── <Mode>.tsx  — the React component. Composes the shared UI kit from
 │                 src/ui (GameFrame + ScenarioCard + PositionBook /
-│                 OrderBookCard + ChoiceGrid + RevealBar) and calls game.ts.
+│                 OrderBookCard + ChoiceGrid + RevealBar + SideBadge +
+│                 VolSurface3D) and calls game.ts.
 └── index.ts    — public surface: `export { Mode } from "./Mode";
                   export * from "./game";`
 ```
@@ -28,8 +29,8 @@ PascalCase; logic files are always named `game.ts`.
      a key to `QuestionBank`, and validate/default it in `parseQuestionBank`.
      The bank entry can be a seed array (payoff/orderbook) or a params object
      (`make-market` stores the synthetic model's `riskAversion`, `arrival`,
-     `fillSensitivity`, `adverseFraction`; `volatility` stores the fixed
-     `riskFreeRate` and `dividendYield` of the vol-surface model).
+     `fillSensitivity`, `adverseFraction`; `volatility` and `exotic` store
+     `riskFreeRate` and `dividendYield`; `curve` stores `evaluationDate`).
    - `src/App.tsx` — route + `record*` handler.
    - `src/ui/controls.tsx` — `GameMode` union + scoreboard branch.
    - `src/ui/pages.tsx` — landing card + collection settlement card.

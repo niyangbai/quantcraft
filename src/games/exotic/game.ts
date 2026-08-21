@@ -120,16 +120,18 @@ const addMonths = (iso: string, months: number): string => {
 
 const typeText = (type: ExoticOptionType): string => type.toUpperCase();
 
-export const positionLabel = (spec: ExoticSpec): string => {
+export const positionBody = (spec: ExoticSpec): string => {
   switch (spec.kind) {
-    case "barrier": return `LONG ${BARRIER_LABELS[spec.barrierType]} ${typeText(spec.type)}`;
-    case "digital": return `LONG DIGITAL ${typeText(spec.type)}`;
-    case "asian": return `LONG ASIAN ${typeText(spec.type)}`;
-    case "worstof": return `LONG WORST-OF ${typeText(spec.type)}`;
-    case "autocall": return "LONG AUTOCALL";
-    case "vanilla": return `LONG VANILLA ${typeText(spec.type)}`;
+    case "barrier": return `${BARRIER_LABELS[spec.barrierType]} ${typeText(spec.type)}`;
+    case "digital": return `DIGITAL ${typeText(spec.type)}`;
+    case "asian": return `ASIAN ${typeText(spec.type)}`;
+    case "worstof": return `WORST-OF ${typeText(spec.type)}`;
+    case "autocall": return "AUTOCALL";
+    case "vanilla": return `VANILLA ${typeText(spec.type)}`;
   }
 };
+
+export const positionLabel = (spec: ExoticSpec): string => `LONG ${positionBody(spec)}`;
 
 export const positionDetail = (spec: ExoticSpec): string => {
   switch (spec.kind) {

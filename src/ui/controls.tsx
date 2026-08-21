@@ -4,6 +4,11 @@ import type { Scoreboard } from "../game";
 
 export type GameMode = "payoff" | "greek" | "orderbook" | "hedge" | "makemarket" | "volatility" | "curve" | "exotic";
 
+/** A small LONG/SHORT pill, reused across every drill's option cards. */
+export function SideBadge({ side }: { side: "long" | "short" }) {
+  return <span className={`side-badge ${side}`}>{side === "long" ? "LONG" : "SHORT"}</span>;
+}
+
 export function RoundResult({ passed, status, score, actionLabel, onNext, onAskAI }: { passed: boolean; status: string; score: number; actionLabel: string; onNext: () => void; onAskAI?: () => void }) {
   return (
     <div className={`round-result ${passed ? "passed" : "failed"}`}>
@@ -85,6 +90,21 @@ export function GameScoreboard({ scoreboard, mode }: { scoreboard: Scoreboard; m
   );
 }
 
+function CountdownValue({ durationMs, paused }: { durationMs: number; paused: boolean }) {
+  const [remainingMs, setRemainingMs] = useState(durationMs);
+
+  useEffect(() => {
+    if (paused) return;
+    const start = performance.now();
+    const interval = window.setInterval(() => {
+      setRemainingMs(Math.max(0, durationMs - (performance.now() - start)));
+    }, 100);
+    return () => window.clearInterval(interval);
+  }, [durationMs, paused]);
+
+  return <>{Math.ceil(remainingMs / 1000)}s</>;
+}
+
 export function RoundTimer({
   label,
   value,
@@ -92,21 +112,23 @@ export function RoundTimer({
   urgent = false,
   durationMs,
   resetKey,
+  paused = false,
 }: {
   label: string;
-  value: string;
+  value?: string;
   progress?: number;
   urgent?: boolean;
   durationMs?: number;
   resetKey?: number;
+  paused?: boolean;
 }) {
   return (
     <div className={`round-timer ${urgent ? "urgent" : ""}`}>
       <small>{label}</small>
-      <strong>{value}</strong>
+      <strong>{durationMs !== undefined ? <CountdownValue key={resetKey} durationMs={durationMs} paused={paused} /> : value}</strong>
       <div key={resetKey}>
         <i
-          className={durationMs ? "animated" : ""}
+          className={`${durationMs ? "animated" : ""}${paused ? " paused" : ""}`}
           style={durationMs
             ? { animationDuration: `${durationMs}ms` }
             : { width: `${Math.max(0, Math.min(100, progress ?? 0))}%` }}

@@ -1,11 +1,28 @@
-/* volatility.css — Volatility drill accent and position-card sizing. */
+/* volatility.css — Volatility drill accent and full-width read panel. */
 .mode-view.game-page.volatility { --accent: #b04a8e; --accent-wash: #f8edf5; }
 
-/* Three option lines side by side, with the option text getting more presence
-   than the generic 9px choice label. */
-.mode-view.game-page.volatility .choice-grid button { min-height: 84px; display: grid; align-content: center; justify-items: center; text-align: center; }
-.mode-view.game-page.volatility .choice-grid strong { font-size: 14px; font-weight: 900; letter-spacing: .4px; font-variant-numeric: tabular-nums; }
+/* Full-width read panel, like the other single-panel drills. */
+.vol-board { margin-top: 22px; padding: 25px; border: 1px solid var(--line); background: var(--paper); }
+.vol-board h2 { margin: 0 0 7px; color: var(--deep); font-size: 22px; }
+.vol-board > .choice-note { margin: 0 0 18px; }
+
+/* Three position options side by side, each centered in its column. */
+.mode-view.game-page.volatility .choice-grid button { min-height: 96px; display: grid; align-content: center; justify-items: center; text-align: center; }
+.mode-view.game-page.volatility .choice-grid strong { font-size: 15px; font-weight: 900; letter-spacing: .4px; font-variant-numeric: tabular-nums; }
 .mode-view.game-page.volatility .choice-grid small { font-size: 10px; letter-spacing: .4px; }
+
+/* Let the reveal explanation span the full row instead of a narrow cell. */
+.mode-view.game-page.volatility .reveal-grid p { grid-column: 1 / -1; }
+
+/* Interactive 3D surface explorer. */
+.vol-surface { margin: 18px 0 0; }
+.vol-surface canvas { display: block; width: 100%; height: auto; background: #fbfbf7; border: 1px solid var(--line); cursor: grab; }
+.vol-surface canvas:active { cursor: grabbing; }
+.vol-surface-legend { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 8px; color: var(--muted); font-size: 9px; letter-spacing: .8px; }
+.vol-surface-legend span { display: inline-flex; align-items: center; gap: 6px; font-weight: 800; }
+.vol-surface-legend i { width: 10px; height: 10px; border-radius: 2px; }
+.vol-surface-legend i.base { background: #3f6fb0; }
+.vol-surface-legend i.shocked { background: #ef765f; }
 
 @media (max-width: 760px) {
   .mode-view.game-page.volatility .choice-grid.cols-3 { grid-template-columns: 1fr; }

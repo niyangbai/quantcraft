@@ -55,9 +55,9 @@ The matching engine lives in `@quantcraft/finmath` (`orderbook` module): determi
 
 A position flashes onto the screen. Then the market changes. Decide whether fair value, delta, gamma, vega, theta, or rho goes **up**, stays **unchanged**, or goes **down**.
 
-Questions may contain a single option or a combined position. As the run continues, decisions arrive faster.
+Questions may contain a single option or a combined position. As the run continues, the decision window shortens.
 
-Answers are evaluated at the displayed four-decimal precision. After an answer or timeout, the result remains visible for three seconds for review.
+Answers are evaluated at the displayed four-decimal precision. The timer pauses when you answer, and the result stays on screen until you advance to the next round.
 
 ### ≋ Hedge · Rebalance the book
 
@@ -75,13 +75,13 @@ The model lives in `@quantcraft/finmath` (`marketmaking` module) and scores ever
 
 ### σ Volatility · Read the surface
 
-An implied-volatility surface and a parameterized shock flash onto the screen. Three option positions follow. Which one has the largest **positive vol P&L**?
+An implied-volatility surface and a parameterized shock flash onto the screen, with an interactive 3D view of the base and shocked surfaces. Three option positions follow. Which one has the largest **positive vol P&L**?
 
 Each round builds a base surface (`ATM`, skew, smile, term structure), applies one of six parameterized shocks — skew steepening/flattening, front- or back-end vol up, smile curvature up/down — and scores every position as `qty × vega × ΔIV`. The surface and the shocks are closed forms in `@quantcraft/finmath` (`volsurface` module): Vega is the analytic Black–Scholes–Merton vega, ΔIV comes straight from the rebuilt surface, so the machine always knows the answer — and the reveal shows exactly which factor (location, vega, size, or side) decided it.
 
 ### ∿ Curve · Read the move
 
-A yield curve flashes onto the screen — 2Y / 5Y / 10Y — with a parameterized shock. Three bond positions follow (long or short, different notionals). Which one has the largest P&L?
+A yield curve flashes onto the screen — three maturities drawn from 1Y through 30Y, plotted before and after the shock — with a parameterized shock. Three bond positions follow (long or short, different notionals). Which one has the largest P&L?
 
 Each round builds a base curve and applies one of nine shocks — parallel up/down, front- or back-end up/down, steepening, flattening, or a butterfly — then scores every position as `side × (price after − price before)` through QuantLib. The machine builds two zero curves, reprices each bond between them, and reads the parallel DV01, so the answer always reflects key-rate exposure, coupon, and notional exactly. The reflex to drill: which part of the curve moved, where is the duration, and long or short.
 
@@ -146,7 +146,7 @@ npm run build         # production build
 npm test              # finmath + payoff + orderbook + makemarket + volatility + curve + exotic + quantlibjs tests
 npm run test:finmath  # @quantcraft/finmath package tests
 npm run test:payoff   # payoff game-logic tests (node:test)
-npm run test:orderbook# order-book game-logic tests (node:test)
+npm run test:orderbook # order-book game-logic tests (node:test)
 npm run test:makemarket # make-market game-logic tests (node:test)
 npm run test:volatility # volatility game-logic tests (node:test)
 npm run test:curve    # curve game-logic tests (node:test)
@@ -165,7 +165,7 @@ importing the math from `@quantcraft/finmath`.
 
 - React 19 and TypeScript 6 frontend
 - Vite 8 build and development server
-- Single UI module in [`src/ui`](src/ui) — design tokens (`base.css`), game-mode blocks (`game.css`), page styles (`pages.css`), shared controls (`controls.tsx`), the app shell (`AppShell.tsx`), the page screens (`pages.tsx`), and the game-mode kit (`GameFrame`, `ScenarioCard`, `PositionBook`, `OrderBookCard`, `ChoiceGrid`, `RevealBar`). New modes and pages are assembled from existing modules
+- Single UI module in [`src/ui`](src/ui) — design tokens (`base.css`), game-mode blocks (`game.css`), page styles (`pages.css`), shared controls (`controls.tsx`), the app shell (`AppShell.tsx`), the page screens (`pages.tsx`), and the game-mode kit (`GameFrame`, `ScenarioCard`, `PositionBook`, `OrderBookCard`, `ChoiceGrid`, `RevealBar`, `SideBadge`, `VolSurface3D`). New modes and pages are assembled from existing modules
 - One folder per game in [`src/games`](src/games) with a uniform shape: `game.ts` (logic, no React) + `<Mode>.tsx` (component) + `index.ts` (public surface). See [`src/games/README.md`](src/games/README.md) for the convention
 - Workspace packages:
   - [`@quantcraft/finmath`](packages/finmath) — unified financial math with modular exports: `payoff` (terminal payoff, max profit, breakevens), `risk` (Greek aggregation, risk magnitude, best-hedge search, hedge quality), `orderbook` (price-time-priority market-order matching, best quotes, spread, depth), `marketmaking` (synthetic market model: fill probability, spread capture, adverse selection, inventory penalty → expected utility), and `volsurface` (parametric implied-vol surface, parameterized shocks, delta IV, analytic BSM vega, vol-only P&L)

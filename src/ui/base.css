@@ -125,6 +125,7 @@ button:disabled {
 .round-timer > div { height: 4px; overflow: hidden; background: #e1e4de; }
 .round-timer i { display: block; height: 100%; background: #72a983; transform-origin: left; transition: width 1s linear; }
 .round-timer i.animated { width: 100%; animation: round-countdown linear forwards; }
+.round-timer i.paused { animation-play-state: paused; }
 .round-timer.urgent strong { color: var(--coral); }
 .round-timer.urgent i { background: var(--coral); }
 

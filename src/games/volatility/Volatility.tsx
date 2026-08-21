@@ -1,10 +1,10 @@
 import "./volatility.css";
 import { useEffect, useMemo, useState } from "react";
-import { AiPromptModal, ChoiceGrid, GameFrame, RevealBar, RoundResult, RoundTimer, ScenarioCard } from "../../ui";
+import { AiPromptModal, ChoiceGrid, GameFrame, RevealBar, RoundResult, RoundTimer, ScenarioCard, SideBadge, VolSurface3D } from "../../ui";
 import { secureSeed, seededRandom } from "../../game";
 import type { Scoreboard } from "../../game";
 import type { QuantLibRuntime } from "@quantcraft/quantlibjs";
-import { buildVolatilityPrompt, generateVolatilityRound, positionDetail, positionLabel, volatilityDurationMs } from "./game";
+import { buildVolatilityPrompt, generateVolatilityRound, positionBody, positionDetail, volatilityDurationMs } from "./game";
 import type { VolatilityParams } from "./game";
 
 export function Volatility({
@@ -82,7 +82,7 @@ export function Volatility({
       title="Read the surface. Find the vol P&L."
       onBack={onBack}
       scoreboard={scoreboard}
-      tools={<RoundTimer label="DECISION WINDOW" value={`${(duration / 1000).toFixed(0)}s`} durationMs={duration} resetKey={roundKey} />}
+      tools={<RoundTimer label="DECISION WINDOW" value={`${(duration / 1000).toFixed(0)}s`} durationMs={duration} resetKey={roundKey} paused={answered} />}
     >
       {question && winner ? (
         <>
@@ -97,33 +97,32 @@ export function Volatility({
               { label: "SHOCK", value: question.shockLabel },
             ]}
           />
-          <div className="game-layout">
-            <article className="game-panel">
-              <h2>YOUR READ</h2>
-              <p className="choice-note">Vol P&L ≈ qty × vega (per 1 vol point) × ΔIV. Read the shock, weigh ΔIV against vega and side, then call the biggest positive one.</p>
-              <ChoiceGrid
-                columns={3}
-                items={question.positions.map((position) => ({
-                  key: position.id,
-                  label: positionLabel(position),
-                  detail: positionDetail(position),
-                }))}
-                selected={selectedIndex !== undefined ? [selectedIndex] : []}
-                revealed={answered}
-                answerIndex={question.answerIndex}
-                onToggle={(index) => submit(index)}
-              />
-            </article>
-          </div>
+          <VolSurface3D base={question.surface} shocked={question.shockedSurface} />
+          <article className="vol-board">
+            <h2>YOUR READ</h2>
+            <p className="choice-note">Read the shock across expiry, then account for side and size.</p>
+            <ChoiceGrid
+              columns={3}
+              items={question.positions.map((position) => ({
+                key: position.id,
+                label: <><SideBadge side={position.side} />{positionBody(position)}</>,
+                detail: positionDetail(position),
+              }))}
+              selected={selectedIndex !== undefined ? [selectedIndex] : []}
+              revealed={answered}
+              answerIndex={question.answerIndex}
+              onToggle={(index) => submit(index)}
+            />
+          </article>
           {answered && (
             <RevealBar
               cells={[
                 { label: "RESULT", value: feedback === "correct" ? "CORRECT" : feedback === "timeout" ? "TIME'S UP" : "WRONG", tone: feedback === "correct" ? "positive" : "negative" },
                 { label: "WINNER", value: question.answerText },
-                { label: "VOL P&L", value: `${winner.pnl >= 0 ? "+" : ""}${winner.pnl.toFixed(2)}`, tone: winner.pnl >= 0 ? "positive" : "negative" },
-                { label: "VEGA", value: `${winner.vegaPerPoint.toFixed(3)}/pt` },
                 { label: "ΔIV", value: `${winner.deltaIVPoints >= 0 ? "+" : ""}${winner.deltaIVPoints.toFixed(1)} pts`, tone: winner.deltaIVPoints >= 0 ? "positive" : "negative" },
+                { label: "VEGA", value: `${winner.vegaPerPoint.toFixed(3)}/pt` },
                 { label: "IV", value: `${(winner.ivBefore * 100).toFixed(1)}% → ${(winner.ivAfter * 100).toFixed(1)}%` },
+                { label: "VOL P&L", value: `${winner.pnl >= 0 ? "+" : ""}${winner.pnl.toFixed(2)}`, tone: winner.pnl >= 0 ? "positive" : "negative" },
               ]}
               note={question.explanation}
             />

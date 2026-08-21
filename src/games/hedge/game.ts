@@ -23,6 +23,7 @@ export const HEDGE_SHOCKS: HedgeShock[] = [
 
 export type HedgeTrade = {
   id: string;
+  side: "long" | "short";
   label: string;
   detail: string;
   delta: number;
@@ -36,6 +37,9 @@ export type HedgeTrade = {
   postTheta: number;
   postRho: number;
 };
+
+/** The trade label without its LONG/SHORT prefix, for badge rendering. */
+export const tradeBody = (trade: HedgeTrade): string => trade.label.slice(trade.label.indexOf(" ") + 1);
 
 export type HedgeRound = {
   template: HedgeProduct;
@@ -97,12 +101,12 @@ export function generateHedgeRound(rng: () => number, ql: QuantLibRuntime, bank:
   const put = price({ type: "put", strike: putStrike, qty: 1 });
   const quantity = .5;
   const trades: HedgeTrade[] = [
-    { id: "buy-stock", label: "BUY STOCK", detail: "Long Delta · neutral other Greeks", delta: quantity, gamma: 0, vega: 0, theta: 0, rho: 0 },
-    { id: "sell-stock", label: "SELL STOCK", detail: "Short Delta · neutral other Greeks", delta: -quantity, gamma: 0, vega: 0, theta: 0, rho: 0 },
-    { id: "buy-call", label: `BUY ${callStrike} CALL`, detail: "Long Delta · Gamma · Vega", delta: quantity * call.delta, gamma: quantity * call.gamma, vega: quantity * call.vega, theta: quantity * call.theta, rho: quantity * call.rho },
-    { id: "sell-call", label: `SELL ${callStrike} CALL`, detail: "Short Delta · Gamma · Vega", delta: -quantity * call.delta, gamma: -quantity * call.gamma, vega: -quantity * call.vega, theta: -quantity * call.theta, rho: -quantity * call.rho },
-    { id: "buy-put", label: `BUY ${putStrike} PUT`, detail: "Short Delta · Gamma · long Vega", delta: quantity * put.delta, gamma: quantity * put.gamma, vega: quantity * put.vega, theta: quantity * put.theta, rho: quantity * put.rho },
-    { id: "sell-put", label: `SELL ${putStrike} PUT`, detail: "Long Delta · Gamma · short Vega", delta: -quantity * put.delta, gamma: -quantity * put.gamma, vega: -quantity * put.vega, theta: -quantity * put.theta, rho: -quantity * put.rho },
+    { id: "buy-stock", side: "long" as const, label: "LONG STOCK", detail: "Long Delta · neutral other Greeks", delta: quantity, gamma: 0, vega: 0, theta: 0, rho: 0 },
+    { id: "sell-stock", side: "short" as const, label: "SHORT STOCK", detail: "Short Delta · neutral other Greeks", delta: -quantity, gamma: 0, vega: 0, theta: 0, rho: 0 },
+    { id: "buy-call", side: "long" as const, label: `LONG ${callStrike} CALL`, detail: "Long Delta · Gamma · Vega", delta: quantity * call.delta, gamma: quantity * call.gamma, vega: quantity * call.vega, theta: quantity * call.theta, rho: quantity * call.rho },
+    { id: "sell-call", side: "short" as const, label: `SHORT ${callStrike} CALL`, detail: "Short Delta · Gamma · Vega", delta: -quantity * call.delta, gamma: -quantity * call.gamma, vega: -quantity * call.vega, theta: -quantity * call.theta, rho: -quantity * call.rho },
+    { id: "buy-put", side: "long" as const, label: `LONG ${putStrike} PUT`, detail: "Short Delta · Gamma · long Vega", delta: quantity * put.delta, gamma: quantity * put.gamma, vega: quantity * put.vega, theta: quantity * put.theta, rho: quantity * put.rho },
+    { id: "sell-put", side: "short" as const, label: `SHORT ${putStrike} PUT`, detail: "Long Delta · Gamma · short Vega", delta: -quantity * put.delta, gamma: -quantity * put.gamma, vega: -quantity * put.vega, theta: -quantity * put.theta, rho: -quantity * put.rho },
   ].map((trade) => ({
     ...trade,
     postDelta: preTrade.delta + trade.delta,

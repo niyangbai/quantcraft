@@ -132,7 +132,7 @@ export function generateMakeMarketRound(rng: () => number, ql?: QuantLibRuntime,
     analysis,
     runnerUp: rankings[1],
     rankings,
-    explanation: explainMakeMarket(analysis, rankings[1], context),
+    explanation: explainMakeMarket(analysis, context),
   };
 }
 
@@ -140,56 +140,46 @@ export function generateMakeMarketRound(rng: () => number, ql?: QuantLibRuntime,
 /* Explanation (what the synthetic model found)                        */
 /* ------------------------------------------------------------------ */
 
-const pct = (value: number): string => `${(value * 100).toFixed(1)}%`;
-const signed = (value: number): string => `${value >= 0 ? "+" : ""}${value.toFixed(4)}`;
-
-export function explainMakeMarket(best: QuoteAnalysis, runnerUp: QuoteAnalysis, context: MarketMakingContext): string {
+export function explainMakeMarket(best: QuoteAnalysis, context: MarketMakingContext): string {
   const { quote } = best;
-  const parts: string[] = [];
+  const q = context.inventory;
+  const long = q > 0;
+  const bidDistance = context.fairValue - quote.bid;
+  const askDistance = quote.ask - context.fairValue;
+  const spread = quote.ask - quote.bid;
+  const spreadWord = spread <= 0.07 ? "tight" : spread <= 0.11 ? "moderate" : "wide";
+  const askTighter = askDistance < bidDistance;
+  const bidTighter = bidDistance < askDistance;
 
-  parts.push(
-    `Best ${quoteLabel(quote)} (EU ${signed(best.utility)}): fills ${pct(best.fillProbability)} · edge ${signed(best.expectedEdge)} · adverse ${signed(-best.adverseSelection)} · inventory ${signed(-best.inventoryPenalty)}.`,
-  );
+  const lead = `You are ${long ? "LONG" : "SHORT"} ${Math.abs(q)}, so a quote that helps you ${long ? "sell" : "buy"} inventory without giving away too much spread is worth more.`;
 
-  // Dominant factor
-  const inventoryMagnitude = Math.abs(best.inventoryPenalty);
-  if (inventoryMagnitude > 0.002) {
-    const deRisking = best.inventoryPenalty < 0;
-    const direction = deRisking
-      ? `a ${context.inventory > 0 ? "long" : "short"} is rewarded for ${context.inventory > 0 ? "selling" : "buying"}`
-      : `the quote leans into ${context.inventory > 0 ? "more buying" : "more selling"} on top of a ${context.inventory > 0 ? "long" : "short"}`;
-    parts.push(
-      `Inventory is the deciding factor: ${direction} — each trade shifts position variance by ±(2q+1)·σ², worth ${signed(-best.inventoryPenalty)} here.`,
-    );
-  } else if (best.adverseSelection > best.expectedEdge * 0.6) {
-    parts.push(
-      `Adverse selection dominates: part of every fill is informed and the value moves through tight quotes, eating the edge — so a quote too close to fair loses.`,
-    );
-  } else if (best.fillProbability < 0.3) {
-    parts.push(`Wide quotes still fill ${pct(best.fillProbability)} of the time, so you keep most of the edge without inviting toxic fills.`);
+  let why: string;
+  if (long && askTighter) {
+    why = `${quoteLabel(quote)} keeps a ${spreadWord} spread while making the ask the more attractive side, so it helps you sell down your long position.`;
+  } else if (!long && bidTighter) {
+    why = `${quoteLabel(quote)} keeps a ${spreadWord} spread while making the bid the more attractive side, so it helps you buy back your short position.`;
+  } else if (askTighter) {
+    why = `${quoteLabel(quote)} tilts toward the ask to attract sellers while keeping a ${spreadWord} spread that protects you from being picked off.`;
+  } else if (bidTighter) {
+    why = `${quoteLabel(quote)} tilts toward the bid to attract buyers while keeping a ${spreadWord} spread that protects you from being picked off.`;
   } else {
-    parts.push(`The winner balances spread capture against adverse selection: it fills ${pct(best.fillProbability)} with edge ${signed(best.expectedEdge)} and adverse cost only ${signed(-best.adverseSelection)}.`);
+    why = `${quoteLabel(quote)} holds a balanced, ${spreadWord} two-sided price — wide enough to get paid for the risk, narrow enough to still fill.`;
   }
 
-  parts.push(
-    `Runner-up ${quoteLabel(runnerUp.quote)}: EU ${signed(runnerUp.utility)}, ${(Math.abs(best.utility - runnerUp.utility) * 100).toFixed(2)}¢/round behind.`,
-  );
-
-  return parts.join(" ");
+  return `${lead} ${why}`;
 }
 
 export const inventoryText = (inventory: number): string =>
   `${inventory > 0 ? "+" : ""}${inventory} ${inventory > 0 ? "LONG" : "SHORT"}`;
 
 export function buildMakeMarketPrompt(round: MakeMarketRound, difficulty: string): string {
-  const { fairValue, inventory, uncertainty, analysis } = round;
+  const { fairValue, inventory, uncertainty } = round;
   return [
     `I am training as a ${difficulty} on the QuantCraft Make Market drill.`,
     `Market: fair value ${fairValue.toFixed(2)} · inventory ${inventoryText(inventory)} · uncertainty ${uncertainty.toFixed(2)}.`,
     `Candidates: ${round.choices.map((choice) => choice.label).join(", ")}.`,
-    `Correct: ${round.answerText} (expected utility ${analysis.utility.toFixed(4)}).`,
-    `Synthetic model breakdown: fill ${(analysis.fillProbability * 100).toFixed(1)}% · spread capture ${analysis.expectedEdge.toFixed(4)} · adverse selection ${analysis.adverseSelection.toFixed(4)} · inventory penalty ${analysis.inventoryPenalty.toFixed(4)}.`,
-    `Working: ${round.explanation}`,
+    `Correct: ${round.answerText}.`,
+    `Reasoning: ${round.explanation}`,
     "Give a short, level-appropriate rule for reading fair value + inventory + uncertainty into a good two-sided quote instantly.",
   ].join("\n");
 }

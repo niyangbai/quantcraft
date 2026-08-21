@@ -43,6 +43,9 @@ export const displayedDirection = (before: number, after: number, precision: num
 export const greekDirection = (before: number, after: number): GreekDirection =>
   displayedDirection(before, after, 4);
 
+/** Decision window: shorter on longer streaks, matching the other flash drills. */
+export const greekDurationMs = (streak: number): number => Math.max(4500, 10000 - streak * 250);
+
 const METRIC_LABELS: Record<GreekMetric, string> = { value: "FAIR VALUE", delta: "DELTA", gamma: "GAMMA", vega: "VEGA", theta: "THETA", rho: "RHO" };
 
 export function generateGreekQuestion(rng: () => number, ql: QuantLibRuntime, bank: QuestionBank["greek"]): GreekQuestion {
@@ -82,4 +85,22 @@ export function generateGreekQuestion(rng: () => number, ql: QuantLibRuntime, ba
   const before = evaluate(baseSpot, baseVol, baseRate, "2025-01-02");
   const after = evaluate(scenario.spot, scenario.vol, scenario.rate, scenario.date);
   return { scenario, marketMove, book, metric: METRIC_LABELS[metric], before, after, direction: greekDirection(before, after) };
+}
+
+const directionText = (direction: GreekDirection): string =>
+  direction === "up" ? "up" : direction === "down" ? "down" : "flat";
+
+export function buildGreekPrompt(question: GreekQuestion, difficulty: string): string {
+  const { marketMove } = question;
+  return [
+    "You are a derivatives tutor. Explain this missed Greek drill at the player's level. Teach the reflex, not just the number.",
+    `PLAYER LEVEL: ${difficulty.toUpperCase()} (adapt the explanation and terminology to this level)`,
+    `Metric: ${question.metric}`,
+    `Market event: ${question.scenario.label} — ${question.scenario.detail}`,
+    `Move: spot ${marketMove.beforeSpot.toFixed(2)} → ${marketMove.afterSpot.toFixed(2)} · vol ${(marketMove.beforeVolatility * 100).toFixed(1)}% → ${(marketMove.afterVolatility * 100).toFixed(1)}% · rate ${(marketMove.beforeRate * 100).toFixed(2)}% → ${(marketMove.afterRate * 100).toFixed(2)}%`,
+    `Position: ${question.book.name} (${question.book.legs.map((leg) => `${leg.qty > 0 ? "long" : "short"} ${Math.abs(leg.qty)}× ${leg.strike} ${leg.type.toUpperCase()}`).join(", ")})`,
+    `Question: What happens to portfolio ${question.metric.toLowerCase()}?`,
+    `Correct answer: ${question.metric.toLowerCase()} goes ${directionText(question.direction)} (${question.before.toFixed(4)} → ${question.after.toFixed(4)})`,
+    "Give a short, level-appropriate rule for reading a market shock + position into the direction of this Greek instantly.",
+  ].join("\n");
 }

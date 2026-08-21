@@ -6,9 +6,10 @@ export type BookRow = {
 };
 
 /**
- * A limit order book ladder: best ask at the top, spread in the middle,
- * best bid below. Prices arrive pre-formatted; the component is purely
- * presentational.
+ * A limit order book ladder laid out like an exchange: asks (red) descend
+ * toward the spread at the top, the spread sits in the middle, and bids
+ * (green) descend away from the spread at the bottom. Prices arrive
+ * pre-formatted; the component is purely presentational.
  */
 export function OrderBookCard({
   asks,
@@ -23,9 +24,9 @@ export function OrderBookCard({
     <article className="position-book order-book">
       <small>ORDER BOOK</small>
       <div className="order-ladder">
-        <div className="order-side">
-          <small>ASK</small>
-          {asks.map((row) => (
+        <div className="book-col-head"><span>PRICE</span><span>SIZE</span></div>
+        <div className="order-side asks">
+          {asks.slice().reverse().map((row) => (
             <div key={row.price} className={`book-row ${row.hit ? "hit" : ""}`}>
               <span>{row.price}</span>
               <b>{row.size}</b>
@@ -33,8 +34,7 @@ export function OrderBookCard({
           ))}
         </div>
         {spreadLabel && <div className="order-spread"><small>SPREAD</small><strong>{spreadLabel}</strong></div>}
-        <div className="order-side">
-          <small>BID</small>
+        <div className="order-side bids">
           {bids.map((row) => (
             <div key={row.price} className={`book-row ${row.hit ? "hit" : ""}`}>
               <span>{row.price}</span>

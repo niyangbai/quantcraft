@@ -1,2 +1,8 @@
 /* hedge.css — Hedge drill accent. */
 .mode-view.game-page.hedge { --accent: #c1504a; --accent-wash: #faece9; }
+
+/* Stack the client position above the dealer's resulting book. */
+.position-stack { display: grid; gap: 12px; }
+
+/* Flag the dealer book as the decision target. */
+.position-stack > .position-book:last-child { border-top: 3px solid var(--accent); }

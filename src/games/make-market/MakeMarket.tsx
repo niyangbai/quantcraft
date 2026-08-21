@@ -1,6 +1,6 @@
 import "./make-market.css";
 import { useEffect, useMemo, useState } from "react";
-import { AiPromptModal, ChoiceGrid, GameFrame, RevealBar, RoundResult, RoundTimer, ScenarioCard } from "../../ui";
+import { AiPromptModal, GameFrame, RoundResult, RoundTimer, ScenarioCard } from "../../ui";
 import { secureSeed, seededRandom } from "../../game";
 import type { Scoreboard } from "../../game";
 import type { QuantLibRuntime } from "@quantcraft/quantlibjs";
@@ -69,8 +69,6 @@ export function MakeMarket({
     return () => window.clearTimeout(timer);
   }, [question, answered, duration, onScore]);
 
-  const analysis = question?.analysis;
-
   return (
     <GameFrame
       mode="makemarket"
@@ -78,9 +76,9 @@ export function MakeMarket({
       title="Make the market."
       onBack={onBack}
       scoreboard={scoreboard}
-      tools={<RoundTimer label="DECISION WINDOW" value={`${(duration / 1000).toFixed(0)}s`} durationMs={duration} resetKey={roundKey} />}
+      tools={<RoundTimer label="DECISION WINDOW" value={`${(duration / 1000).toFixed(0)}s`} durationMs={duration} resetKey={roundKey} paused={answered} />}
     >
-      {question && analysis ? (
+      {question ? (
         <>
           <ScenarioCard
             label="MARKET"
@@ -93,34 +91,42 @@ export function MakeMarket({
               { label: "UNCERTAINTY", value: question.uncertainty.toFixed(2) },
             ]}
           />
-          <div className="game-layout">
-            <article className="game-panel">
-              <h2>YOUR QUOTE</h2>
-              <p className="choice-note">The synthetic model scores every quote on fill probability, spread capture, adverse selection, and inventory risk.</p>
-              <ChoiceGrid
-                note={question.questionText}
-                items={question.choices.map((choice, index) => ({ key: `${choice.label}-${index}`, label: choice.label, detail: choice.detail }))}
-                selected={selectedIndex !== undefined ? [selectedIndex] : []}
-                revealed={answered}
-                answerIndex={question.answerIndex}
-                onToggle={(index) => submit(index)}
-                large
-              />
-            </article>
-          </div>
+          <article className="quote-board">
+            <h2>YOUR QUOTE</h2>
+            <p className="choice-note">The synthetic model scores every quote on fill probability, spread capture, adverse selection, and inventory risk.</p>
+            <div className="quote-grid">
+              {question.choices.map((choice, index) => {
+                const isSelected = selectedIndex === index;
+                const isCorrect = answered && index === question.answerIndex;
+                const isWrong = answered && index !== question.answerIndex && isSelected;
+                const className = answered ? (isCorrect ? "correct" : isWrong ? "wrong" : "") : isSelected ? "selected" : "";
+                return (
+                  <button key={`${choice.label}-${index}`} className={className} disabled={answered} onClick={() => submit(index)}>
+                    <span className="quote-side bid"><small>BID</small><strong>{choice.quote.bid.toFixed(2)}</strong></span>
+                    <span className="quote-side ask"><small>ASK</small><strong>{choice.quote.ask.toFixed(2)}</strong></span>
+                    <span className="quote-meta">{choice.detail}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </article>
           {answered && (
-            <RevealBar
-              cells={[
-                { label: "RESULT", value: feedback === "correct" ? "CORRECT" : feedback === "timeout" ? "TIME'S UP" : "WRONG", tone: feedback === "correct" ? "positive" : "negative" },
-                { label: "BEST QUOTE", value: question.answerText },
-                { label: "EXPECTED UTILITY", value: `${analysis.utility >= 0 ? "+" : ""}${analysis.utility.toFixed(4)}`, tone: analysis.utility >= 0 ? "positive" : "negative" },
-                { label: "FILL", value: `${(analysis.fillProbability * 100).toFixed(1)}%` },
-                { label: "EDGE", value: `+${analysis.expectedEdge.toFixed(4)}` },
-                { label: "ADVERSE", value: `−${analysis.adverseSelection.toFixed(4)}`, tone: "negative" },
-                { label: "INVENTORY", value: `${analysis.inventoryPenalty >= 0 ? "−" : "+"}${Math.abs(analysis.inventoryPenalty).toFixed(4)}`, tone: analysis.inventoryPenalty <= 0 ? "positive" : "negative" },
-              ]}
-              note={question.explanation}
-            />
+            <section className="analysis-board">
+              <div className="analysis-group">
+                <p className="analysis-group-label">OUTCOME</p>
+                <div className="analysis-grid cols-2">
+                  <div className="analysis-cell">
+                    <span>RESULT</span>
+                    <strong className={feedback === "correct" ? "tone-positive" : "tone-negative"}>{feedback === "correct" ? "CORRECT" : feedback === "timeout" ? "TIME'S UP" : "WRONG"}</strong>
+                  </div>
+                  <div className="analysis-cell">
+                    <span>BEST QUOTE</span>
+                    <strong>{question.answerText}</strong>
+                  </div>
+                </div>
+              </div>
+              <p className="analysis-note">{question.explanation}</p>
+            </section>
           )}
           {answered && (
             <RoundResult

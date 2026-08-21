@@ -26,8 +26,9 @@ export { ChoiceGrid } from "./ChoiceGrid";
 export type { ChoiceItem } from "./ChoiceGrid";
 export { RevealBar } from "./RevealBar";
 export type { RevealCell } from "./RevealBar";
+export { VolSurface3D } from "./VolSurface3D";
 
-export { GameScoreboard, RoundTimer, RoundResult, AiPromptModal } from "./controls";
+export { GameScoreboard, RoundTimer, RoundResult, AiPromptModal, SideBadge } from "./controls";
 export type { GameMode } from "./controls";
 
 export { AppShell, GameOverScreen } from "./AppShell";

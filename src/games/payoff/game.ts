@@ -321,7 +321,7 @@ const maxProfitChoices = (rng: () => number, legs: PayoffLeg[], extremes: { max:
   const options: (number | "unbounded")[] = [...distractors];
   options.splice(answerIndex, 0, answer);
   return options.map((value) => ({
-    label: value === "unbounded" ? "UNLIMITED" : `${value}`,
+    label: value === "unbounded" ? "∞" : `${value}`,
     hint: value === "unbounded" ? "UNCAPPED" : "CAPPED",
     value,
   }));

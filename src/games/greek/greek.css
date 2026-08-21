@@ -1,2 +1,4 @@
 /* greek.css — Greek drill accent. */
 .mode-view.game-page.greek { --accent: #7d5fb0; --accent-wash: #f2eef8; }
+.mode-view.game-page.greek .choice-grid button { text-align: center; }
+.mode-view.game-page.greek .choice-grid strong { font-size: 32px; line-height: 1; }

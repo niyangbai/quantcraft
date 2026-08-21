@@ -84,7 +84,7 @@ export function Payoff({
       title="Call the payoff."
       onBack={onBack}
       scoreboard={scoreboard}
-      tools={<RoundTimer label="DECISION WINDOW" value={`${(duration / 1000).toFixed(0)}s`} durationMs={duration} resetKey={roundKey} />}
+      tools={<RoundTimer label="DECISION WINDOW" value={`${(duration / 1000).toFixed(0)}s`} durationMs={duration} resetKey={roundKey} paused={answered} />}
     >
       {question ? (
         <>
@@ -104,7 +104,6 @@ export function Payoff({
               label="YOUR POSITION"
               title={question.seed.label}
               legs={question.legs.map((leg) => ({ side: leg.side, text: legDetailText(leg) }))}
-              signals={<><small>BOOK PAYOFF</small><strong className="signal-rule">Σ quantity × signed leg payoff</strong></>}
             />
             <article className="game-panel">
               <h2>{question.typeLabel}</h2>

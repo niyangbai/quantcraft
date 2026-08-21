@@ -102,7 +102,7 @@ export function OrderBook({
       intro="A market order walks the ladder in price-time priority. Call what happens to the book."
       onBack={onBack}
       scoreboard={scoreboard}
-      tools={<RoundTimer label="DECISION WINDOW" value={`${(duration / 1000).toFixed(0)}s`} durationMs={duration} resetKey={roundKey} />}
+      tools={<RoundTimer label="DECISION WINDOW" value={`${(duration / 1000).toFixed(0)}s`} durationMs={duration} resetKey={roundKey} paused={answered} />}
     >
       <ScenarioCard
         label={`EVENT · ${question.questionText}`}

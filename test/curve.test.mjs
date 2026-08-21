@@ -113,7 +113,7 @@ test("positions are well-formed and pedagogically mixed", () => {
     assert.equal(round.nodes.length, 3, `seed=${seed}: three curve nodes`);
     assert.ok(round.nodes.every((node) => node.baseRate > 0 && Number.isFinite(node.shockedRate) && node.shockedRate > 0), `seed=${seed}: positive finite rates`);
     round.positions.forEach((position) => {
-      assert.ok([2, 5, 10].includes(position.maturityYears), `seed=${seed}: maturity`);
+      assert.ok(Number.isInteger(position.maturityYears) && position.maturityYears >= 1 && position.maturityYears <= 30, `seed=${seed}: maturity`);
       assert.ok(["long", "short"].includes(position.side), `seed=${seed}: side`);
       assert.ok([100000, 200000, 500000].includes(position.notional), `seed=${seed}: notional`);
       assert.ok(position.couponRate > 0, `seed=${seed}: coupon`);

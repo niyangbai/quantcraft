@@ -62,6 +62,10 @@
 .position-legs b.long { background: #dceade; color: #467c57; }
 .position-legs b.short { background: #f7dcd5; color: #9b4d42; }
 
+.side-badge { display: inline-block; margin-right: 7px; padding: 3px 7px; border-radius: 2px; font-size: 8px; font-weight: 800; letter-spacing: .6px; line-height: 1.4; vertical-align: middle; }
+.side-badge.long { background: #dceade; color: #467c57; }
+.side-badge.short { background: #f7dcd5; color: #9b4d42; }
+
 .book-signals { display: grid; grid-template-columns: 1fr; gap: 6px; margin-top: 20px; }
 .book-signals small { color: var(--muted); font-size: 8px; letter-spacing: 1px; }
 .book-signals strong { display: block; padding: 8px 10px; border: 1px solid var(--line); font-size: 9px; text-align: left; letter-spacing: .8px; }
@@ -112,13 +116,46 @@
 .reveal-grid p { display: flex; align-items: center; color: var(--muted); font-size: 10px; line-height: 1.5; }
 
 /* ------------------------------------------------------------------ */
+/* Grouped post-round analysis                                         */
+/* ------------------------------------------------------------------ */
+
+.analysis-board { margin: 12px 0 0; }
+
+.analysis-group { margin-bottom: 12px; }
+.analysis-group-label { margin: 0 0 7px; color: #9a7770; letter-spacing: 1.8px; font-size: 10px; font-weight: 900; }
+
+.analysis-grid { display: grid; gap: 10px; }
+.analysis-grid.cols-2 { grid-template-columns: 1fr 1fr; }
+.analysis-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+
+.analysis-cell { padding: 15px 17px; border: 1px solid var(--line); background: var(--paper); }
+.analysis-cell > span { display: block; margin-bottom: 7px; color: var(--muted); font-size: 8px; letter-spacing: 1px; }
+.analysis-cell > strong { display: block; color: var(--deep); font-size: 15px; font-variant-numeric: tabular-nums; }
+
+.analysis-cell.analysis-total { border-top: 3px solid var(--accent); }
+.analysis-cell.analysis-total > strong { font-size: 26px; font-weight: 900; letter-spacing: -0.5px; }
+
+.analysis-board .tone-positive { color: #397651; }
+.analysis-board .tone-negative { color: #a3483d; }
+
+.analysis-note { margin: 0; padding: 15px 17px; border: 1px solid var(--line); background: var(--paper); color: var(--muted); font-size: 10px; line-height: 1.5; }
+
+@media (max-width: 760px) {
+  .analysis-grid.cols-3 { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 420px) {
+  .analysis-grid.cols-2 { grid-template-columns: 1fr; }
+}
+
+/* ------------------------------------------------------------------ */
 /* Order book ladder                                                   */
 /* ------------------------------------------------------------------ */
 
 .order-book h2 { margin: 7px 0 12px; font-size: 21px; }
 .order-ladder { display: grid; grid-template-columns: 1fr; gap: 8px; }
-.order-side > small,
-.order-spread small { display: block; color: var(--muted); font-size: 8px; letter-spacing: 1.3px; margin-bottom: 6px; }
+.book-col-head { display: grid; grid-template-columns: 1fr auto; gap: 10px; padding: 0 12px 4px; color: var(--muted); font-size: 8px; letter-spacing: 1.3px; }
+.book-col-head span:last-child { text-align: right; }
 .book-row {
   display: grid;
   grid-template-columns: 1fr auto;
@@ -131,8 +168,8 @@
 }
 .book-row span { color: var(--deep); font-weight: 800; font-size: 13px; }
 .book-row b { color: var(--muted); font-size: 11px; }
-.order-side:first-child .book-row span { color: #9b4d42; } /* asks */
-.order-side:last-child .book-row span { color: #467c57; } /* bids */
+.order-side.asks .book-row span { color: #9b4d42; } /* asks */
+.order-side.bids .book-row span { color: #467c57; } /* bids */
 .book-row.hit { border-color: var(--coral); background: #fff1eb; }
 .book-row.hit b { color: var(--coral); }
 .order-spread {
@@ -144,7 +181,7 @@
   border-bottom: 1px solid var(--line);
   background: var(--paper);
 }
-.order-spread small { margin: 0; }
+.order-spread small { display: block; margin: 0; color: var(--muted); font-size: 8px; letter-spacing: 1.3px; }
 .order-spread strong { color: var(--deep); font-size: 12px; font-variant-numeric: tabular-nums; }
 
 /* ------------------------------------------------------------------ */

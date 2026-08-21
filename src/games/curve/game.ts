@@ -16,7 +16,7 @@ export const curveParamDefaults: Required<CurveParams> = {
   evaluationDate: "2025-01-02",
 };
 
-export type CurveNodeLabel = "2Y" | "5Y" | "10Y";
+export type CurveNodeLabel = string;
 export type CurveSide = "long" | "short";
 
 export type CurveNode = {
@@ -85,17 +85,22 @@ export const CURVE_MIN_WINNER_PNL = 50;
 /** Minimum visible margin (dollars) between the winner and the runner-up. */
 export const CURVE_MIN_GAP = 20;
 
-const NODES: { label: CurveNodeLabel; years: number; months: number }[] = [
-  { label: "2Y", years: 2, months: 24 },
-  { label: "5Y", years: 5, months: 60 },
-  { label: "10Y", years: 10, months: 120 },
+/** Candidate curve nodes; each round picks three distinct, sorted maturities. */
+const MATURITY_POOL: { years: number; months: number }[] = [
+  { years: 1, months: 12 },
+  { years: 2, months: 24 },
+  { years: 3, months: 36 },
+  { years: 5, months: 60 },
+  { years: 7, months: 84 },
+  { years: 10, months: 120 },
+  { years: 20, months: 240 },
+  { years: 30, months: 360 },
 ];
 
-const NODE_INDEX: Record<number, number> = { 2: 0, 5: 1, 10: 2 };
-
-/** Base 2Y zero rates (decimal), upward-sloped by BASE_SLOPES per segment. */
+/** Base short-end zero rates (decimal). */
 const BASE_LEVELS = [0.025, 0.03, 0.035] as const;
-const BASE_SLOPES = [0.003, 0.004, 0.005] as const;
+/** Upward slope, in decimal per year. */
+const BASE_SLOPES_PER_YEAR = [0.0008, 0.0012, 0.0016] as const;
 
 /** Candidate face amounts (dollars). */
 const NOTIONALS = [100000, 200000, 500000] as const;
@@ -145,8 +150,11 @@ const addMonths = (iso: string, months: number): string => {
   return date.toISOString().slice(0, 10);
 };
 
+export const positionBody = (position: CurvePosition): string =>
+  `${position.maturityYears}Y BOND`;
+
 export const positionLabel = (position: CurvePosition): string =>
-  `${position.side.toUpperCase()} ${position.maturityYears}Y BOND`;
+  `${position.side.toUpperCase()} ${positionBody(position)}`;
 
 export const positionDetail = (position: CurvePosition): string =>
   `${Math.round(position.notional / 1000)}K FACE · ${(position.couponRate * 100).toFixed(2)}% COUPON`;
@@ -158,26 +166,27 @@ const signedPnl = (value: number): string => `${value >= 0 ? "+" : ""}${value.to
 /* Curve shock description                                             */
 /* ------------------------------------------------------------------ */
 
-const describeShock = (shockType: string, magnitude: number): string => {
+const describeShock = (shockType: string, magnitude: number, nodes: CurveNode[]): string => {
+  const [short, mid, long] = nodes.map((node) => node.label);
   switch (shockType) {
     case "parallel-up":
       return `the whole curve shifts up ${magnitude}bp.`;
     case "parallel-down":
       return `the whole curve shifts down ${magnitude}bp.`;
     case "front-up":
-      return `the 2Y point sells off ${magnitude}bp while longer maturities hold.`;
+      return `the ${short} point sells off ${magnitude}bp while longer maturities hold.`;
     case "front-down":
-      return `the 2Y point rallies ${magnitude}bp while longer maturities hold.`;
+      return `the ${short} point rallies ${magnitude}bp while longer maturities hold.`;
     case "back-up":
-      return `the 10Y point sells off ${magnitude}bp while the front end holds.`;
+      return `the ${long} point sells off ${magnitude}bp while the front end holds.`;
     case "back-down":
-      return `the 10Y point rallies ${magnitude}bp while the front end holds.`;
+      return `the ${long} point rallies ${magnitude}bp while the front end holds.`;
     case "steepen":
-      return `2Y rallies ${magnitude}bp and 10Y sells off ${magnitude}bp — the curve steepens.`;
+      return `${short} rallies ${magnitude}bp and ${long} sells off ${magnitude}bp — the curve steepens.`;
     case "flatten":
-      return `2Y sells off ${magnitude}bp and 10Y rallies ${magnitude}bp — the curve flattens.`;
+      return `${short} sells off ${magnitude}bp and ${long} rallies ${magnitude}bp — the curve flattens.`;
     case "butterfly":
-      return `2Y and 10Y sell off ${magnitude}bp while 5Y rallies ${magnitude}bp — a butterfly.`;
+      return `${short} and ${long} sell off ${magnitude}bp while ${mid} rallies ${magnitude}bp — a butterfly.`;
     default:
       return "";
   }
@@ -256,37 +265,40 @@ export function generateCurveRound(rng: () => number, ql: QuantLibRuntime, param
   const evaluationDate = params.evaluationDate ?? curveParamDefaults.evaluationDate;
 
   for (let attempt = 0; attempt < 300; attempt += 1) {
+    const maturities = shuffle(rng, MATURITY_POOL).slice(0, 3).sort((a, b) => a.years - b.years);
+
     const baseRates = [pick(rng, BASE_LEVELS), 0, 0];
-    baseRates[1] = baseRates[0] + pick(rng, BASE_SLOPES);
-    baseRates[2] = baseRates[1] + pick(rng, BASE_SLOPES);
+    baseRates[1] = baseRates[0] + pick(rng, BASE_SLOPES_PER_YEAR) * (maturities[1].years - maturities[0].years);
+    baseRates[2] = baseRates[1] + pick(rng, BASE_SLOPES_PER_YEAR) * (maturities[2].years - maturities[1].years);
 
     const shockType = pick(rng, Object.keys(CURVE_SHOCK_LABELS));
     const magnitude = pick(rng, SHOCK_MAGNITUDES);
     const shifts = SHOCK_SHIFTS[shockType];
     const shockedRates = baseRates.map((rate, index) => rate + (shifts[index] * magnitude) / 10000);
 
-    const nodes: CurveNode[] = NODES.map((node, index) => ({
-      ...node,
+    const nodes: CurveNode[] = maturities.map((maturity, index) => ({
+      label: `${maturity.years}Y`,
+      years: maturity.years,
+      months: maturity.months,
       baseRate: baseRates[index],
       shockedRate: shockedRates[index],
       deltaBp: (shockedRates[index] - baseRates[index]) * 10000,
     }));
-    const deltaBpByYears: Record<number, number> = { 2: nodes[0].deltaBp, 5: nodes[1].deltaBp, 10: nodes[2].deltaBp };
+    const deltaBpByYears: Record<number, number> = {};
+    for (const node of nodes) deltaBpByYears[node.years] = node.deltaBp;
 
-    const maturities = shuffle(rng, [2, 5, 10]);
-    const positions: CurvePosition[] = maturities.map((years, index) => {
+    const positions: CurvePosition[] = shuffle(rng, nodes).map((node, index) => {
       const side: CurveSide = rng() < 0.5 ? "long" : "short";
       const notional = pick(rng, NOTIONALS);
-      const couponRate = baseRates[NODE_INDEX[years]];
       const position = {
         id: (["A", "B", "C"] as const)[index],
         label: "",
         detail: "",
-        maturityYears: years,
+        maturityYears: node.years,
         side,
         notional,
-        couponRate,
-        maturityDate: addMonths(evaluationDate, NODES[NODE_INDEX[years]].months),
+        couponRate: node.baseRate,
+        maturityDate: addMonths(evaluationDate, node.months),
       };
       return { ...position, label: positionLabel(position), detail: positionDetail(position) };
     });
@@ -307,7 +319,7 @@ export function generateCurveRound(rng: () => number, ql: QuantLibRuntime, param
     if (gap < Math.max(CURVE_MIN_GAP, 0.15 * winnerPnl)) continue;
 
     const shockLabel = CURVE_SHOCK_LABELS[shockType];
-    const shockDetail = describeShock(shockType, magnitude);
+    const shockDetail = describeShock(shockType, magnitude, nodes);
 
     return {
       evaluationDate,

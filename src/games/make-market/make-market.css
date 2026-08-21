@@ -1,2 +1,70 @@
-/* make-market.css — Make Market drill accent. */
+/* make-market.css — Make Market drill accent and quote board. */
 .mode-view.game-page.makemarket { --accent: #218a94; --accent-wash: #e8f3f4; }
+
+/* Full-width two-sided quote board: four candidate quotes in a row,
+   wrapped in a single card like every other answer panel. */
+.quote-board { margin-top: 22px; padding: 25px; border: 1px solid var(--line); background: var(--paper); }
+.quote-board h2 { margin: 0 0 7px; color: var(--deep); font-size: 22px; }
+.quote-board > .choice-note { margin: 0 0 18px; }
+
+.quote-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+
+.quote-grid button {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  min-height: 98px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--deep);
+  cursor: pointer;
+  transition: .15s;
+  text-align: center;
+}
+.quote-grid button:hover:not(:disabled),
+.quote-grid button.selected {
+  border-color: var(--accent);
+  background: var(--accent-wash);
+  transform: translateY(-1px);
+}
+.quote-grid button:disabled { cursor: default; }
+
+.quote-side { display: flex; flex-direction: column; gap: 7px; min-width: 0; align-items: center; }
+.quote-side small { color: var(--muted); font-size: 8px; letter-spacing: 1.2px; }
+.quote-side strong { color: var(--deep); font-size: 22px; font-weight: 900; font-variant-numeric: tabular-nums; letter-spacing: -0.5px; }
+.quote-side.bid strong { color: #397651; }
+.quote-side.ask strong { color: #a3483d; }
+.quote-side.ask { border-left: 1px solid var(--line); }
+
+.quote-meta {
+  grid-column: 1 / -1;
+  margin-top: 4px;
+  padding-top: 9px;
+  border-top: 1px dashed var(--line);
+  color: var(--muted);
+  font-size: 9px;
+  letter-spacing: .5px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.quote-grid button.correct {
+  border-color: #4f8a61;
+  background: #e2efe5;
+  color: #2f5e3e;
+  transform: translateY(-1px);
+  box-shadow: 4px 4px 0 #a7d1ad, 0 10px 24px #24383a20;
+}
+.quote-grid button.correct .quote-side strong { color: #2f5e3e; }
+.quote-grid button.wrong {
+  border-color: #c15e4e;
+  background: #f8e1dc;
+  color: #a3483d;
+  box-shadow: 4px 4px 0 #f0aaa0, 0 10px 24px #24383a20;
+}
+.quote-grid button.wrong .quote-side strong { color: #a3483d; }
+
+@media (max-width: 420px) {
+  .quote-grid { grid-template-columns: 1fr; }
+}

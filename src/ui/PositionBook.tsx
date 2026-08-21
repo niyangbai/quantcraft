@@ -17,7 +17,7 @@ export function PositionBook({
   signals,
 }: {
   label: string;
-  title: ReactNode;
+  title?: ReactNode;
   description?: ReactNode;
   legs: PositionLeg[];
   signals?: ReactNode;
@@ -25,7 +25,7 @@ export function PositionBook({
   return (
     <article className="position-book">
       <small>{label}</small>
-      <h2>{title}</h2>
+      {title && <h2>{title}</h2>}
       {description && <p>{description}</p>}
       <div className="position-legs">
         {legs.map((leg, index) => (

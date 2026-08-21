@@ -1,12 +1,13 @@
 import "./hedge.css";
 import { useEffect, useMemo, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import type { QuantLibRuntime } from "@quantcraft/quantlibjs";
 import { GREEK_LABELS } from "@quantcraft/finmath";
 import type { GreekRisk } from "@quantcraft/finmath";
-import { AiPromptModal, ChoiceGrid, GameFrame, PositionBook, RevealBar, RoundResult, RoundTimer, ScenarioCard } from "../../ui";
+import { AiPromptModal, ChoiceGrid, GameFrame, PositionBook, RevealBar, RoundResult, RoundTimer, ScenarioCard, SideBadge } from "../../ui";
 import { secureSeed, seededRandom } from "../../game";
 import type { QuestionBank, Scoreboard } from "../../game";
-import { generateHedgeRound, settleHedge } from "./game";
+import { generateHedgeRound, settleHedge, tradeBody } from "./game";
 import type { HedgeSettlement } from "./game";
 
 const greekLines = (greeks: GreekRisk) => (
@@ -52,9 +53,6 @@ export function Hedge({ ql, bank, onScore, onBack, scoreboard }: { ql?: QuantLib
     setResult(undefined);
   };
   if (!round) return <GameFrame mode="hedge" eyebrow="HEDGE" title="Read the shock. Pick the trade." onBack={onBack} scoreboard={scoreboard}><div className="drop-zone">Preparing hedge book…</div></GameFrame>;
-  const deltaLabel = round.preTrade.delta >= 0 ? "LONG DELTA" : "SHORT DELTA";
-  const gammaLabel = round.preTrade.gamma >= 0 ? "LONG GAMMA" : "SHORT GAMMA";
-  const vegaLabel = round.preTrade.vega >= 0 ? "LONG VEGA" : "SHORT VEGA";
   const bestTrades = round.trades.filter((trade) => result?.bestTradeIds.includes(trade.id));
   const bestHedgeLabel = bestTrades.length ? bestTrades.map((trade) => trade.label).join(" + ") : "DO NOTHING";
   const objectiveLabel = round.objectiveKeys.map((key) => GREEK_LABELS[key]).join(" + ");
@@ -63,8 +61,8 @@ export function Hedge({ ql, bank, onScore, onBack, scoreboard }: { ql?: QuantLib
     const selectedLabel = selectedTrades.length ? selectedTrades.map((id) => id === "do-nothing" ? "DO NOTHING" : round.trades.find((trade) => trade.id === id)?.label ?? id).join(" + ") : "No hedge selected";
     setAiPrompt(["You are a derivatives risk tutor. Explain this failed portfolio-hedging exercise at the player's level. Teach the risk logic clearly, including why the selected hedge was weaker and how to choose a better hedge.", `PLAYER LEVEL: ${scoreboard.difficulty.toUpperCase()} (adapt the explanation and terminology to this level)`, `Market event: ${round.shock.label}`, `Market detail: ${round.shock.detail}`, `Spot: ${round.beforeSpot.toFixed(2)} -> ${round.spot.toFixed(2)}`, `Volatility: ${(round.beforeVolatility * 100).toFixed(1)}% -> ${(round.volatility * 100).toFixed(1)}%`, `Maturity: ${round.maturityDate}`, `Dealer objective: ${objectiveLabel}`, `Client product: ${round.template.name}`, `Product description: ${round.template.description}`, `Product option legs: ${round.legs.map((leg) => `${leg.qty > 0 ? "LONG" : "SHORT"} ${leg.strike} ${leg.type.toUpperCase()}`).join("; ")}`, "Available hedge tools:", availableTools, `My selected hedge: ${selectedLabel}`, `Resulting Greeks: Delta ${result?.greeks.delta.toFixed(3) ?? "n/a"}, Gamma ${result?.greeks.gamma.toFixed(3) ?? "n/a"}, Vega ${result?.greeks.vega.toFixed(2) ?? "n/a"}, Theta ${result?.greeks.theta.toFixed(2) ?? "n/a"}, Rho ${result?.greeks.rho.toFixed(2) ?? "n/a"}`, "Please explain the dealer's objective, identify the key mistake, and give a level-appropriate decision rule for future decisions."] .join("\n"));
   };
-  const choiceItems: { key: string; label: string; detail: string; wide?: boolean }[] = [
-    ...round.trades.map((trade) => ({ key: trade.id, label: trade.label, detail: trade.detail })),
+  const choiceItems: { key: string; label: ReactNode; detail?: string; wide?: boolean }[] = [
+    ...round.trades.map((trade) => ({ key: trade.id, label: <><SideBadge side={trade.side} />{tradeBody(trade)}</> })),
     { key: "do-nothing", label: "DO NOTHING", detail: "Keep the current book unchanged", wide: true },
   ];
   const selectedIndices = choiceItems.map((item, index) => selectedTrades.includes(item.key) ? index : -1).filter((index) => index >= 0);
@@ -103,18 +101,18 @@ export function Hedge({ ql, bank, onScore, onBack, scoreboard }: { ql?: QuantLib
         </div>
       </ScenarioCard>
       <div className="game-layout">
-        <PositionBook
-          label="CLIENT PRODUCT · DEALER SHORT"
-          title={round.template.name}
-          description={round.template.description}
-          legs={round.legs.map((leg) => ({ side: leg.qty > 0 ? "long" : "short", text: `${leg.strike} ${leg.type.toUpperCase()}` }))}
-          signals={<>
-            <small>DEALER RISK AFTER SHOCK</small>
-            <strong className={round.preTrade.delta >= 0 ? "positive" : "negative"}>{deltaLabel}</strong>
-            <strong className={round.preTrade.gamma >= 0 ? "positive" : "negative"}>{gammaLabel}</strong>
-            <strong className={round.preTrade.vega >= 0 ? "positive" : "negative"}>{vegaLabel}</strong>
-          </>}
-        />
+        <div className="position-stack">
+          <PositionBook
+            label="CLIENT POSITION"
+            title={round.template.name}
+            description={round.template.description}
+            legs={round.legs.map((leg) => ({ side: leg.qty > 0 ? "long" : "short", text: `${leg.strike} ${leg.type.toUpperCase()}` }))}
+          />
+          <PositionBook
+            label="DEALER POSITION"
+            legs={round.legs.map((leg) => ({ side: leg.qty > 0 ? "short" : "long", text: `${leg.strike} ${leg.type.toUpperCase()}` }))}
+          />
+        </div>
         <article className="game-panel">
           <h2>Build the hedge</h2>
           <ChoiceGrid

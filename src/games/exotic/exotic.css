@@ -1,5 +1,13 @@
-/* exotic.css — Exotic drill accent. */
+/* exotic.css — Exotic drill accent and layout. */
 .mode-view.game-page.exotic { --accent: #c07f20; --accent-wash: #faf2e5; }
+
+/* Full-width read panel, like the other single-panel drills. */
+.exotic-board { margin-top: 22px; padding: 25px; border: 1px solid var(--line); background: var(--paper); }
+.exotic-board h2 { margin: 0 0 7px; color: var(--deep); font-size: 22px; }
+.exotic-board > .choice-note { margin: 0 0 18px; }
+
+/* Let the reveal explanation span the full row instead of a narrow cell. */
+.mode-view.game-page.exotic .reveal-grid p { grid-column: 1 / -1; }
 
 @media (max-width: 420px) {
   .mode-view.game-page.exotic .choice-grid { grid-template-columns: 1fr; }

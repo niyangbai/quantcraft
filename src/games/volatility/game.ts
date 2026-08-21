@@ -9,7 +9,7 @@
 // round generation, the labels, the explanation, and the AI tutor prompt.
 // No React, no storage.
 
-import { applyVolShock, blackVol } from "@quantcraft/finmath";
+import { applyVolShock, blackVol, termBumpAt } from "@quantcraft/finmath";
 import type { VolPnlBreakdown, VolShock, VolSurfaceParams } from "@quantcraft/finmath";
 import type { QuantLibRuntime } from "@quantcraft/quantlibjs";
 
@@ -135,8 +135,11 @@ const shuffle = <T,>(rng: () => number, items: readonly T[]): T[] => {
   return copy;
 };
 
+export const positionBody = (position: VolatilityPosition): string =>
+  `${position.qty}× ${position.kind.toUpperCase()}`;
+
 export const positionLabel = (position: VolatilityPosition): string =>
-  `${position.id} · ${position.side.toUpperCase()} ${position.qty} ${position.kind.toUpperCase()}`;
+  `${position.side.toUpperCase()} ${positionBody(position)}`;
 
 export const positionDetail = (position: VolatilityPosition): string =>
   `K ${position.strike} · ${position.expiry}`;
@@ -187,27 +190,34 @@ const drawShock = (rng: () => number): VolShock => {
   }
 };
 
-/** One sentence describing how this shock moves the surface. */
+const moneynessLabel = (m: number): string => (m === 0 ? "ATM" : `${m > 0 ? "+" : ""}${Math.round(m * 100)}%`);
+const signedDelta = (value: number): string => (value === 0 ? "0.0" : `${value > 0 ? "+" : ""}${value.toFixed(1)}`);
+
+/** How this shock moves the surface, as ΔIV (vol pts) per expiry or moneyness. */
 export const describeVolShock = (shock: VolShock): string => {
   switch (shock.type) {
     case "skew-steepen":
-      return `skew steepens by ${shock.magnitude.toFixed(2)} — low strikes gain vol, high strikes lose it.`;
-    case "skew-flatten":
-      return `skew flattens by ${shock.magnitude.toFixed(2)} — the put wing gives vol back, high strikes gain.`;
-    case "front-vol-up":
-      return `front-end ATM vol jumps ${(shock.magnitude * 100).toFixed(1)} pts and fades with maturity.`;
-    case "back-vol-up":
-      return `back-end ATM vol jumps ${(shock.magnitude * 100).toFixed(1)} pts and builds toward long maturities.`;
+    case "skew-flatten": {
+      const sign = shock.type === "skew-steepen" ? -1 : 1;
+      return MONEYNESS.map((m) => `${moneynessLabel(m)} ${signedDelta(sign * shock.magnitude * m * 100)}`).join(" · ");
+    }
     case "smile-up":
-      return `smile curvature rises by ${shock.magnitude.toFixed(2)} — the wings lift around ATM.`;
-    case "smile-down":
-      return `smile curvature falls by ${shock.magnitude.toFixed(2)} — the wings sag toward ATM.`;
+    case "smile-down": {
+      const sign = shock.type === "smile-up" ? 1 : -1;
+      return MONEYNESS.map((m) => `${moneynessLabel(m)} ${signedDelta(sign * shock.magnitude * m * m * 100)}`).join(" · ");
+    }
+    case "front-vol-up":
+    case "back-vol-up": {
+      const kind: "front" | "back" = shock.type === "front-vol-up" ? "front" : "back";
+      const bump = { kind, magnitude: shock.magnitude };
+      return EXPIRIES.map((expiry) => `${expiry.label} ${signedDelta(termBumpAt(bump, expiry.maturity) * 100)}`).join(" · ");
+    }
   }
 };
 
-const describeScenario = (surface: VolSurfaceParams, shockDetail: string): string => {
+const describeScenario = (surface: VolSurfaceParams, shock: string): string => {
   const term = surface.termSlope === 0 ? "" : surface.termSlope > 0 ? `, +${(surface.termSlope * 100).toFixed(0)} pts/yr` : `, ${(surface.termSlope * 100).toFixed(0)} pts/yr`;
-  return `Spot ${surface.spot}. Base surface: ATM ${(surface.atmLevel * 100).toFixed(0)}%${term} · skew ${surface.skew.toFixed(2)} · smile ${surface.curvature.toFixed(2)}. Shock: ${shockDetail}`;
+  return `Spot ${surface.spot}. Base surface: ATM ${(surface.atmLevel * 100).toFixed(0)}%${term} · skew ${surface.skew.toFixed(2)} · smile ${surface.curvature.toFixed(2)}. Shock: ${shock}`;
 };
 
 /**
@@ -420,8 +430,8 @@ export function buildVolatilityPrompt(round: VolatilityRound, difficulty: string
   return [
     `I am training as a ${difficulty} on the QuantCraft Volatility drill.`,
     `Market: spot ${spot}. Base surface: ATM ${(surface.atmLevel * 100).toFixed(0)}%${term} · skew ${surface.skew.toFixed(2)} · smile ${surface.curvature.toFixed(2)}.`,
-    `Shock: ${shockLabel} — ${shockDetail}`,
-    `Positions: ${positions.map((position, index) => `${positionText(position)} (IV ${(analysis[index].ivBefore * 100).toFixed(1)}% → ${(analysis[index].ivAfter * 100).toFixed(1)}%, vega ${analysis[index].vegaPerPoint.toFixed(3)})`).join(" | ")}.`,
+    `Shock: ${shockLabel === shockDetail ? shockLabel : `${shockLabel} — ${shockDetail}`}`,
+    `Positions: ${positions.map((position, index) => `${position.id}: ${positionText(position)} (IV ${(analysis[index].ivBefore * 100).toFixed(1)}% → ${(analysis[index].ivAfter * 100).toFixed(1)}%, vega ${analysis[index].vegaPerPoint.toFixed(3)})`).join(" | ")}.`,
     `Correct: ${answerText} (vol P&L ${signedPnl(analysis[answerIndex].pnl)}).`,
     `Working: ${round.explanation}`,
     "Calls and puts share the same vega, so the answer never depends on the option kind — only on strike, expiry, side, and size.",
