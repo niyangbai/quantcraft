@@ -121,6 +121,7 @@ rewritten to `.js`, then runs `test/payoff.test.mjs` against that output.
 
 - React 19 and TypeScript 6 frontend
 - Vite 8 build and development server
+- Shared game UI kit in [`src/ui`](src/ui) — every mode composes the same blocks (`GameFrame`, `ScenarioCard`, `PositionBook`, `ChoiceGrid`, `RevealBar`), so new modes are assembled from existing modules
 - Official QuantLib 1.43 compiled to WebAssembly
 - Local TypeScript wrapper in [`packages/market-kernel`](packages/market-kernel)
 - Browser Local Storage for optional persistence

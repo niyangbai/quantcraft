@@ -1,0 +1,136 @@
+/* game.css — the single shared stylesheet for every game mode.
+   Page chrome (back-home, game-scoreboard, mode-header, round-timer,
+   round-result, action-row) lives in Core.css. Modes assemble the blocks
+   below from the src/ui component kit and may add mode-specific hooks
+   (.payoff / .greekthon / .hedge) in their own small stylesheet. */
+
+.mode-view.game-page.payoff,
+.mode-view.game-page.greekthon,
+.mode-view.game-page.hedge { max-width: 980px; }
+
+/* ------------------------------------------------------------------ */
+/* Scenario card (market event / drill question)                       */
+/* ------------------------------------------------------------------ */
+
+.scenario-card { margin: 30px 0 22px; padding: 25px 30px 22px; background: var(--paper); border: 1px solid var(--line); }
+.scenario-card > small,
+.scenario-card > strong,
+.scenario-card > p { display: block; }
+.scenario-card > small { font-size: 8px; letter-spacing: 1.3px; color: var(--muted); }
+.scenario-card > strong { font-size: 25px; color: var(--deep); margin: 7px 0 4px; }
+.scenario-card.large-title > strong { font-size: 30px; line-height: 1.1; letter-spacing: -0.5px; }
+.scenario-card > p { max-width: 620px; margin: 8px 0 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.scenario-card .metric-grid { margin-top: 18px; }
+
+.metric-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin-top: 18px; border: 1px solid var(--line); background: var(--line); }
+.metric-grid > span { min-width: 0; padding: 12px; background: #fff; color: var(--muted); }
+.metric-grid small { display: block; margin-bottom: 7px; color: var(--muted); font-size: 7px; letter-spacing: 1px; }
+.metric-grid strong { display: block; margin: 0; color: var(--deep); font-size: 13px; line-height: 1.35; white-space: nowrap; }
+.metric-grid b { color: var(--coral); font-weight: 900; }
+.metric-grid .tone-positive { color: #397651; }
+.metric-grid .tone-negative { color: #c64e42; }
+.metric-grid .tone-flat { color: #7b8581; }
+
+.dealer-objective { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; align-items: baseline; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
+.dealer-objective small { color: var(--muted); font-size: 8px; letter-spacing: 1.2px; }
+.dealer-objective strong { color: var(--deep); font-size: 14px; letter-spacing: .5px; }
+.dealer-objective span { grid-column: 1 / -1; color: var(--muted); font-size: 10px; line-height: 1.4; }
+
+/* ------------------------------------------------------------------ */
+/* Two-column layout                                                   */
+/* ------------------------------------------------------------------ */
+
+.game-layout { display: grid; grid-template-columns: 1.08fr .92fr; gap: 12px; }
+.game-layout article { padding: 25px; border: 1px solid var(--line); background: var(--paper); }
+.game-layout h2 { margin: 7px 0; color: var(--deep); font-size: 22px; }
+.game-layout article > small { display: block; font-size: 8px; letter-spacing: 1.3px; color: var(--muted); }
+
+/* ------------------------------------------------------------------ */
+/* Position book                                                       */
+/* ------------------------------------------------------------------ */
+
+.position-book h2 { margin: 7px 0 12px; font-size: 21px; }
+.position-book > p { margin: 0 0 19px; color: var(--muted); font-size: 11px; }
+.position-legs { display: grid; grid-template-columns: 1fr; gap: 6px; }
+.position-legs > div { display: flex; align-items: center; gap: 9px; margin-top: 6px; color: var(--muted); font-size: 11px; }
+.position-legs b { width: 42px; padding: 5px; text-align: center; font-size: 7px; letter-spacing: .8px; }
+.position-legs b.long { background: #dceade; color: #467c57; }
+.position-legs b.short { background: #f7dcd5; color: #9b4d42; }
+
+.book-signals { display: grid; grid-template-columns: 1fr; gap: 6px; margin-top: 20px; }
+.book-signals small { color: var(--muted); font-size: 8px; letter-spacing: 1px; }
+.book-signals strong { display: block; padding: 8px 10px; border: 1px solid var(--line); font-size: 9px; text-align: left; letter-spacing: .8px; }
+.book-signals .positive { background: #e2efe5; color: #397651; }
+.book-signals .negative { background: #f8e1dc; color: #a3483d; }
+.book-signals .signal-rule { font-weight: 900; letter-spacing: .6px; }
+
+/* ------------------------------------------------------------------ */
+/* Choice grid                                                         */
+/* ------------------------------------------------------------------ */
+
+.choice-note { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.45; }
+.choice-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 17px; }
+.choice-grid button { min-height: 66px; padding: 11px; border: 1px solid var(--line); background: #fff; color: var(--deep); text-align: left; cursor: pointer; transition: .15s; }
+.choice-grid button:hover:not(:disabled),
+.choice-grid button.selected { border-color: var(--coral); background: #fff1eb; transform: translateY(-1px); }
+.choice-grid button:disabled { cursor: default; }
+.choice-grid button.wide { grid-column: 1 / -1; }
+.choice-grid strong,
+.choice-grid small { display: block; }
+.choice-grid strong { font-size: 9px; }
+.choice-grid small { margin-top: 5px; color: var(--muted); font-size: 8px; }
+.choice-grid button.correct { border-color: #4f8a61; background: #e2efe5; color: #2f5e3e; transform: translateY(-1px); box-shadow: 4px 4px 0 #a7d1ad, 0 10px 24px #24383a20; }
+.choice-grid button.wrong { border-color: #c15e4e; background: #f8e1dc; color: #a3483d; box-shadow: 4px 4px 0 #f0aaa0, 0 10px 24px #24383a20; }
+
+/* Three-column choice grids (e.g. Greekthon direction buttons). */
+.choice-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+.choice-grid button.tone-down { background: #f7dcd5; color: #a3483d; }
+.choice-grid button.tone-flat { background: #eee9d9; color: var(--deep); }
+.choice-grid button.tone-up { background: #e5f0e5; color: #397651; }
+
+/* Large numeric answer buttons (e.g. Payoff drills). */
+.choice-grid.large button { min-height: 84px; display: grid; align-content: center; justify-items: center; text-align: center; }
+.choice-grid.large strong { font-size: 26px; font-weight: 900; font-variant-numeric: tabular-nums; letter-spacing: -0.5px; }
+
+/* ------------------------------------------------------------------ */
+/* Reveal bar                                                          */
+/* ------------------------------------------------------------------ */
+
+.reveal-grid { display: grid; grid-template-columns: 1fr 1fr 1.4fr; gap: 10px; margin: 12px 0; }
+.reveal-grid > div,
+.reveal-grid > p { margin: 0; padding: 15px 17px; border: 1px solid var(--line); background: var(--paper); }
+.reveal-grid span { display: block; margin-bottom: 7px; color: var(--muted); font-size: 8px; letter-spacing: 1px; }
+.reveal-grid strong { display: block; color: var(--deep); font-size: 15px; }
+.reveal-grid strong > span { display: block; }
+.reveal-grid .tone-positive { color: #397651; }
+.reveal-grid .tone-negative { color: #a3483d; }
+.reveal-grid p { display: flex; align-items: center; color: var(--muted); font-size: 10px; line-height: 1.5; }
+
+/* ------------------------------------------------------------------ */
+/* Responsive                                                          */
+/* ------------------------------------------------------------------ */
+
+@media (max-width: 760px) {
+  .game-layout,
+  .reveal-grid { grid-template-columns: 1fr; }
+  .game-layout article { padding: 19px; }
+  .scenario-card.large-title > strong { font-size: 24px; }
+  .choice-grid.large button { min-height: 72px; }
+  .choice-grid.large strong { font-size: 22px; }
+}
+
+@media (max-width: 560px) {
+  .metric-grid { grid-template-columns: 1fr; }
+  .metric-grid > span { display: grid; grid-template-columns: minmax(120px, 1fr) auto; align-items: center; gap: 10px; }
+  .metric-grid small { margin: 0; }
+  .metric-grid strong { font-size: 12px; }
+}
+
+@media (max-width: 420px) {
+  .scenario-card { padding: 17px; }
+  .game-layout article { padding: 15px; }
+  .choice-grid { gap: 6px; }
+  .choice-grid.large button { min-height: 66px; }
+  .choice-grid.large strong { font-size: 20px; }
+}
+

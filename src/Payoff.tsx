@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { AiPromptModal, GameScoreboard, RoundResult, RoundTimer } from "./Controls";
+import { AiPromptModal, RoundResult, RoundTimer } from "./Controls";
 import { secureSeed, seededRandom } from "./game";
 import type { Scoreboard } from "./game";
-import { buildPayoffPrompt, decisionDurationMs, generatePayoffQuestion, legDetailText, legSideText, levelForProgress, levelLabel } from "./payoffGame";
+import { buildPayoffPrompt, decisionDurationMs, generatePayoffQuestion, legDetailText, levelForProgress, levelLabel } from "./payoffGame";
 import type { PayoffSeed, PayoffTier } from "./payoffGame";
-import "./Hedge.css";
-import "./Payoff.css";
+import { ChoiceGrid, GameFrame, PositionBook, RevealBar, ScenarioCard } from "./ui";
 
 export function Payoff({
   seeds,
@@ -71,108 +70,79 @@ export function Payoff({
   }, [question, answered, duration, onScore]);
 
   if (!seeds.length) {
-    return <section className="mode-view game-page payoff"><button className="back-home" onClick={onBack}><span aria-hidden="true">←</span> BACK TO HOME</button><GameScoreboard scoreboard={scoreboard} mode="payoff" /><div className="drop-zone">No payoff position seeds loaded.</div></section>;
+    return <GameFrame mode="payoff" eyebrow="PAYOFF" title="Call the payoff." onBack={onBack} scoreboard={scoreboard}><div className="drop-zone">No payoff position seeds loaded.</div></GameFrame>;
   }
 
   return (
-    <section className="mode-view game-page payoff">
-      <button className="back-home" onClick={onBack}><span aria-hidden="true">←</span> BACK TO HOME</button>
-      <GameScoreboard scoreboard={scoreboard} mode="payoff" />
-      <div className="mode-header payoff-head">
-        <div>
-          <p className="eyebrow">PAYOFF · FLASH DRILL · ROUND {round} · {levelLabel(roundLevel)}</p>
-          <h1>Call the payoff.</h1>
-        </div>
-        <div className="header-tools">
-          <RoundTimer label="DECISION WINDOW" value={`${(duration / 1000).toFixed(0)}s`} durationMs={duration} resetKey={roundKey} />
-        </div>
-      </div>
-      {question ? <>
-        <section className="hedge-market market-shock payoff-scenario">
-          <small>SCENARIO · {question.typeLabel}</small>
-          <strong>{question.questionText}</strong>
-          <p>{question.scenarioText}</p>
-          <div className="shock-metrics">
-            <span>
-              <small>TERMINAL SPOT S(T)</small>
-              <strong>{question.type === "payoff" ? question.spot : "?"}</strong>
-            </span>
-            <span>
-              <small>POSITION</small>
-              <strong>{question.bookSummary}</strong>
-            </span>
-            <span>
-              <small>LEVEL</small>
-              <strong>{question.levelLabel}</strong>
-            </span>
-          </div>
-        </section>
-        <div className="hedge-layout">
-          <article className="hedge-product position-book payoff-book">
-            <small>YOUR POSITION</small>
-            <h2>{question.seed.label}</h2>
-            <div className="hedge-legs">
-              {question.legs.map((leg, index) => (
-                <div key={`${leg.kind}-${index}`}>
-                  <b className={leg.side}>{legSideText(leg)}</b>
-                  <span>{legDetailText(leg)}</span>
-                </div>
-              ))}
-            </div>
-            <div className="risk-signals">
-              <small>BOOK PAYOFF</small>
-              <strong className="payoff-rule">Σ quantity × signed leg payoff</strong>
-            </div>
-          </article>
-          <article className="hedge-ticket">
-            <h2>{question.typeLabel}</h2>
-            <p className="hedge-choice-note">{question.questionText}</p>
-            <div className="trade-choices payoff-choices">
-              {question.choices.map((choice, index) => {
-                const isCorrect = index === question.answerIndex;
-                const isSelected = index === selectedIndex;
-                const className = answered ? (isCorrect ? "correct" : isSelected ? "wrong" : "") : "";
-                return (
-                  <button key={index} className={className} disabled={answered} onClick={() => submit(index)}>
-                    <strong>{choice.label}</strong>
-                    <small>{choice.hint}</small>
-                  </button>
-                );
-              })}
-            </div>
-          </article>
-        </div>
-        {answered && (
-          <div className="hedge-reveal payoff-reveal">
-            <div>
-              <span>RESULT</span>
-              <strong className={feedback === "correct" ? "positive" : "negative"}>
-                {feedback === "correct" ? "CORRECT" : feedback === "timeout" ? "TIME'S UP" : "WRONG"}
-              </strong>
-            </div>
-            <div>
-              <span>ANSWER</span>
-              <strong>{question.answerText}</strong>
-            </div>
-            <p>{question.explanation}</p>
-          </div>
-        )}
-        {answered && (
-          <RoundResult
-            passed={feedback === "correct"}
-            status={feedback === "correct"
-              ? "PAYOFF SPOTTED"
-              : feedback === "timeout"
-                ? "DECISION WINDOW CLOSED"
-                : scoreboard.difficulty === "intern" ? "WRONG PAYOFF" : "WRONG PAYOFF · −1 LIFE"}
-            score={lastScore}
-            actionLabel="NEXT ROUND"
-            onNext={next}
-            onAskAI={feedback === "correct" ? undefined : () => setAiPrompt(buildPayoffPrompt(question, scoreboard.difficulty))}
+    <GameFrame
+      mode="payoff"
+      eyebrow={`PAYOFF · FLASH DRILL · ROUND ${round} · ${levelLabel(roundLevel)}`}
+      title="Call the payoff."
+      onBack={onBack}
+      scoreboard={scoreboard}
+      tools={<RoundTimer label="DECISION WINDOW" value={`${(duration / 1000).toFixed(0)}s`} durationMs={duration} resetKey={roundKey} />}
+    >
+      {question ? (
+        <>
+          <ScenarioCard
+            label={`SCENARIO · ${question.typeLabel}`}
+            title={question.questionText}
+            description={question.scenarioText}
+            largeTitle
+            metrics={[
+              { label: "TERMINAL SPOT S(T)", value: question.type === "payoff" ? question.spot : "?" },
+              { label: "POSITION", value: question.bookSummary },
+              { label: "LEVEL", value: question.levelLabel },
+            ]}
           />
-        )}
-        {aiPrompt && <AiPromptModal prompt={aiPrompt} onClose={() => setAiPrompt(undefined)} />}
-      </> : <div className="drop-zone">Preparing payoff cards…</div>}
-    </section>
+          <div className="game-layout">
+            <PositionBook
+              label="YOUR POSITION"
+              title={question.seed.label}
+              legs={question.legs.map((leg) => ({ side: leg.side, text: legDetailText(leg) }))}
+              signals={<><small>BOOK PAYOFF</small><strong className="signal-rule">Σ quantity × signed leg payoff</strong></>}
+            />
+            <article className="game-panel">
+              <h2>{question.typeLabel}</h2>
+              <ChoiceGrid
+                note={question.questionText}
+                items={question.choices.map((choice, index) => ({ key: `${choice.label}-${index}`, label: choice.label, detail: choice.hint }))}
+                selected={selectedIndex !== undefined ? [selectedIndex] : []}
+                revealed={answered}
+                answerIndex={question.answerIndex}
+                onToggle={(index) => submit(index)}
+                large
+              />
+            </article>
+          </div>
+          {answered && (
+            <RevealBar
+              cells={[
+                { label: "RESULT", value: feedback === "correct" ? "CORRECT" : feedback === "timeout" ? "TIME'S UP" : "WRONG", tone: feedback === "correct" ? "positive" : "negative" },
+                { label: "ANSWER", value: question.answerText },
+              ]}
+              note={question.explanation}
+            />
+          )}
+          {answered && (
+            <RoundResult
+              passed={feedback === "correct"}
+              status={feedback === "correct"
+                ? "PAYOFF SPOTTED"
+                : feedback === "timeout"
+                  ? "DECISION WINDOW CLOSED"
+                  : scoreboard.difficulty === "intern" ? "WRONG PAYOFF" : "WRONG PAYOFF · −1 LIFE"}
+              score={lastScore}
+              actionLabel="NEXT ROUND"
+              onNext={next}
+              onAskAI={feedback === "correct" ? undefined : () => setAiPrompt(buildPayoffPrompt(question, scoreboard.difficulty))}
+            />
+          )}
+          {aiPrompt && <AiPromptModal prompt={aiPrompt} onClose={() => setAiPrompt(undefined)} />}
+        </>
+      ) : (
+        <div className="drop-zone">Preparing payoff cards…</div>
+      )}
+    </GameFrame>
   );
 }

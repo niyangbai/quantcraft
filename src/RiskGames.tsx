@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { QuantLibRuntime } from "@quantcraft/market-kernel";
-import { AiPromptModal, GameScoreboard, RoundResult, RoundTimer } from "./Controls";
+import { AiPromptModal, RoundResult, RoundTimer } from "./Controls";
 import { between, isoDate, market, secureSeed, seededRandom } from "./game";
 import type { HedgeLeg, QuestionBank, Scoreboard } from "./game";
-import "./Greekthon.css";
-import "./Hedge.css";
+import { ChoiceGrid, GameFrame, PositionBook, RevealBar, ScenarioCard } from "./ui";
 
 type GreekDirection = "down" | "unchanged" | "up";
 type GreekRisk = { delta: number; gamma: number; vega: number; theta: number; rho: number };
@@ -26,6 +25,25 @@ const displayedDirection = (before: number, after: number, precision: number): G
 };
 
 const greekDirection = (before: number, after: number) => displayedDirection(before, after, 4);
+
+const metricToneClass = (direction: GreekDirection): string =>
+  direction === "up" ? "tone-positive" : direction === "down" ? "tone-negative" : "tone-flat";
+
+const DIRECTIONS: { key: GreekDirection; label: string; detail: string; tone: "down" | "flat" | "up" }[] = [
+  { key: "down", label: "↓", detail: "GOES DOWN", tone: "down" },
+  { key: "unchanged", label: "→", detail: "UNCHANGED", tone: "flat" },
+  { key: "up", label: "↑", detail: "GOES UP", tone: "up" },
+];
+
+const greekLines = (greeks: GreekRisk) => (
+  <>
+    <span>Δ {greeks.delta.toFixed(3)}</span>
+    <span>Γ {greeks.gamma.toFixed(3)}</span>
+    <span>V {greeks.vega.toFixed(2)}</span>
+    <span>Θ {greeks.theta.toFixed(2)}</span>
+    <span>ρ {greeks.rho.toFixed(2)}</span>
+  </>
+);
 
 export function Greekthon({ ql, bank, onScore, onBack, scoreboard }: { ql?: QuantLibRuntime; bank: QuestionBank["greekthon"]; onScore: (score: number, correct: boolean, streak: number, label: string) => void; onBack: () => void; scoreboard: Scoreboard }) {
   const REVIEW_DURATION_MS = 3000;
@@ -90,7 +108,61 @@ export function Greekthon({ ql, bank, onScore, onBack, scoreboard }: { ql?: Quan
     const timer = setTimeout(() => { setAnswered(true); setFeedback("timeout"); onScore(-50, false, 0, `${question.metric} · Time out`); setTimeout(next, REVIEW_DURATION_MS); }, duration);
     return () => clearTimeout(timer);
   }, [question, answered, duration, onScore]);
-  return <section className="mode-view game-page greekthon"><button className="back-home" onClick={onBack}><span aria-hidden="true">←</span> BACK TO HOME</button><GameScoreboard scoreboard={scoreboard} mode="greekthon" /><div className="mode-header greekthon-head"><div><p className="eyebrow">GREEKTHON · FLASH ROUND · STREAK ×{scoreboard.streak}</p><h1>Up, flat, or down?</h1></div><div className="header-tools"><RoundTimer label="DECISION WINDOW" value={`${(duration / 1000).toFixed(1)}s`} durationMs={duration} resetKey={seed} /></div></div><p className="mode-intro">Read the market shock, the position, and the requested metric. No calculator. Just direction.</p>{question ? <div className={`flashcard ${feedback ?? ""}`}><div className="flash-top"><span className="greek-chip">{question.metric}</span><span>ROUND {seed + 1}</span></div><div className="market-shock"><small>MARKET EVENT</small><strong>{question.scenario.label}</strong><div className="shock-metrics"><span><small>SPOT PRICE</small><strong>{question.marketMove.beforeSpot.toFixed(2)} <b className={`move-${question.marketMove.spotDirection}`}>→ {question.marketMove.afterSpot.toFixed(2)}</b></strong></span><span><small>IMPLIED VOLATILITY</small><strong>{(question.marketMove.beforeVolatility * 100).toFixed(1)}% <b className={`move-${question.marketMove.volatilityDirection}`}>→ {(question.marketMove.afterVolatility * 100).toFixed(1)}%</b></strong></span><span><small>INTEREST RATE</small><strong>{(question.marketMove.beforeRate * 100).toFixed(2)}% <b className={`move-${question.marketMove.rateDirection}`}>→ {(question.marketMove.afterRate * 100).toFixed(2)}%</b></strong></span></div></div><div className="position-book"><small>YOUR POSITION</small><h2>{question.book.name}</h2>{question.book.legs.map((leg, index) => <div key={`${leg.type}-${index}`}><b className={leg.qty > 0 ? "long" : "short"}>{leg.qty > 0 ? "LONG" : "SHORT"}</b><span>{Math.abs(leg.qty)}× {leg.strike} {leg.type.toUpperCase()}</span></div>)}</div><div className="flash-question">What happens to portfolio <strong>{question.metric}</strong>?</div>{answered ? <div className="flash-feedback"><strong>{feedback === "correct" ? "CORRECT" : feedback === "timeout" ? "TIME'S UP" : "WRONG"}</strong><span>{question.before.toFixed(4)} → <b className={`metric-${question.direction}`}>{question.after.toFixed(4)}</b></span></div> : <div className="direction-buttons"><button onClick={() => answer("down")}>↓<span>GOES DOWN</span></button><button onClick={() => answer("unchanged")}>→<span>UNCHANGED</span></button><button onClick={() => answer("up")}>↑<span>GOES UP</span></button></div>}</div> : <div className="drop-zone">Preparing cards…</div>}</section>;
+  return (
+    <GameFrame
+      mode="greekthon"
+      eyebrow={`GREEKTHON · FLASH ROUND · STREAK ×${scoreboard.streak}`}
+      title="Up, flat, or down?"
+      intro="Read the market shock, the position, and the requested metric. No calculator. Just direction."
+      onBack={onBack}
+      scoreboard={scoreboard}
+      tools={<RoundTimer label="DECISION WINDOW" value={`${(duration / 1000).toFixed(1)}s`} durationMs={duration} resetKey={seed} />}
+    >
+      {question ? (
+        <>
+          <ScenarioCard
+            label={`MARKET EVENT · ${question.metric}`}
+            title={question.scenario.label}
+            description={question.scenario.detail}
+            metrics={[
+              { label: "SPOT PRICE", value: <>{question.marketMove.beforeSpot.toFixed(2)} <b className={metricToneClass(question.marketMove.spotDirection)}>→ {question.marketMove.afterSpot.toFixed(2)}</b></> },
+              { label: "IMPLIED VOLATILITY", value: <>{`${(question.marketMove.beforeVolatility * 100).toFixed(1)}%`} <b className={metricToneClass(question.marketMove.volatilityDirection)}>→ {(question.marketMove.afterVolatility * 100).toFixed(1)}%</b></> },
+              { label: "INTEREST RATE", value: <>{`${(question.marketMove.beforeRate * 100).toFixed(2)}%`} <b className={metricToneClass(question.marketMove.rateDirection)}>→ {(question.marketMove.afterRate * 100).toFixed(2)}%</b></> },
+            ]}
+          />
+          <div className="game-layout">
+            <PositionBook
+              label="YOUR POSITION"
+              title={question.book.name}
+              legs={question.book.legs.map((leg) => ({ side: leg.qty > 0 ? "long" : "short", text: `${Math.abs(leg.qty)}× ${leg.strike} ${leg.type.toUpperCase()}` }))}
+            />
+            <article className="game-panel">
+              <h2>What happens to portfolio <strong>{question.metric}</strong>?</h2>
+              <ChoiceGrid
+                items={DIRECTIONS.map((direction) => ({ key: direction.key, label: direction.label, detail: direction.detail, tone: direction.tone }))}
+                selected={[]}
+                revealed={answered}
+                answerIndex={DIRECTIONS.findIndex((direction) => direction.key === question.direction)}
+                onToggle={(index) => answer(DIRECTIONS[index].key)}
+                columns={3}
+              />
+            </article>
+          </div>
+          {answered && (
+            <RevealBar
+              cells={[
+                { label: "RESULT", value: feedback === "correct" ? "CORRECT" : feedback === "timeout" ? "TIME'S UP" : "WRONG", tone: feedback === "correct" ? "positive" : "negative" },
+                { label: question.metric, value: <>{question.before.toFixed(4)} → <b className={metricToneClass(question.direction)}>{question.after.toFixed(4)}</b></> },
+              ]}
+              note={`${question.book.name} · ${question.scenario.label}: ${question.metric.toLowerCase()} goes ${question.direction === "up" ? "up" : question.direction === "down" ? "down" : "flat"}.`}
+            />
+          )}
+        </>
+      ) : (
+        <div className="drop-zone">Preparing cards…</div>
+      )}
+    </GameFrame>
+  );
 }
 
 export function Hedge({ ql, bank, onScore, onBack, scoreboard }: { ql?: QuantLibRuntime; bank: QuestionBank["hedge"]; onScore: (score: number, passed: boolean, label: string) => void; onBack: () => void; scoreboard: Scoreboard }) {
@@ -199,7 +271,7 @@ export function Hedge({ ql, bank, onScore, onBack, scoreboard }: { ql?: QuantLib
     setSecondsLeft(ROUND_SECONDS);
     setResult(undefined);
   };
-  if (!round) return <section className="mode-view game-page hedge"><button className="back-home" onClick={onBack}><span aria-hidden="true">←</span> BACK TO HOME</button><GameScoreboard scoreboard={scoreboard} mode="hedge" /><div className="drop-zone">Preparing hedge book…</div></section>;
+  if (!round) return <GameFrame mode="hedge" eyebrow="HEDGE" title="Read the shock. Pick the trade." onBack={onBack} scoreboard={scoreboard}><div className="drop-zone">Preparing hedge book…</div></GameFrame>;
   const deltaLabel = round.preTrade.delta >= 0 ? "LONG DELTA" : "SHORT DELTA";
   const gammaLabel = round.preTrade.gamma >= 0 ? "LONG GAMMA" : "SHORT GAMMA";
   const vegaLabel = round.preTrade.vega >= 0 ? "LONG VEGA" : "SHORT VEGA";
@@ -211,39 +283,83 @@ export function Hedge({ ql, bank, onScore, onBack, scoreboard }: { ql?: QuantLib
     const selectedLabel = selectedTrades.length ? selectedTrades.map((id) => id === "do-nothing" ? "DO NOTHING" : round.trades.find((trade) => trade.id === id)?.label ?? id).join(" + ") : "No hedge selected";
     setAiPrompt(["You are a derivatives risk tutor. Explain this failed portfolio-hedging exercise at the player's level. Teach the risk logic clearly, including why the selected hedge was weaker and how to choose a better hedge.", `PLAYER LEVEL: ${scoreboard.difficulty.toUpperCase()} (adapt the explanation and terminology to this level)`, `Market event: ${round.shock.label}`, `Market detail: ${round.shock.detail}`, `Spot: ${round.beforeSpot.toFixed(2)} -> ${round.spot.toFixed(2)}`, `Volatility: ${(round.beforeVolatility * 100).toFixed(1)}% -> ${(round.volatility * 100).toFixed(1)}%`, `Maturity: ${round.maturityDate}`, `Dealer objective: ${objectiveLabel}`, `Client product: ${round.template.name}`, `Product description: ${round.template.description}`, `Product option legs: ${round.legs.map((leg) => `${leg.qty > 0 ? "LONG" : "SHORT"} ${leg.strike} ${leg.type.toUpperCase()}`).join("; ")}`, "Available hedge tools:", availableTools, `My selected hedge: ${selectedLabel}`, `Resulting Greeks: Delta ${result?.greeks.delta.toFixed(3) ?? "n/a"}, Gamma ${result?.greeks.gamma.toFixed(3) ?? "n/a"}, Vega ${result?.greeks.vega.toFixed(2) ?? "n/a"}, Theta ${result?.greeks.theta.toFixed(2) ?? "n/a"}, Rho ${result?.greeks.rho.toFixed(2) ?? "n/a"}`, "Please explain the dealer's objective, identify the key mistake, and give a level-appropriate decision rule for future decisions."] .join("\n"));
   };
+  const choiceItems: { key: string; label: string; detail: string; wide?: boolean }[] = [
+    ...round.trades.map((trade) => ({ key: trade.id, label: trade.label, detail: trade.detail })),
+    { key: "do-nothing", label: "DO NOTHING", detail: "Keep the current book unchanged", wide: true },
+  ];
+  const selectedIndices = choiceItems.map((item, index) => selectedTrades.includes(item.key) ? index : -1).filter((index) => index >= 0);
+  const toggleTrade = (index: number) => {
+    if (result) return;
+    const id = choiceItems[index].key;
+    setSelectedTrades((current) => {
+      if (id === "do-nothing") return current.includes("do-nothing") ? [] : ["do-nothing"];
+      const without = current.filter((existing) => existing !== "do-nothing");
+      return without.includes(id) ? without.filter((existing) => existing !== id) : [...without, id];
+    });
+  };
   return (
-    <section className="mode-view game-page hedge">
-      <button className="back-home" onClick={onBack}><span aria-hidden="true">←</span> BACK TO HOME</button>
-      <GameScoreboard scoreboard={scoreboard} mode="hedge" />
-      <div className="mode-header hedge-head">
-        <div><p className="eyebrow">HEDGE · MARKET INTUITION</p><h1>Read the shock. Pick the trade.</h1></div>
-        <RoundTimer label="MARKET CLOSE" value={`${secondsLeft}s`} progress={secondsLeft / ROUND_SECONDS * 100} urgent={secondsLeft <= 10} />
-      </div>
-      <section className="hedge-market market-shock">
-        <small>MARKET EVENT · BEFORE → AFTER</small>
-        <strong>{round.shock.label}</strong>
-        <p>{round.shock.detail} The dealer's goal is to neutralize the book's risk, not to predict the market.</p>
-        <div className="dealer-objective"><small>DEALER OBJECTIVE</small><strong>{objectiveLabel}</strong><span>Reduce this exposure{round.objectiveKeys.length > 1 ? " set" : ""} while avoiding unnecessary risk in the rest of the book.</span></div>
-        <div className="shock-metrics">
-          <span><small>SPOT PRICE</small><strong>{round.beforeSpot.toFixed(2)} <b>→ {round.spot.toFixed(2)}</b></strong></span>
-          <span><small>IMPLIED VOLATILITY</small><strong>{(round.beforeVolatility * 100).toFixed(1)}% <b>→ {(round.volatility * 100).toFixed(1)}%</b></strong></span>
-          <span><small>MATURITY</small><strong>{round.maturityDate}</strong></span>
+    <GameFrame
+      mode="hedge"
+      eyebrow="HEDGE · MARKET INTUITION"
+      title="Read the shock. Pick the trade."
+      onBack={onBack}
+      scoreboard={scoreboard}
+      tools={<RoundTimer label="MARKET CLOSE" value={`${secondsLeft}s`} progress={secondsLeft / ROUND_SECONDS * 100} urgent={secondsLeft <= 10} />}
+    >
+      <ScenarioCard
+        label="MARKET EVENT · BEFORE → AFTER"
+        title={round.shock.label}
+        description={<>{round.shock.detail} The dealer's goal is to neutralize the book's risk, not to predict the market.</>}
+        metrics={[
+          { label: "SPOT PRICE", value: <>{round.beforeSpot.toFixed(2)} <b>→ {round.spot.toFixed(2)}</b></> },
+          { label: "IMPLIED VOLATILITY", value: <>{`${(round.beforeVolatility * 100).toFixed(1)}%`} <b>→ {(round.volatility * 100).toFixed(1)}%</b></> },
+          { label: "MATURITY", value: round.maturityDate },
+        ]}
+      >
+        <div className="dealer-objective">
+          <small>DEALER OBJECTIVE</small>
+          <strong>{objectiveLabel}</strong>
+          <span>Reduce this exposure{round.objectiveKeys.length > 1 ? " set" : ""} while avoiding unnecessary risk in the rest of the book.</span>
         </div>
-      </section>
-      <div className="hedge-layout">
-        <article className="hedge-product position-book">
-          <small>CLIENT PRODUCT · DEALER SHORT</small><h2>{round.template.name}</h2><p>{round.template.description}</p>
-          <div className="hedge-legs">{round.legs.map((leg, index) => <div key={`${leg.type}-${index}`}><b className={leg.qty > 0 ? "long" : "short"}>{leg.qty > 0 ? "LONG" : "SHORT"}</b><span>{leg.strike} {leg.type.toUpperCase()}</span></div>)}</div>
-          <div className="risk-signals"><small>DEALER RISK AFTER SHOCK</small><strong className={round.preTrade.delta >= 0 ? "positive" : "negative"}>{deltaLabel}</strong><strong className={round.preTrade.gamma >= 0 ? "positive" : "negative"}>{gammaLabel}</strong><strong className={round.preTrade.vega >= 0 ? "positive" : "negative"}>{vegaLabel}</strong></div>
-        </article>
-        <article className="hedge-ticket">
+      </ScenarioCard>
+      <div className="game-layout">
+        <PositionBook
+          label="CLIENT PRODUCT · DEALER SHORT"
+          title={round.template.name}
+          description={round.template.description}
+          legs={round.legs.map((leg) => ({ side: leg.qty > 0 ? "long" : "short", text: `${leg.strike} ${leg.type.toUpperCase()}` }))}
+          signals={<>
+            <small>DEALER RISK AFTER SHOCK</small>
+            <strong className={round.preTrade.delta >= 0 ? "positive" : "negative"}>{deltaLabel}</strong>
+            <strong className={round.preTrade.gamma >= 0 ? "positive" : "negative"}>{gammaLabel}</strong>
+            <strong className={round.preTrade.vega >= 0 ? "positive" : "negative"}>{vegaLabel}</strong>
+          </>}
+        />
+        <article className="game-panel">
           <h2>Build the hedge</h2>
-          <p className="hedge-choice-note">Select multiple instruments when one Greek needs more than one offset.</p>
-          <div className="trade-choices">{round.trades.map((trade) => <button key={trade.id} className={selectedTrades.includes(trade.id) ? "selected" : ""} onClick={() => setSelectedTrades((current) => current.includes(trade.id) ? current.filter((id) => id !== trade.id) : [...current.filter((id) => id !== "do-nothing"), trade.id])} disabled={Boolean(result)}><strong>{trade.label}</strong><small>{trade.detail}</small></button>)}<button className={selectedTrades.includes("do-nothing") ? "selected" : ""} onClick={() => setSelectedTrades((current) => current.includes("do-nothing") ? [] : ["do-nothing"])} disabled={Boolean(result)}><strong>DO NOTHING</strong><small>Keep the current book unchanged</small></button></div>
+          <ChoiceGrid
+            note="Select multiple instruments when one Greek needs more than one offset."
+            items={choiceItems}
+            selected={selectedIndices}
+            revealed={Boolean(result)}
+            onToggle={toggleTrade}
+          />
         </article>
       </div>
-      {result && <div className="hedge-reveal"><div><span>BEFORE</span><strong>Δ {round.preTrade.delta.toFixed(3)}</strong><strong>Γ {round.preTrade.gamma.toFixed(3)}</strong><strong>V {round.preTrade.vega.toFixed(2)}</strong><strong>Θ {round.preTrade.theta.toFixed(2)}</strong><strong>ρ {round.preTrade.rho.toFixed(2)}</strong></div><div><span>AFTER YOUR HEDGE</span><strong>Δ {result.greeks.delta.toFixed(3)}</strong><strong>Γ {result.greeks.gamma.toFixed(3)}</strong><strong>V {result.greeks.vega.toFixed(2)}</strong><strong>Θ {result.greeks.theta.toFixed(2)}</strong><strong>ρ {result.greeks.rho.toFixed(2)}</strong></div><p>{result.passed ? "Good call. The dealer's objective is met: the combined book risk is reduced." : result.timedOut ? `Best hedge: ${bestHedgeLabel}.` : `The selected hedge leaves more combined Greek risk. Best hedge: ${bestHedgeLabel}.`}</p></div>}
-      {result ? <><RoundResult passed={result.passed} status={result.passed ? "RISK REDUCED" : result.timedOut ? "MARKET CLOSED" : "RISK NOT IMPROVED"} score={result.score} actionLabel="NEXT SHOCK" onNext={next} onAskAI={createHedgePrompt} />{aiPrompt && <AiPromptModal prompt={aiPrompt} onClose={() => setAiPrompt(undefined)} />}</> : <div className="action-row submit-only"><button className="primary-action game-primary" disabled={!selectedTrades.length} onClick={() => settle(false)}>COMMIT HEDGE <span>→</span></button></div>}
-    </section>
+      {result && (
+        <RevealBar
+          cells={[
+            { label: "BEFORE", value: greekLines(round.preTrade) },
+            { label: "AFTER YOUR HEDGE", value: greekLines(result.greeks) },
+          ]}
+          note={result.passed ? "Good call. The dealer's objective is met: the combined book risk is reduced." : result.timedOut ? `Best hedge: ${bestHedgeLabel}.` : `The selected hedge leaves more combined Greek risk. Best hedge: ${bestHedgeLabel}.`}
+        />
+      )}
+      {result ? (
+        <><RoundResult passed={result.passed} status={result.passed ? "RISK REDUCED" : result.timedOut ? "MARKET CLOSED" : "RISK NOT IMPROVED"} score={result.score} actionLabel="NEXT SHOCK" onNext={next} onAskAI={createHedgePrompt} />{aiPrompt && <AiPromptModal prompt={aiPrompt} onClose={() => setAiPrompt(undefined)} />}</>
+      ) : (
+        <div className="action-row submit-only"><button className="primary-action game-primary" disabled={!selectedTrades.length} onClick={() => settle(false)}>COMMIT HEDGE <span>→</span></button></div>
+      )}
+    </GameFrame>
   );
 }
