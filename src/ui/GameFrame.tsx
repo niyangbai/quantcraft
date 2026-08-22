@@ -30,7 +30,7 @@ export function GameFrame({
 }) {
   return (
     <section className={`mode-view game-page ${mode}`}>
-      <button className="back-home" onClick={onBack}><span aria-hidden="true">←</span> BACK TO HOME</button>
+      <button className="back-home" onClick={onBack}><span aria-hidden="true"><svg viewBox="0 0 16 16" fill="none"><path d="M13 8 H3 M7 4 L3 8 L7 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg></span> BACK TO HOME</button>
       <GameScoreboard scoreboard={scoreboard} mode={mode} />
       <div className="mode-header">
         <div>

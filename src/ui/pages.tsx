@@ -53,7 +53,7 @@ export function Collection({ name, scoreboard, onRename, onResetScore, onBack }:
   };
   return (
     <section className="mode-view">
-      <button className="back-home" onClick={onBack}><span aria-hidden="true">←</span> BACK TO HOME</button>
+      <button className="back-home" onClick={onBack}><span aria-hidden="true"><svg viewBox="0 0 16 16" fill="none"><path d="M13 8 H3 M7 4 L3 8 L7 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg></span> BACK TO HOME</button>
       <div className="collection-heading">
         <div>
           <div className="player-title"><p className="eyebrow">{name.toUpperCase()} · PLAYER SETTLEMENT</p><button onClick={() => { setDraftName(name); setEditingName(true); }}>EDIT NAME</button></div>

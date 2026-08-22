@@ -81,9 +81,10 @@ button:disabled {
 .panel-label small { color: var(--muted); font-size: 10px; letter-spacing: 0; font-weight: 500; }
 .mode-view { max-width: 920px; margin: auto; }
 .mode-view.game-page { max-width: 1080px; }
-.back-home { display: inline-flex; align-items: center; gap: 10px; min-height: 42px; margin: 0 0 20px; padding: 0 16px 0 12px; border: 1px solid var(--line); background: var(--paper); color: var(--deep); cursor: pointer; font-size: 10px; font-weight: 900; letter-spacing: 1.2px; box-shadow: 4px 4px 0 var(--line); }
-.back-home span { display: inline-grid; place-items: center; width: 20px; height: 20px; background: var(--coral); color: var(--paper); font-size: 13px; line-height: 1; transition: transform .18s ease; }
-.back-home:hover { border-color: var(--deep); box-shadow: 4px 4px 0 var(--deep); }
+.back-home { display: inline-flex; align-items: center; gap: 10px; min-height: 42px; margin: 0 0 20px; padding: 0; border: 0; background: transparent; color: var(--deep); cursor: pointer; font-size: 10px; font-weight: 900; letter-spacing: 1.2px; }
+.back-home span { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; background: var(--coral); color: var(--paper); transition: transform .18s ease; }
+.back-home svg { display: block; width: 12px; height: 12px; }
+.back-home:hover { color: var(--coral); }
 .back-home:hover span { transform: translateX(-2px); }
 .back-home:focus-visible { outline: 2px solid var(--coral); outline-offset: 3px; }
 .game-scoreboard { position: relative; display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; margin-bottom: 20px; border: 1px solid var(--line); background: var(--line); }
