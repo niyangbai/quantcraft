@@ -36,6 +36,18 @@ export function Volatility({
     return generateVolatilityRound(rng, ql, params);
   }, [roundKey, ql, params]);
 
+  // Stable identity per round so the 3D surface's drag/zoom state isn't reset
+  // by unrelated re-renders (answered, timer, selection).
+  const markers = useMemo(
+    () =>
+      question?.positions.map((position) => ({
+        label: positionBody(position),
+        strike: position.strike,
+        maturity: position.maturity,
+      })) ?? [],
+    [question],
+  );
+
   const next = () => {
     nextSeed();
     setRound((value) => value + 1);
@@ -97,7 +109,7 @@ export function Volatility({
               { label: "SHOCK", value: question.shockLabel },
             ]}
           />
-          <VolSurface3D base={question.surface} shocked={question.shockedSurface} />
+          <VolSurface3D base={question.surface} shocked={question.shockedSurface} markers={markers} />
           <article className="vol-board">
             <h2>YOUR READ</h2>
             <p className="choice-note">Read the shock across expiry, then account for side and size.</p>

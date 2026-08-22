@@ -18,11 +18,13 @@
 .vol-surface { margin: 18px 0 0; }
 .vol-surface canvas { display: block; width: 100%; height: auto; background: #fbfbf7; border: 1px solid var(--line); cursor: grab; }
 .vol-surface canvas:active { cursor: grabbing; }
-.vol-surface-legend { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 8px; color: var(--muted); font-size: 9px; letter-spacing: .8px; }
+.vol-surface-legend { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 8px; color: var(--muted); font-size: 9px; letter-spacing: .8px; }
 .vol-surface-legend span { display: inline-flex; align-items: center; gap: 6px; font-weight: 800; }
 .vol-surface-legend i { width: 10px; height: 10px; border-radius: 2px; }
-.vol-surface-legend i.base { background: #3f6fb0; }
-.vol-surface-legend i.shocked { background: #ef765f; }
+.vol-scale-caption { letter-spacing: .6px; }
+.vol-scale { width: 170px; height: 8px; border: 1px solid var(--line); background: linear-gradient(90deg, #3f6fb0, #ece9e2 50%, #ef765f); }
+.vol-legend-sep { width: 1px; height: 14px; background: var(--line); margin: 0 4px; }
+.vol-ref i.base { width: 12px; height: 12px; border: 1.5px solid #6f8796; background: transparent; }
 
 @media (max-width: 760px) {
   .mode-view.game-page.volatility .choice-grid.cols-3 { grid-template-columns: 1fr; }
