@@ -9,10 +9,12 @@ usage() {
 Usage: ./manage.sh <command> [options]
 
 Commands:
-  compile        Compile the quantlibjs package and type-check the application
-  test           Run the payoff math tests and the quantlibjs tests
+  run            Build the workspace packages and start the development server
   build          Create a production build in dist/
-  run            Build the quantlibjs package and start the Vite development server
+  test           Run the full test suite (games + finmath + quantlibjs)
+  lint           Lint the source
+  compile        Build the workspace packages and type-check the application
+  preview        Preview the production build
   help           Show this help
 
 Extra options after run are passed to Vite, for example:
@@ -47,26 +49,36 @@ if (( $# > 0 )); then
 fi
 
 case "$command" in
-  compile)
+  run)
     require_node
     require_dependencies
-    npm run build:packages
-    npm exec -- tsc -b "$@"
-    ;;
-  test)
-    require_node
-    require_dependencies
-    npm test
+    npm run dev -- "$@"
     ;;
   build)
     require_node
     require_dependencies
     npm run build -- "$@"
     ;;
-  run)
+  test)
     require_node
     require_dependencies
-    npm run dev -- "$@"
+    npm test
+    ;;
+  lint)
+    require_node
+    require_dependencies
+    npm run lint
+    ;;
+  compile)
+    require_node
+    require_dependencies
+    npm run build:packages
+    npm exec -- tsc -b "$@"
+    ;;
+  preview)
+    require_node
+    require_dependencies
+    npm run preview -- "$@"
     ;;
   help|-h|--help)
     usage
