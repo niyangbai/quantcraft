@@ -6,3 +6,20 @@
 
 /* Flag the dealer book as the decision target. */
 .position-stack > .position-book:last-child { border-top: 3px solid var(--accent); }
+
+/* Three-cell reveal (before / your hedge / correct hedge) with a full-width note. */
+.mode-view.game-page.hedge .reveal-grid { grid-template-columns: 1fr 1fr 1fr; }
+.mode-view.game-page.hedge .reveal-grid p { grid-column: 1 / -1; }
+
+/* Risk reduction chart. */
+.hedge-chart-wrap { margin: 12px 0 0; padding: 20px 22px 16px; border: 1px solid var(--line); background: var(--paper); box-shadow: 0 1px 2px rgba(36, 56, 58, 0.05), 0 14px 34px -26px rgba(36, 56, 58, 0.5); }
+.hedge-chart-label { margin: 0 0 10px; color: #9a7770; letter-spacing: 1.8px; font-size: 10px; font-weight: 900; }
+.hedge-chart { display: block; width: 100%; height: auto; background: #fbfbf7; border: 1px solid var(--line); }
+.hedge-chart-legend { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 8px; color: var(--muted); font-size: 9px; letter-spacing: .8px; }
+.hedge-chart-legend span { display: inline-flex; align-items: center; gap: 6px; font-weight: 800; }
+.hedge-chart-legend i { width: 10px; height: 10px; border-radius: 2px; }
+.hedge-chart-legend i.before { background: #ef765f; }
+.hedge-chart-legend i.user { background: #3f6fb0; }
+.hedge-chart-legend i.best { background: #397651; }
+.hedge-chart-legend .objective { color: var(--deep); }
+.hedge-chart-legend .objective i { width: 14px; height: 3px; border-radius: 0; background: var(--coral); }

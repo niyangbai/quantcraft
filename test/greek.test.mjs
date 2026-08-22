@@ -92,5 +92,5 @@ test("the AI prompt carries the metric, book, and direction", () => {
   assert.ok(prompt.includes("DELTA"), "prompt names the metric");
   assert.ok(prompt.includes("Long call"), "prompt names the book");
   assert.ok(prompt.includes("up"), "prompt names the direction");
-  assert.ok(prompt.includes("ANALYST"), "prompt names the difficulty");
+  assert.ok(prompt.includes("basic finance knowledge"), "prompt names the learner's level");
 });

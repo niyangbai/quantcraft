@@ -4,10 +4,10 @@
 // mixed), how distractors are chosen, and the AI tutor prompt. The payoff
 // math itself lives in @quantcraft/finmath (payoff). No React, no storage.
 
-import { bookPayoff, breakevens, isContinuousBook, legPayoff, payoffExtremes, signedQuantity } from "@quantcraft/finmath";
+import { isContinuousBook, signedQuantity } from "@quantcraft/finmath";
 import type { PayoffBarrierType, PayoffExtremes, PayoffKind, PayoffLeg, PayoffSide } from "@quantcraft/finmath";
 import type { QuantLibRuntime, TerminalPayoffInput } from "@quantcraft/quantlibjs";
-import { chance, integer, pick, shuffle } from "../../shared.js";
+import { chance, integer, pick, shuffle, tutorIntro } from "../../shared.js";
 
 export type PayoffTier = 1 | 2 | 3 | 4 | 5;
 export type PayoffQuestionType = "payoff" | "maxProfit" | "breakeven";
@@ -52,8 +52,8 @@ export type PayoffQuestion = {
 /* QuantLib-backed payoff math                                         */
 /* ------------------------------------------------------------------ */
 /* The terminal-payoff / extremes / breakevens math runs in the QuantLib
-   layer (C++ bindings). When a runtime is available the drill routes every
-   number through it; the pure-TypeScript finmath versions are the fallback. */
+   layer (C++ bindings). The pure-TypeScript finmath analyzers are used only
+   as a cross-check in the test suite, never in the running drill. */
 
 export const toTerminalLeg = (leg: PayoffLeg): TerminalPayoffInput => ({
   kind: leg.kind,
@@ -69,6 +69,9 @@ export const toTerminalLeg = (leg: PayoffLeg): TerminalPayoffInput => ({
   barrierTouched: leg.barrierTouched,
   barrierType: leg.barrierType,
 });
+
+const qlBookPayoff = (ql: QuantLibRuntime, legs: PayoffLeg[], spot: number): number =>
+  legs.reduce((sum, leg) => sum + ql.terminalPayoff(toTerminalLeg(leg), spot), 0);
 
 const qlPayoffExtremes = (ql: QuantLibRuntime, legs: PayoffLeg[]): PayoffExtremes | undefined => {
   try {
@@ -225,9 +228,10 @@ const explainMaxProfit = (extremes: { max: number | "unbounded" }): string =>
     ? "The payoff keeps growing as S(T) rises, so the position has no cap on profit."
     : `The highest payoff the book can reach is ${extremes.max}; the position is capped once it is fully in the money.`;
 
-const explainBreakeven = (legs: PayoffLeg[], root: number): string => {
-  const above = bookPayoff(legs, root + 1);
-  const below = bookPayoff(legs, root - 1);
+const explainBreakeven = (ql: QuantLibRuntime, legs: PayoffLeg[], root: number): string => {
+  const above = qlBookPayoff(ql, legs, root + 1);
+  // QuantLib rejects negative spot, so a root at S=0 has no "below" sample.
+  const below = root > 0 ? qlBookPayoff(ql, legs, root - 1) : 0;
   if (above > below) return `At S(T) = ${root} the book breaks even exactly. Profit increases as S(T) rises above ${root}.`;
   if (below > above) return `At S(T) = ${root} the book breaks even exactly. Profit increases as S(T) falls below ${root}.`;
   return `At S(T) = ${root} the book breaks even exactly.`;
@@ -387,7 +391,7 @@ const makeQuestion = (
   };
 };
 
-const tryGenerate = (rng: () => number, seeds: PayoffSeed[], tier: PayoffTier, ql?: QuantLibRuntime): PayoffQuestion | undefined => {
+const tryGenerate = (rng: () => number, seeds: PayoffSeed[], tier: PayoffTier, ql: QuantLibRuntime): PayoffQuestion | undefined => {
   const pool = seeds.filter((seed) => {
     const count = seed.legs.length;
     if (tier === 1) return count === 1;
@@ -405,19 +409,19 @@ const tryGenerate = (rng: () => number, seeds: PayoffSeed[], tier: PayoffTier, q
   let type = pickType(rng, tier);
   if (type === "breakeven") {
     if (continuous) {
-      const roots = ql ? qlPayoffBreakevens(ql, legs) : breakevens(legs);
+      const roots = qlPayoffBreakevens(ql, legs);
       if (roots.length === 1 && Number.isInteger(roots[0])) {
         const root = roots[0];
         const choices = breakevenChoices(rng, legs, spot, root);
         if (distinctChoices(choices)) {
-          return makeQuestion(seed, tier, type, legs, spot, choices, choices.findIndex((c) => c.value === root), `${root}`, explainBreakeven(legs, root));
+          return makeQuestion(seed, tier, type, legs, spot, choices, choices.findIndex((c) => c.value === root), `${root}`, explainBreakeven(ql, legs, root));
         }
       }
     }
     type = "payoff";
   } else if (type === "maxProfit") {
     if (continuous) {
-      const extremes = ql ? qlPayoffExtremes(ql, legs) : payoffExtremes(legs);
+      const extremes = qlPayoffExtremes(ql, legs);
       if (extremes) {
         const valid = extremes.max === "unbounded" || Number.isInteger(extremes.max);
         if (valid) {
@@ -431,9 +435,7 @@ const tryGenerate = (rng: () => number, seeds: PayoffSeed[], tier: PayoffTier, q
     type = "payoff";
   }
 
-  const valueForLeg = (leg: PayoffLeg) => ql
-    ? ql.terminalPayoff(toTerminalLeg(leg), spot)
-    : legPayoff(leg, spot);
+  const valueForLeg = (leg: PayoffLeg) => ql.terminalPayoff(toTerminalLeg(leg), spot);
   const valueForBook = () => legs.reduce((sum, leg) => sum + valueForLeg(leg), 0);
   const answer = valueForBook();
   const choices = payoffChoices(rng, legs, spot, answer, valueForLeg, valueForBook);
@@ -442,7 +444,7 @@ const tryGenerate = (rng: () => number, seeds: PayoffSeed[], tier: PayoffTier, q
 };
 
 /** Fallback that can never fail: the classic long call example. */
-const fallbackQuestion = (rng: () => number): PayoffQuestion => {
+const fallbackQuestion = (rng: () => number, ql: QuantLibRuntime): PayoffQuestion => {
   const legs: PayoffLeg[] = [{ kind: "call", side: "long", quantity: 1, strike: 100, optionType: "call", cashPayoff: 10, faceAmount: 100, couponRate: 5, barrier: 80, barrierType: "down-out", barrierTouched: false, rebate: 0 }];
   const spot = 115;
   const answer = 15;
@@ -461,16 +463,16 @@ const fallbackQuestion = (rng: () => number): PayoffQuestion => {
     choices,
     choices.findIndex((choice) => choice.value === answer),
     `${answer}`,
-    explainPayoff(legs, spot, answer, (leg) => legPayoff(leg, spot)),
+    explainPayoff(legs, spot, answer, (leg) => ql.terminalPayoff(toTerminalLeg(leg), spot)),
   );
 };
 
-export function generatePayoffQuestion(rng: () => number, seeds: PayoffSeed[], tier: PayoffTier, ql?: QuantLibRuntime): PayoffQuestion {
+export function generatePayoffQuestion(rng: () => number, seeds: PayoffSeed[], tier: PayoffTier, ql: QuantLibRuntime): PayoffQuestion {
   for (let attempt = 0; attempt < 40; attempt += 1) {
     const question = tryGenerate(rng, seeds, tier, ql);
     if (question) return question;
   }
-  return fallbackQuestion(rng);
+  return fallbackQuestion(rng, ql);
 }
 
 /* ------------------------------------------------------------------ */
@@ -479,14 +481,12 @@ export function generatePayoffQuestion(rng: () => number, seeds: PayoffSeed[], t
 
 export const buildPayoffPrompt = (question: PayoffQuestion, difficulty: string): string =>
   [
-    "You are a derivatives tutor. Explain this missed payoff drill at the player's level. Teach the reflex, not just the number.",
-    `PLAYER LEVEL: ${difficulty.toUpperCase()} (adapt the explanation and terminology to this level)`,
-    `Drill level: ${question.levelLabel} · ${question.typeLabel}`,
+    tutorIntro(difficulty),
     `Position: ${question.legs.map((leg) => `${legSideText(leg)} ${legDetailText(leg)}`).join(", ")}`,
     `Question: ${question.questionText}`,
-    `Correct answer: ${question.answerText}`,
-    `Working: ${question.explanation}`,
-    "Give a short, level-appropriate rule for reading a position's terminal payoff, max profit, or breakeven instantly.",
+    `Answer: ${question.answerText}`,
+    `Reasoning: ${question.explanation}`,
+    "Give one short, memorable rule for reading a position's terminal payoff, max profit, or breakeven.",
   ].join("\n");
 
 /* ------------------------------------------------------------------ */

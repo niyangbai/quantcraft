@@ -3,21 +3,23 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import type { QuantLibRuntime } from "@quantcraft/quantlibjs";
 import { GREEK_LABELS } from "@quantcraft/finmath";
-import type { GreekRisk } from "@quantcraft/finmath";
+import type { GreekKey, GreekRisk } from "@quantcraft/finmath";
 import { AiPromptModal, ChoiceGrid, GameFrame, PositionBook, RevealBar, RoundResult, RoundTimer, ScenarioCard, SideBadge } from "../../ui";
-import { seededRandom } from "../../game";
+import { seededRandom, tutorIntro } from "../../game";
 import { useSeededRound } from "../../hooks";
 import type { QuestionBank, Scoreboard } from "../../game";
 import { generateHedgeRound, settleHedge, tradeBody } from "./game";
 import type { HedgeSettlement } from "./game";
+import { HedgeChart } from "./HedgeChart";
 
-const greekLines = (greeks: GreekRisk) => (
+const GREEK_SYMBOLS: Record<GreekKey, string> = { delta: "Δ", gamma: "Γ", vega: "V", theta: "Θ", rho: "ρ" };
+const GREEK_PRECISION: Record<GreekKey, number> = { delta: 3, gamma: 3, vega: 2, theta: 2, rho: 2 };
+
+const greekLines = (greeks: GreekRisk, keys: GreekKey[]) => (
   <>
-    <span>Δ {greeks.delta.toFixed(3)}</span>
-    <span>Γ {greeks.gamma.toFixed(3)}</span>
-    <span>V {greeks.vega.toFixed(2)}</span>
-    <span>Θ {greeks.theta.toFixed(2)}</span>
-    <span>ρ {greeks.rho.toFixed(2)}</span>
+    {keys.map((key) => (
+      <span key={key}>{GREEK_SYMBOLS[key]} {greeks[key].toFixed(GREEK_PRECISION[key])}</span>
+    ))}
   </>
 );
 
@@ -60,7 +62,7 @@ export function Hedge({ ql, bank, onScore, onBack, scoreboard }: { ql?: QuantLib
   const createHedgePrompt = () => {
     const availableTools = [...round.trades.map((trade) => `${trade.label}: ${trade.detail}`), "DO NOTHING: keep the current book unchanged"].join("\n");
     const selectedLabel = selectedTrades.length ? selectedTrades.map((id) => id === "do-nothing" ? "DO NOTHING" : round.trades.find((trade) => trade.id === id)?.label ?? id).join(" + ") : "No hedge selected";
-    setAiPrompt(["You are a derivatives risk tutor. Explain this failed portfolio-hedging exercise at the player's level. Teach the risk logic clearly, including why the selected hedge was weaker and how to choose a better hedge.", `PLAYER LEVEL: ${scoreboard.difficulty.toUpperCase()} (adapt the explanation and terminology to this level)`, `Market event: ${round.shock.label}`, `Market detail: ${round.shock.detail}`, `Spot: ${round.beforeSpot.toFixed(2)} -> ${round.spot.toFixed(2)}`, `Volatility: ${(round.beforeVolatility * 100).toFixed(1)}% -> ${(round.volatility * 100).toFixed(1)}%`, `Maturity: ${round.maturityDate}`, `Dealer objective: ${objectiveLabel}`, `Client product: ${round.template.name}`, `Product description: ${round.template.description}`, `Product option legs: ${round.legs.map((leg) => `${leg.qty > 0 ? "LONG" : "SHORT"} ${leg.strike} ${leg.type.toUpperCase()}`).join("; ")}`, "Available hedge tools:", availableTools, `My selected hedge: ${selectedLabel}`, `Resulting Greeks: Delta ${result?.greeks.delta.toFixed(3) ?? "n/a"}, Gamma ${result?.greeks.gamma.toFixed(3) ?? "n/a"}, Vega ${result?.greeks.vega.toFixed(2) ?? "n/a"}, Theta ${result?.greeks.theta.toFixed(2) ?? "n/a"}, Rho ${result?.greeks.rho.toFixed(2) ?? "n/a"}`, "Please explain the dealer's objective, identify the key mistake, and give a level-appropriate decision rule for future decisions."] .join("\n"));
+    setAiPrompt([tutorIntro(scoreboard.difficulty), `Market event: ${round.shock.label}`, `Market detail: ${round.shock.detail}`, `Spot: ${round.beforeSpot.toFixed(2)} -> ${round.spot.toFixed(2)}`, `Volatility: ${(round.beforeVolatility * 100).toFixed(1)}% -> ${(round.volatility * 100).toFixed(1)}%`, `Maturity: ${round.maturityDate}`, `Dealer objective: ${objectiveLabel}`, `Client product: ${round.template.name}`, `Product description: ${round.template.description}`, `Product option legs: ${round.legs.map((leg) => `${leg.qty > 0 ? "LONG" : "SHORT"} ${leg.strike} ${leg.type.toUpperCase()}`).join("; ")}`, "Available hedge tools:", availableTools, `My selected hedge: ${selectedLabel}`, `Resulting Greeks: Delta ${result?.greeks.delta.toFixed(3) ?? "n/a"}, Gamma ${result?.greeks.gamma.toFixed(3) ?? "n/a"}, Vega ${result?.greeks.vega.toFixed(2) ?? "n/a"}, Theta ${result?.greeks.theta.toFixed(2) ?? "n/a"}, Rho ${result?.greeks.rho.toFixed(2) ?? "n/a"}`, "Explain the dealer's objective, identify the key mistake, and give one short, memorable decision rule for future trades."].join("\n"));
   };
   const choiceItems: { key: string; label: ReactNode; detail?: string; wide?: boolean }[] = [
     ...round.trades.map((trade) => ({ key: trade.id, label: <><SideBadge side={trade.side} />{tradeBody(trade)}</> })),
@@ -129,12 +131,14 @@ export function Hedge({ ql, bank, onScore, onBack, scoreboard }: { ql?: QuantLib
       {result && (
         <RevealBar
           cells={[
-            { label: "BEFORE", value: greekLines(round.preTrade) },
-            { label: "AFTER YOUR HEDGE", value: greekLines(result.greeks) },
+            { label: "BEFORE", value: greekLines(round.preTrade, round.objectiveKeys) },
+            { label: "YOUR HEDGE", value: greekLines(result.greeks, round.objectiveKeys) },
+            { label: "CORRECT HEDGE", value: greekLines(result.bestGreeks, round.objectiveKeys) },
           ]}
           note={result.passed ? "Good call. The dealer's objective is met: the combined book risk is reduced." : result.timedOut ? `Best hedge: ${bestHedgeLabel}.` : `The selected hedge leaves more combined Greek risk. Best hedge: ${bestHedgeLabel}.`}
         />
       )}
+      {result && <HedgeChart before={round.preTrade} user={result.greeks} best={result.bestGreeks} objectiveKeys={round.objectiveKeys} />}
       {result ? (
         <><RoundResult passed={result.passed} status={result.passed ? "RISK REDUCED" : result.timedOut ? "MARKET CLOSED" : "RISK NOT IMPROVED"} score={result.score} actionLabel="NEXT SHOCK" onNext={next} onAskAI={createHedgePrompt} />{aiPrompt && <AiPromptModal prompt={aiPrompt} onClose={() => setAiPrompt(undefined)} />}</>
       ) : (

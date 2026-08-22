@@ -13,17 +13,9 @@
 .curve-board h2 { margin: 0 0 7px; color: var(--deep); font-size: 22px; }
 .curve-board > .choice-note { margin: 0 0 18px; }
 
-/* Before/after yield-curve chart. */
+/* Before/after yield-curve chart (canvas). */
 .curve-chart-wrap { margin-top: 18px; }
 .curve-chart { display: block; width: 100%; height: auto; background: #fbfbf7; border: 1px solid var(--line); }
-.curve-axis { stroke: #d9ddd6; stroke-width: 1; }
-.curve-gridline { stroke: #eef0ea; stroke-width: 1; }
-.curve-line { stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
-.curve-line.base { stroke: #3f6fb0; }
-.curve-line.shocked { stroke: #ef765f; }
-.curve-dot.base { fill: #3f6fb0; }
-.curve-dot.shocked { fill: #ef765f; }
-.curve-tick { fill: #778080; font-size: 11px; font-family: inherit; }
 .curve-chart-legend { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 8px; color: var(--muted); font-size: 9px; letter-spacing: .8px; }
 .curve-chart-legend span { display: inline-flex; align-items: center; gap: 6px; font-weight: 800; }
 .curve-chart-legend i { width: 10px; height: 10px; border-radius: 2px; }

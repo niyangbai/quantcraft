@@ -8,7 +8,7 @@
 // strike, the running average, the weakest asset — and find the pain.
 
 import type { QuantLibRuntime } from "@quantcraft/quantlibjs";
-import { drillDurationMs, pick, shuffle } from "../../shared.js";
+import { drillDurationMs, pick, shuffle, tutorIntro } from "../../shared.js";
 
 export type ExoticParams = { riskFreeRate?: number; dividendYield?: number };
 
@@ -369,11 +369,11 @@ export function explainExotic(
 export function buildExoticPrompt(round: ExoticRound, difficulty: string): string {
   const { positions, pnl, answerIndex, answerText } = round;
   return [
-    `I am training as a ${difficulty} on the QuantCraft Exotic drill.`,
+    tutorIntro(difficulty),
     `Shock: ${round.shockLabel} — spot ${round.baseSpot} → ${round.afterSpot}, vol ${(round.baseVol * 100).toFixed(0)}% → ${(round.afterVol * 100).toFixed(0)}%.`,
     `Positions: ${positions.map((position, index) => `${position.label} (${position.detail}, P&L ${signed(pnl[index].pnl)})`).join(" | ")}.`,
     `Correct: ${answerText} (worst P&L ${signed(pnl[answerIndex].pnl)}).`,
-    `Working: ${round.explanation}`,
-    "Give a short, level-appropriate rule for reading a market shock into the worst exotic P&L — find the state that matters (barrier, digital strike, running average, weakest asset).",
+    `Reasoning: ${round.explanation}`,
+    "Give one short, memorable rule for reading a market shock into the worst exotic P&L — find the state that matters (barrier, digital strike, running average, weakest asset).",
   ].join("\n");
 }

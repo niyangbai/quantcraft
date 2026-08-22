@@ -9,7 +9,7 @@
 import { bestQuote, builtinNormalStats } from "@quantcraft/finmath";
 import type { MarketMakingContext, NormalStats, Quote, QuoteAnalysis } from "@quantcraft/finmath";
 import type { QuantLibRuntime } from "@quantcraft/quantlibjs";
-import { drillDurationMs, pick, shuffle } from "../../shared.js";
+import { drillDurationMs, pick, shuffle, tutorIntro } from "../../shared.js";
 
 export type MakeMarketParams = {
   riskAversion?: number;
@@ -166,12 +166,12 @@ export const inventoryText = (inventory: number): string =>
 export function buildMakeMarketPrompt(round: MakeMarketRound, difficulty: string): string {
   const { fairValue, inventory, uncertainty } = round;
   return [
-    `I am training as a ${difficulty} on the QuantCraft Make Market drill.`,
+    tutorIntro(difficulty),
     `Market: fair value ${fairValue.toFixed(2)} · inventory ${inventoryText(inventory)} · uncertainty ${uncertainty.toFixed(2)}.`,
     `Candidates: ${round.choices.map((choice) => choice.label).join(", ")}.`,
     `Correct: ${round.answerText}.`,
     `Reasoning: ${round.explanation}`,
-    "Give a short, level-appropriate rule for reading fair value + inventory + uncertainty into a good two-sided quote instantly.",
+    "Give one short, memorable rule for reading fair value, inventory, and uncertainty into a good two-sided quote.",
   ].join("\n");
 }
 

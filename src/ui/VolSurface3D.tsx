@@ -2,10 +2,18 @@ import { useEffect, useRef } from "react";
 import { blackVol } from "@quantcraft/finmath";
 import type { VolSurfaceParams } from "@quantcraft/finmath";
 
+// Logical drawing size (scaled to the container via CSS; the backing store is
+// multiplied by the device pixel ratio so the wireframe stays crisp).
+const W = 760;
+const H = 460;
+
+const BLUE: [number, number, number] = [63, 111, 176];
+const CORAL: [number, number, number] = [239, 118, 95];
+
 /**
  * An interactive 3D implied-volatility surface. It renders the base surface
- * in blue and overlays the shocked surface in translucent red, so the region
- * the shock moved is visible as the red diverging from the blue.
+ * in blue and overlays the shocked surface in translucent coral, so the region
+ * the shock moved is visible as the coral diverging from the blue.
  *
  * The heights are evaluated with the same `blackVol` used to score the round,
  * so what you see is exactly the surface that produces ΔIV and vol P&L.
@@ -21,10 +29,13 @@ export function VolSurface3D({ base, shocked }: { base: VolSurfaceParams; shocke
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const width = canvas.width;
-    const height = canvas.height;
-    const cx = width / 2;
-    const cy = height / 2;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    const cx = W / 2;
+    const cy = H / 2;
 
     // Mesh resolution and ranges. Moneyness spans the listed strikes; the
     // maturity axis runs from spot date out past the 1Y point.
@@ -90,7 +101,7 @@ export function VolSurface3D({ base, shocked }: { base: VolSurfaceParams; shocke
 
     type Quad = { pts: [number, number][]; depth: number };
 
-    const drawSurface = (mesh: number[][], fill: string, stroke: string) => {
+    const drawSurface = (mesh: number[][], rgb: [number, number, number]) => {
       const quads: Quad[] = [];
       for (let iy = 0; iy < NY; iy += 1) {
         for (let ix = 0; ix < NX; ix += 1) {
@@ -109,16 +120,22 @@ export function VolSurface3D({ base, shocked }: { base: VolSurfaceParams; shocke
         }
       }
       quads.sort((p, q) => p.depth - q.depth);
+      const minDepth = quads[0].depth;
+      const maxDepth = quads[quads.length - 1].depth;
+      const span = maxDepth - minDepth || 1;
       for (const quad of quads) {
+        // Shade by depth so near quads read more solidly than far ones.
+        const t = (quad.depth - minDepth) / span;
+        const alpha = 0.22 + t * 0.5;
         ctx.beginPath();
         ctx.moveTo(quad.pts[0][0], quad.pts[0][1]);
         ctx.lineTo(quad.pts[1][0], quad.pts[1][1]);
         ctx.lineTo(quad.pts[2][0], quad.pts[2][1]);
         ctx.lineTo(quad.pts[3][0], quad.pts[3][1]);
         ctx.closePath();
-        ctx.fillStyle = fill;
+        ctx.fillStyle = `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${alpha})`;
         ctx.fill();
-        ctx.strokeStyle = stroke;
+        ctx.strokeStyle = `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${Math.min(1, alpha + 0.35)})`;
         ctx.lineWidth = 0.5;
         ctx.stroke();
       }
@@ -153,10 +170,10 @@ export function VolSurface3D({ base, shocked }: { base: VolSurfaceParams; shocke
     };
 
     const render = () => {
-      ctx.clearRect(0, 0, width, height);
+      ctx.clearRect(0, 0, W, H);
       drawAxes();
-      drawSurface(baseMesh, "rgba(63, 111, 176, 0.5)", "#3f6fb0");
-      drawSurface(shockedMesh, "rgba(239, 118, 95, 0.42)", "#ef765f");
+      drawSurface(baseMesh, BLUE);
+      drawSurface(shockedMesh, CORAL);
     };
 
     render();
@@ -204,7 +221,7 @@ export function VolSurface3D({ base, shocked }: { base: VolSurfaceParams; shocke
 
   return (
     <div className="vol-surface">
-      <canvas ref={canvasRef} width={760} height={460} />
+      <canvas ref={canvasRef} />
       <div className="vol-surface-legend">
         <span><i className="base" /> BASE SURFACE</span>
         <span><i className="shocked" /> AFTER SHOCK</span>

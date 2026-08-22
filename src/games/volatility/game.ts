@@ -12,7 +12,7 @@
 import { applyVolShock, blackVol, termBumpAt } from "@quantcraft/finmath";
 import type { VolPnlBreakdown, VolShock, VolSurfaceParams } from "@quantcraft/finmath";
 import type { QuantLibRuntime } from "@quantcraft/quantlibjs";
-import { drillDurationMs, pick, shuffle } from "../../shared.js";
+import { drillDurationMs, pick, shuffle, tutorIntro } from "../../shared.js";
 
 export type VolatilityParams = {
   riskFreeRate?: number;
@@ -416,14 +416,14 @@ export function buildVolatilityPrompt(round: VolatilityRound, difficulty: string
   const { spot, surface, shockLabel, shockDetail, positions, analysis, answerIndex, answerText } = round;
   const term = surface.termSlope === 0 ? "" : surface.termSlope > 0 ? `, +${(surface.termSlope * 100).toFixed(0)} pts/yr` : `, ${(surface.termSlope * 100).toFixed(0)} pts/yr`;
   return [
-    `I am training as a ${difficulty} on the QuantCraft Volatility drill.`,
+    tutorIntro(difficulty),
     `Market: spot ${spot}. Base surface: ATM ${(surface.atmLevel * 100).toFixed(0)}%${term} · skew ${surface.skew.toFixed(2)} · smile ${surface.curvature.toFixed(2)}.`,
     `Shock: ${shockLabel === shockDetail ? shockLabel : `${shockLabel} — ${shockDetail}`}`,
     `Positions: ${positions.map((position, index) => `${position.id}: ${positionText(position)} (IV ${(analysis[index].ivBefore * 100).toFixed(1)}% → ${(analysis[index].ivAfter * 100).toFixed(1)}%, vega ${analysis[index].vegaPerPoint.toFixed(3)})`).join(" | ")}.`,
     `Correct: ${answerText} (vol P&L ${signedPnl(analysis[answerIndex].pnl)}).`,
-    `Working: ${round.explanation}`,
-    "Calls and puts share the same vega, so the answer never depends on the option kind — only on strike, expiry, side, and size.",
-    "Give a short, level-appropriate rule for reading a surface shock + position into the largest positive vol P&L instantly.",
+    `Reasoning: ${round.explanation}`,
+    "Calls and puts share the same vega, so the answer depends on strike, expiry, side, and size — not on the option kind.",
+    "Give one short, memorable rule for reading a surface shock plus a position into the largest positive vol P&L.",
   ].join("\n");
 }
 

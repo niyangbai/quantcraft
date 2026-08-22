@@ -9,7 +9,7 @@
 // before), so key-rate exposure, coupon, and notional all enter exactly.
 
 import type { CurveBondPositionInput, QuantLibRuntime } from "@quantcraft/quantlibjs";
-import { drillDurationMs, pick, shuffle } from "../../shared.js";
+import { drillDurationMs, pick, shuffle, tutorIntro } from "../../shared.js";
 
 export type CurveParams = { evaluationDate?: string };
 
@@ -392,12 +392,12 @@ export function explainCurve(
 export function buildCurvePrompt(round: CurveRound, difficulty: string): string {
   const { nodes, shockLabel, shockDetail, positions, analysis, answerIndex, answerText } = round;
   return [
-    `I am training as a ${difficulty} on the QuantCraft Curve Trader drill.`,
+    tutorIntro(difficulty),
     `Curve: ${nodes.map((node) => `${node.label} ${(node.baseRate * 100).toFixed(2)}% → ${(node.shockedRate * 100).toFixed(2)}%`).join(" · ")}.`,
     `Shock: ${shockLabel} — ${shockDetail}`,
     `Positions: ${positions.map((position, index) => `${position.label} (${signedBpText(analysis[index].deltaYieldBp)}, DV01 ${analysis[index].dv01.toFixed(1)})`).join(" | ")}.`,
     `Correct: ${answerText} (P&L ${signedPnl(analysis[answerIndex].pnl)}).`,
-    `Working: ${round.explanation}`,
-    "P&L ≈ −DV01 × Δyield for a long; flip the sign when short. Give a short, level-appropriate rule for reading a curve move + position into the largest P&L instantly.",
+    `Reasoning: ${round.explanation}`,
+    "A long bond gains when yields fall and loses when they rise; the longer the maturity, the bigger the move. Flip the sign when short. Give one short, memorable rule for reading a curve move plus a position into the largest P&L.",
   ].join("\n");
 }

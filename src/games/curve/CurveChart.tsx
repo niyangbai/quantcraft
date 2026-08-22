@@ -1,62 +1,114 @@
+import { useEffect, useRef } from "react";
+import { CHART, CHART_FONT, linear, niceTicks, setupCanvas } from "../../ui/chart";
 import type { CurveNode } from "./game";
 
-/**
- * A static before/after yield-curve chart. Blue = base curve, red = the curve
- * after the shock. Purely presentational — no interaction.
- */
-export function CurveChart({ nodes }: { nodes: CurveNode[] }) {
-  const W = 800;
-  const H = 320;
-  const padL = 56;
-  const padR = 24;
-  const padT = 24;
-  const padB = 42;
+const W = 800;
+const H = 320;
+const PAD = { left: 56, right: 24, top: 24, bottom: 42 };
 
-  const years = nodes.map((node) => node.years);
+function curve(ctx: CanvasRenderingContext2D, points: [number, number][], color: string) {
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2.5;
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  points.forEach(([px, py], index) => (index === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py)));
+  ctx.stroke();
+}
+
+function dot(ctx: CanvasRenderingContext2D, px: number, py: number, color: string) {
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.arc(px, py, 4, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function draw(canvas: HTMLCanvasElement, nodes: CurveNode[]) {
+  const ctx = setupCanvas(canvas, W, H);
+  ctx.fillStyle = CHART.paper;
+  ctx.fillRect(0, 0, W, H);
+
+  const plotW = W - PAD.left - PAD.right;
+  const plotH = H - PAD.top - PAD.bottom;
+
+  const xMax = Math.max(...nodes.map((node) => node.years)) + 2;
   const rates = nodes.flatMap((node) => [node.baseRate, node.shockedRate]);
-  const maxYears = Math.max(...years);
   const minRate = Math.min(...rates);
   const maxRate = Math.max(...rates);
   const span = maxRate - minRate || 0.004;
   const lo = minRate - span * 0.25;
   const hi = maxRate + span * 0.25;
 
-  const x = (years: number): number => padL + (years / (maxYears + 2)) * (W - padL - padR);
-  const y = (rate: number): number => padT + (1 - (rate - lo) / (hi - lo)) * (H - padT - padB);
+  const x = linear(0, xMax, PAD.left, PAD.left + plotW);
+  const y = linear(lo, hi, PAD.top + plotH, PAD.top);
 
-  const basePoints = nodes.map((node) => `${x(node.years)},${y(node.baseRate)}`).join(" ");
-  const shockedPoints = nodes.map((node) => `${x(node.years)},${y(node.shockedRate)}`).join(" ");
+  ctx.font = CHART_FONT;
 
-  const ticks = [lo, (lo + hi) / 2, hi];
+  // Horizontal gridlines + rate ticks.
+  for (const tick of niceTicks(lo, hi, 4)) {
+    const yy = y(tick);
+    ctx.strokeStyle = CHART.grid;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(PAD.left, yy);
+    ctx.lineTo(PAD.left + plotW, yy);
+    ctx.stroke();
+    ctx.fillStyle = CHART.muted;
+    ctx.textAlign = "right";
+    ctx.fillText(`${(tick * 100).toFixed(2)}%`, PAD.left - 8, yy + 3);
+  }
+
+  // Axes.
+  ctx.strokeStyle = CHART.axis;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(PAD.left, PAD.top);
+  ctx.lineTo(PAD.left, PAD.top + plotH);
+  ctx.lineTo(PAD.left + plotW, PAD.top + plotH);
+  ctx.stroke();
+
+  // Maturity tick labels at the node positions.
+  ctx.fillStyle = CHART.muted;
+  ctx.textAlign = "center";
+  nodes.forEach((node) => ctx.fillText(node.label, x(node.years), PAD.top + plotH + 18));
+
+  // Dotted connectors showing the shock at each node.
+  nodes.forEach((node) => {
+    ctx.strokeStyle = CHART.axis;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.moveTo(x(node.years), y(node.baseRate));
+    ctx.lineTo(x(node.years), y(node.shockedRate));
+    ctx.stroke();
+    ctx.setLineDash([]);
+  });
+
+  curve(ctx, nodes.map((node) => [x(node.years), y(node.baseRate)]), CHART.blue);
+  curve(ctx, nodes.map((node) => [x(node.years), y(node.shockedRate)]), CHART.coral);
+  nodes.forEach((node) => {
+    dot(ctx, x(node.years), y(node.baseRate), CHART.blue);
+    dot(ctx, x(node.years), y(node.shockedRate), CHART.coral);
+  });
+
+  // Axis labels.
+  ctx.fillStyle = CHART.muted;
+  ctx.textAlign = "right";
+  ctx.fillText("RATE", PAD.left - 8, PAD.top - 6);
+  ctx.textAlign = "left";
+  ctx.fillText("MATURITY", PAD.left + plotW + 2, PAD.top + plotH + 6);
+}
+
+export function CurveChart({ nodes }: { nodes: CurveNode[] }) {
+  const ref = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const canvas = ref.current;
+    if (canvas) draw(canvas, nodes);
+  }, [nodes]);
 
   return (
     <div className="curve-chart-wrap">
-      <svg viewBox={`0 0 ${W} ${H}`} className="curve-chart" role="img" aria-label="Yield curve before and after shock">
-        <line x1={padL} y1={H - padB} x2={W - padR} y2={H - padB} className="curve-axis" />
-        <line x1={padL} y1={padT} x2={padL} y2={H - padB} className="curve-axis" />
-
-        {ticks.map((tick) => (
-          <line key={tick} x1={padL} y1={y(tick)} x2={W - padR} y2={y(tick)} className="curve-gridline" />
-        ))}
-
-        <polyline points={basePoints} fill="none" className="curve-line base" />
-        <polyline points={shockedPoints} fill="none" className="curve-line shocked" />
-
-        {nodes.map((node) => (
-          <g key={node.label}>
-            <circle cx={x(node.years)} cy={y(node.baseRate)} r={4} className="curve-dot base" />
-            <circle cx={x(node.years)} cy={y(node.shockedRate)} r={4} className="curve-dot shocked" />
-          </g>
-        ))}
-
-        {nodes.map((node) => (
-          <text key={node.label} x={x(node.years)} y={H - padB + 18} textAnchor="middle" className="curve-tick">{node.label}</text>
-        ))}
-
-        {ticks.map((tick) => (
-          <text key={tick} x={padL - 8} y={y(tick) + 3} textAnchor="end" className="curve-tick">{(tick * 100).toFixed(2)}%</text>
-        ))}
-      </svg>
+      <canvas ref={ref} className="curve-chart" aria-label="Yield curve before and after shock" />
       <div className="curve-chart-legend">
         <span><i className="base" /> BASE CURVE</span>
         <span><i className="shocked" /> AFTER SHOCK</span>

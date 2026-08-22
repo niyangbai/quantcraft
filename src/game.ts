@@ -97,7 +97,7 @@ export const market = {
   maturityDate: "2028-01-03",
 };
 // Seeded PRNG and shared drill helpers re-exported for `../../game` imports.
-export { secureSeed, seededRandom, between, pick, shuffle, integer, chance, drillDurationMs, roundScore } from "./shared.js";
+export { secureSeed, seededRandom, between, pick, shuffle, integer, chance, drillDurationMs, roundScore, knowledgeLevel, tutorIntro } from "./shared.js";
 export const isoDate = (date: Date) => date.toISOString().slice(0, 10);
 
 

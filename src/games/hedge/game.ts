@@ -64,6 +64,7 @@ export type HedgeSettlement = {
   score: number;
   bestTradeIds: string[];
   greeks: GreekRisk;
+  bestGreeks: GreekRisk;
   timedOut: boolean;
   quality: number;
 };
@@ -125,11 +126,12 @@ export function settleHedge(round: HedgeRound, selectedTradeIds: string[], secon
   const selectedIds = selectedTradeIds.filter((id) => id !== "do-nothing");
   const selected = round.trades.filter((trade) => selectedIds.includes(trade.id));
   const greeks = selected.reduce((sum, trade) => addRisk(sum, trade), round.preTrade);
+  const bestGreeks = round.bestTrades.reduce((sum, trade) => addRisk(sum, trade), round.preTrade);
   const chosenRisk = round.risk(greeks);
   const exactMatch = selectedIds.length === round.bestTrades.length && selectedIds.every((id) => round.bestTrades.some((trade) => trade.id === id));
   const quality = hedgeQuality({ beforeRisk: round.beforeRisk, chosenRisk, bestRisk: round.bestRisk, exactMatch });
   const passed = !timedOut && quality >= .8;
   const score = passed ? Math.round(100 + quality * 40 + secondsLeft * .4) : -50;
-  return { passed, score, bestTradeIds: round.bestTrades.map((trade) => trade.id), greeks, timedOut, quality };
+  return { passed, score, bestTradeIds: round.bestTrades.map((trade) => trade.id), greeks, bestGreeks, timedOut, quality };
 }
 

@@ -5,7 +5,7 @@
 
 import { depthAt, matchMarketOrder } from "@quantcraft/finmath";
 import type { BookSide, MatchResult, OrderBook, OrderSide } from "@quantcraft/finmath";
-import { integer, pick, shuffle } from "../../shared.js";
+import { integer, pick, shuffle, tutorIntro } from "../../shared.js";
 
 export type OrderBookSeed = {
   id: string;
@@ -219,13 +219,12 @@ export const orderBookSeedDefaults: OrderBookSeed[] = [
 
 export const buildOrderbookPrompt = (question: OrderbookQuestion, difficulty: string): string =>
   [
-    "You are a market-microstructure tutor. Explain this missed order-book drill at the player's level.",
-    `PLAYER LEVEL: ${difficulty.toUpperCase()}`,
+    tutorIntro(difficulty),
     `Book before the order: ${JSON.stringify(question.book)}`,
     `Event: MARKET ${question.event.side.toUpperCase()} ${question.event.size}`,
     `Question: ${question.questionText}`,
-    `Correct answer: ${question.answerText}`,
-    `Working: ${question.explanation}`,
-    "Give a short rule for reading how a market order moves the best quote, spread, fill VWAP, or remaining depth.",
+    `Answer: ${question.answerText}`,
+    `Reasoning: ${question.explanation}`,
+    "Give one short, memorable rule for reading how a market order moves the best quote, spread, fill VWAP, or remaining depth.",
   ].join("\n");
 

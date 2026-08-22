@@ -40,7 +40,7 @@ test("generator always yields 4 distinct choices with a matching answer", () => 
   let valid = 0;
   for (let seed = 1; seed <= 4000; seed += 1) {
     for (let tier = 1; tier <= 5; tier += 1) {
-      const question = generatePayoffQuestion(rng(seed), SEEDS, tier);
+      const question = generatePayoffQuestion(rng(seed), SEEDS, tier, ql);
       assert.equal(new Set(question.choices.map((c) => c.label)).size, 4, `seed=${seed} tier=${tier}`);
       const answerValue = question.choices[question.answerIndex].value;
       const expected = question.type === "maxProfit" && question.answerText === "UNLIMITED" ? "unbounded" : Number(question.answerText);
@@ -54,7 +54,7 @@ test("generator always yields 4 distinct choices with a matching answer", () => 
 test("payoff-type questions match bookPayoff at the terminal spot", () => {
   let verified = 0;
   for (let seed = 1; seed <= 1000; seed += 1) {
-    const question = generatePayoffQuestion(rng(seed), SEEDS, 1);
+    const question = generatePayoffQuestion(rng(seed), SEEDS, 1, ql);
     if (question.type === "payoff") {
       assert.equal(bookPayoff(question.legs, question.spot), question.choices[question.answerIndex].value);
       verified += 1;
@@ -65,7 +65,7 @@ test("payoff-type questions match bookPayoff at the terminal spot", () => {
 
 test("max-profit questions report the book's true extreme", () => {
   for (let seed = 1; seed <= 2000; seed += 1) {
-    const question = generatePayoffQuestion(rng(seed), SEEDS, 5);
+    const question = generatePayoffQuestion(rng(seed), SEEDS, 5, ql);
     if (question.type !== "maxProfit") continue;
     const max = payoffExtremes(question.legs).max;
     assert.equal(question.choices[question.answerIndex].value, max);
@@ -74,7 +74,7 @@ test("max-profit questions report the book's true extreme", () => {
 
 test("breakeven questions use the book's unique integer root", () => {
   for (let seed = 1; seed <= 2000; seed += 1) {
-    const question = generatePayoffQuestion(rng(seed), SEEDS, 5);
+    const question = generatePayoffQuestion(rng(seed), SEEDS, 5, ql);
     if (question.type !== "breakeven") continue;
     const roots = breakevens(question.legs);
     assert.equal(roots.length, 1);

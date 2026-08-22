@@ -55,3 +55,21 @@ export const drillDurationMs = (streak: number, floor = 4500, start = 10000, per
 /** Points and resulting streak for a drill answer. */
 export const roundScore = (streak: number, correct: boolean): { points: number; nextStreak: number } =>
   correct ? { points: 100 + streak * 10, nextStreak: streak + 1 } : { points: -50, nextStreak: 0 };
+
+/** A difficulty tier, restated as a plain-language financial-knowledge level. */
+export const knowledgeLevel = (difficulty: string): string =>
+  ({
+    intern: "little finance background",
+    analyst: "basic finance knowledge",
+    associate: "solid working knowledge of options",
+    vp: "strong derivatives and risk experience",
+    director: "deep market experience",
+    md: "expert-level market knowledge",
+  })[difficulty] ?? "basic finance knowledge";
+
+/** Shared opening lines for every AI-tutor prompt: intuition over mechanics. */
+export const tutorIntro = (difficulty: string): string =>
+  [
+    "You are a finance educator. Teach the intuition — the trader's reflex and the 'why', not the mechanics or formulas.",
+    `The learner has ${knowledgeLevel(difficulty)}.`,
+  ].join("\n");

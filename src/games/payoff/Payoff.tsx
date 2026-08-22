@@ -6,6 +6,7 @@ import { useSeededRound } from "../../hooks";
 import type { Scoreboard } from "../../game";
 import { buildPayoffPrompt, decisionDurationMs, generatePayoffQuestion, legDetailText, levelForProgress, levelLabel } from "./game";
 import type { PayoffSeed, PayoffTier } from "./game";
+import { PayoffChart } from "./PayoffChart";
 import type { QuantLibRuntime } from "@quantcraft/quantlibjs";
 import { ChoiceGrid, GameFrame, PositionBook, RevealBar, ScenarioCard } from "../../ui";
 
@@ -35,6 +36,7 @@ export function Payoff({
   const level = levelForProgress(correctCount);
   const duration = decisionDurationMs(roundLevel, scoreboard.streak);
   const question = useMemo(() => {
+    if (!ql) return undefined;
     const rng = seededRandom(roundKey);
     return generatePayoffQuestion(rng, seeds, roundLevel, ql);
   }, [roundKey, seeds, roundLevel, ql]);
@@ -127,6 +129,7 @@ export function Payoff({
               note={question.explanation}
             />
           )}
+          {answered && <PayoffChart legs={question.legs} spot={question.type === "payoff" ? question.spot : undefined} />}
           {answered && (
             <RoundResult
               passed={feedback === "correct"}
@@ -144,7 +147,7 @@ export function Payoff({
           {aiPrompt && <AiPromptModal prompt={aiPrompt} onClose={() => setAiPrompt(undefined)} />}
         </>
       ) : (
-        <div className="drop-zone">Preparing payoff cards…</div>
+        <div className="drop-zone">{ql ? "Preparing payoff cards…" : "Loading the QuantLib engine…"}</div>
       )}
     </GameFrame>
   );

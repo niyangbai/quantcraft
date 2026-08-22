@@ -8,6 +8,7 @@ import { useSeededRound } from "../../hooks";
 import type { Scoreboard } from "../../game";
 import { applyEvent, buildOrderbookPrompt, formatPrice, generateInitialBook, generateQuestion, isBookHealthy } from "./game";
 import type { OrderBookSeed, OrderbookQuestion } from "./game";
+import { OrderBookChart } from "./OrderBookChart";
 import { ChoiceGrid, GameFrame, OrderBookCard, RevealBar, ScenarioCard } from "../../ui";
 
 export function OrderBook({
@@ -142,6 +143,7 @@ export function OrderBook({
           note={question.explanation}
         />
       )}
+      {answered && <OrderBookChart book={displayedBook} />}
       {answered && (
         <RoundResult
           passed={feedback === "correct"}
