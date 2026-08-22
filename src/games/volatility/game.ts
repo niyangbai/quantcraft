@@ -12,6 +12,7 @@
 import { applyVolShock, blackVol, termBumpAt } from "@quantcraft/finmath";
 import type { VolPnlBreakdown, VolShock, VolSurfaceParams } from "@quantcraft/finmath";
 import type { QuantLibRuntime } from "@quantcraft/quantlibjs";
+import { flashDrillDurationMs, pick, shuffle } from "../../shared.js";
 
 export type VolatilityParams = {
   riskFreeRate?: number;
@@ -76,7 +77,7 @@ export type VolatilityRound = {
 };
 
 /** Decision window: shorter on longer streaks. */
-export const volatilityDurationMs = (streak: number): number => Math.max(4500, 10000 - streak * 250);
+export const volatilityDurationMs = (streak: number): number => flashDrillDurationMs(streak);
 
 /** Winner's P&L must clear this to keep "largest positive" well-posed. */
 export const VOLATILITY_MIN_WINNER_PNL = 0.02;
@@ -120,16 +121,6 @@ export const VOL_SHOCK_LABELS: Record<VolShock["type"], string> = {
   "back-vol-up": "BACK-END VOL UP",
   "smile-up": "SMILE UP",
   "smile-down": "SMILE DOWN",
-};
-
-const pick = <T,>(rng: () => number, items: readonly T[]): T => items[Math.floor(rng() * items.length)];
-const shuffle = <T,>(rng: () => number, items: readonly T[]): T[] => {
-  const copy = [...items];
-  for (let index = copy.length - 1; index > 0; index -= 1) {
-    const swap = Math.floor(rng() * (index + 1));
-    [copy[index], copy[swap]] = [copy[swap], copy[index]];
-  }
-  return copy;
 };
 
 export const positionBody = (position: VolatilityPosition): string =>

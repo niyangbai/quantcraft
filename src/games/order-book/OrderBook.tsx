@@ -3,7 +3,8 @@ import { useEffect, useMemo, useState } from "react";
 import { bestAsk, bestBid, spread } from "@quantcraft/finmath";
 import type { OrderBook as Book } from "@quantcraft/finmath";
 import { AiPromptModal, RoundResult, RoundTimer } from "../../ui";
-import { secureSeed, seededRandom } from "../../game";
+import { flashRoundScore, secureSeed, seededRandom } from "../../game";
+import { useSeededRound } from "../../hooks";
 import type { Scoreboard } from "../../game";
 import { applyEvent, buildOrderbookPrompt, formatPrice, generateInitialBook, generateQuestion, isBookHealthy } from "./game";
 import type { OrderBookSeed, OrderbookQuestion } from "./game";
@@ -24,7 +25,7 @@ export function OrderBook({
   const [book, setBook] = useState<Book>(initial.book);
   const [seed, setSeed] = useState<OrderBookSeed>(initial.seed);
   const [bookIndex, setBookIndex] = useState(0);
-  const [roundKey, setRoundKey] = useState(secureSeed);
+  const { roundKey, nextSeed } = useSeededRound();
   const [round, setRound] = useState(0);
   const [answered, setAnswered] = useState(false);
   const [feedback, setFeedback] = useState<"correct" | "wrong" | "timeout">();
@@ -49,7 +50,7 @@ export function OrderBook({
       setSeed(fresh.seed);
       setBookIndex((value) => value + 1);
     }
-    setRoundKey(secureSeed());
+    nextSeed();
     setRound((value) => value + 1);
     setAnswered(false);
     setFeedback(undefined);
@@ -60,8 +61,7 @@ export function OrderBook({
   const submit = (index: number) => {
     if (!question || answered) return;
     const correct = index === question.answerIndex;
-    const nextStreak = correct ? scoreboard.streak + 1 : 0;
-    const points = correct ? 100 + scoreboard.streak * 10 : -50;
+    const { points, nextStreak } = flashRoundScore(scoreboard.streak, correct);
     setAnswered(true);
     setFeedback(correct ? "correct" : "wrong");
     setSelectedIndex(index);

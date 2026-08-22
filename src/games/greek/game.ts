@@ -3,7 +3,7 @@
 // then evaluates it before/after the shock through @quantcraft/quantlibjs.
 // No React, no storage.
 
-import { between, isoDate, market } from "../../game.js";
+import { between, flashDrillDurationMs, isoDate, market, pick } from "../../game.js";
 import type { QuestionBank } from "../../game.js";
 import type { QuantLibRuntime } from "@quantcraft/quantlibjs";
 
@@ -44,15 +44,15 @@ export const greekDirection = (before: number, after: number): GreekDirection =>
   displayedDirection(before, after, 4);
 
 /** Decision window: shorter on longer streaks, matching the other flash drills. */
-export const greekDurationMs = (streak: number): number => Math.max(4500, 10000 - streak * 250);
+export const greekDurationMs = (streak: number): number => flashDrillDurationMs(streak);
 
 const METRIC_LABELS: Record<GreekMetric, string> = { value: "FAIR VALUE", delta: "DELTA", gamma: "GAMMA", vega: "VEGA", theta: "THETA", rho: "RHO" };
 
 export function generateGreekQuestion(rng: () => number, ql: QuantLibRuntime, bank: QuestionBank["greek"]): GreekQuestion {
   const { scenarios, books, metrics } = bank;
-  const scenarioTemplate = scenarios[Math.floor(rng() * scenarios.length)];
-  const bookTemplate = books[Math.floor(rng() * books.length)];
-  const metric = metrics[Math.floor(rng() * metrics.length)];
+  const scenarioTemplate = pick(rng, scenarios);
+  const bookTemplate = pick(rng, books);
+  const metric = pick(rng, metrics);
   const baseSpot = Math.round(between(rng, 80, 125));
   const baseVol = Number(between(rng, .12, .36).toFixed(4));
   const baseRate = Number(between(rng, .005, .06).toFixed(4));

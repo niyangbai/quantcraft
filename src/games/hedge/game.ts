@@ -3,7 +3,7 @@
 // builds hedge tools, finds the best hedge via @quantcraft/finmath (risk),
 // and settles the player's chosen hedge. No React, no storage.
 
-import { between, isoDate } from "../../game.js";
+import { between, isoDate, pick } from "../../game.js";
 import type { QuestionBank } from "../../game.js";
 import type { QuantLibRuntime } from "@quantcraft/quantlibjs";
 import { DEFAULT_GREEK_SCALES, GREEK_KEYS, addRisk, bestHedge, hedgeQuality } from "@quantcraft/finmath";
@@ -69,8 +69,8 @@ export type HedgeSettlement = {
 };
 
 export function generateHedgeRound(rng: () => number, ql: QuantLibRuntime, bank: QuestionBank["hedge"]): HedgeRound {
-  const template = bank.products[Math.floor(rng() * bank.products.length)];
-  const shock = HEDGE_SHOCKS[Math.floor(rng() * HEDGE_SHOCKS.length)];
+  const template = pick(rng, bank.products);
+  const shock = pick(rng, HEDGE_SHOCKS);
   const evaluation = new Date(Date.UTC(2025, 0, 2));
   evaluation.setUTCMonth(evaluation.getUTCMonth() + Math.floor(between(rng, 0, 36)));
   const maturity = new Date(evaluation);

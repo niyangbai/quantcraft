@@ -1,6 +1,9 @@
 import { useState } from "react";
-import { exampleQuestionBank, parseQuestionBank, totalScore } from "../game";
+import { exampleQuestionBank, GAME_LABELS, parseQuestionBank, totalScore } from "../game";
 import type { Difficulty, Mode, QuestionBank, Scoreboard } from "../game";
+
+/** Display order for the settlement grid (drill modes plus hedge). */
+const SETTLEMENT_ORDER = ["payoff", "greek", "orderbook", "hedge", "makemarket", "volatility", "curve", "exotic"] as const;
 
 export function Onboarding({ onFinish }: { onFinish: (name: string, storage: boolean) => void }) {
   const [name, setName] = useState("");
@@ -43,13 +46,6 @@ export function Collection({ name, scoreboard, onRename, onResetScore, onBack }:
   const [editingName, setEditingName] = useState(false);
   const [draftName, setDraftName] = useState(name);
   const [shareImage, setShareImage] = useState<string>();
-  const payoffAccuracy = scoreboard.payoff.answers ? scoreboard.payoff.correct / scoreboard.payoff.answers * 100 : 0;
-  const greekAccuracy = scoreboard.greek.answers ? scoreboard.greek.correct / scoreboard.greek.answers * 100 : 0;
-  const orderbookAccuracy = scoreboard.orderbook.answers ? scoreboard.orderbook.correct / scoreboard.orderbook.answers * 100 : 0;
-  const makemarketAccuracy = scoreboard.makemarket.answers ? scoreboard.makemarket.correct / scoreboard.makemarket.answers * 100 : 0;
-  const volatilityAccuracy = scoreboard.volatility.answers ? scoreboard.volatility.correct / scoreboard.volatility.answers * 100 : 0;
-  const curveAccuracy = scoreboard.curve.answers ? scoreboard.curve.correct / scoreboard.curve.answers * 100 : 0;
-  const exoticAccuracy = scoreboard.exotic.answers ? scoreboard.exotic.correct / scoreboard.exotic.answers * 100 : 0;
   const createShareImage = () => {
     const escapeXml = (value: string) => value.replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&apos;" })[character] ?? character);
     const image = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760"><rect width="1200" height="760" fill="#edf0eb"/><rect x="54" y="54" width="1092" height="652" fill="#334a45"/><path d="M54 610h1092v96H54z" fill="#ef765f"/><circle cx="1050" cy="150" r="72" fill="#f1d17d"/><circle cx="1050" cy="150" r="40" fill="#334a45"/><circle cx="96" cy="116" r="6" fill="#ef765f"/><circle cx="110" cy="116" r="6" fill="#e2c17b"/><circle cx="124" cy="116" r="6" fill="#6fa7b6"/><text x="146" y="126" fill="#ffffff" font-family="Arial,sans-serif" font-size="26" font-weight="900" letter-spacing="3">QUANT<tspan fill="#ef765f">CRAFT</tspan></text><text x="96" y="300" fill="#b8c4c0" font-family="Arial,sans-serif" font-size="24" letter-spacing="3">PLAYER</text><text x="96" y="356" fill="#ffffff" font-family="Arial,sans-serif" font-size="42" font-weight="700">${escapeXml(name)}</text><text x="760" y="300" fill="#b8c4c0" font-family="Arial,sans-serif" font-size="24" letter-spacing="3">DIFFICULTY</text><text x="760" y="356" fill="#f1d17d" font-family="Arial,sans-serif" font-size="42" font-weight="700">${escapeXml(scoreboard.difficulty.toUpperCase())}</text><text x="96" y="470" fill="#b8c4c0" font-family="Arial,sans-serif" font-size="22" letter-spacing="3">TOTAL SCORE</text><text x="96" y="555" fill="#f1d17d" font-family="Arial,sans-serif" font-size="92" font-weight="700">${totalScore(scoreboard)} PTS</text><text x="96" y="663" fill="#334a45" font-family="Arial,sans-serif" font-size="22" font-weight="700">github.com/niyangbai/quantcraft</text><text x="1060" y="664" fill="#ffffff" font-family="Arial,sans-serif" font-size="20" text-anchor="end">BUILD RISK · READ RISK</text></svg>`;
@@ -71,14 +67,18 @@ export function Collection({ name, scoreboard, onRename, onResetScore, onBack }:
         </div>
       </div>
       <div className="settlement-grid">
-        <article><span>PAYOFF</span><strong>{scoreboard.payoff.score}</strong><small>{scoreboard.payoff.correct}/{scoreboard.payoff.answers} correct · {payoffAccuracy.toFixed(0)}% accuracy</small><b>BEST STREAK ×{scoreboard.payoff.bestStreak}</b></article>
-        <article><span>GREEK</span><strong>{scoreboard.greek.score}</strong><small>{scoreboard.greek.correct}/{scoreboard.greek.answers} correct · {greekAccuracy.toFixed(0)}% accuracy</small><b>BEST STREAK ×{scoreboard.greek.bestStreak}</b></article>
-        <article><span>ORDER BOOK</span><strong>{scoreboard.orderbook.score}</strong><small>{scoreboard.orderbook.correct}/{scoreboard.orderbook.answers} correct · {orderbookAccuracy.toFixed(0)}% accuracy</small><b>BEST STREAK ×{scoreboard.orderbook.bestStreak}</b></article>
-        <article><span>HEDGE</span><strong>{scoreboard.hedge.score}</strong><small>{scoreboard.hedge.passed}/{scoreboard.hedge.rounds} books inside limits</small><b>BEST ROUND {scoreboard.hedge.best}</b></article>
-        <article><span>MAKE MARKET</span><strong>{scoreboard.makemarket.score}</strong><small>{scoreboard.makemarket.correct}/{scoreboard.makemarket.answers} correct · {makemarketAccuracy.toFixed(0)}% accuracy</small><b>BEST STREAK ×{scoreboard.makemarket.bestStreak}</b></article>
-        <article><span>VOLATILITY</span><strong>{scoreboard.volatility.score}</strong><small>{scoreboard.volatility.correct}/{scoreboard.volatility.answers} correct · {volatilityAccuracy.toFixed(0)}% accuracy</small><b>BEST STREAK ×{scoreboard.volatility.bestStreak}</b></article>
-        <article><span>CURVE</span><strong>{scoreboard.curve.score}</strong><small>{scoreboard.curve.correct}/{scoreboard.curve.answers} correct · {curveAccuracy.toFixed(0)}% accuracy</small><b>BEST STREAK ×{scoreboard.curve.bestStreak}</b></article>
-        <article><span>EXOTIC</span><strong>{scoreboard.exotic.score}</strong><small>{scoreboard.exotic.correct}/{scoreboard.exotic.answers} correct · {exoticAccuracy.toFixed(0)}% accuracy</small><b>BEST STREAK ×{scoreboard.exotic.bestStreak}</b></article>
+        {SETTLEMENT_ORDER.map((mode) => {
+          if (mode === "hedge") {
+            return (
+              <article key="hedge"><span>HEDGE</span><strong>{scoreboard.hedge.score}</strong><small>{scoreboard.hedge.passed}/{scoreboard.hedge.rounds} books inside limits</small><b>BEST ROUND {scoreboard.hedge.best}</b></article>
+            );
+          }
+          const stat = scoreboard[mode];
+          const accuracy = stat.answers ? (stat.correct / stat.answers) * 100 : 0;
+          return (
+            <article key={mode}><span>{GAME_LABELS[mode].toUpperCase()}</span><strong>{stat.score}</strong><small>{stat.correct}/{stat.answers} correct · {accuracy.toFixed(0)}% accuracy</small><b>BEST STREAK ×{stat.bestStreak}</b></article>
+          );
+        })}
       </div>
       <section className="recent-settlements">
         <div className="settlement-head"><div><h2>{scoreboard.gameOver ? "Final score ledger" : "Current run ledger"}</h2></div><button onClick={onResetScore}>NEW RUN</button></div>

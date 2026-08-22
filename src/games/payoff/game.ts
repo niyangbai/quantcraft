@@ -7,6 +7,7 @@
 import { bookPayoff, breakevens, isContinuousBook, legPayoff, payoffExtremes, signedQuantity } from "@quantcraft/finmath";
 import type { PayoffBarrierType, PayoffExtremes, PayoffKind, PayoffLeg, PayoffSide } from "@quantcraft/finmath";
 import type { QuantLibRuntime, TerminalPayoffInput } from "@quantcraft/quantlibjs";
+import { chance, integer, pick, shuffle } from "../../shared.js";
 
 export type PayoffTier = 1 | 2 | 3 | 4 | 5;
 export type PayoffQuestionType = "payoff" | "maxProfit" | "breakeven";
@@ -85,24 +86,6 @@ const qlPayoffBreakevens = (ql: QuantLibRuntime, legs: PayoffLeg[]): number[] =>
   } catch {
     return [];
   }
-};
-
-/* ------------------------------------------------------------------ */
-/* Random helpers (stateless; the caller passes a seeded rng)          */
-/* ------------------------------------------------------------------ */
-
-const range = (rng: () => number, min: number, max: number): number => min + rng() * (max - min);
-const pick = <T,>(rng: () => number, items: readonly T[]): T => items[Math.floor(rng() * items.length)];
-const integer = (rng: () => number, min: number, max: number): number => Math.round(range(rng, min, max));
-const chance = (rng: () => number, probability: number): boolean => rng() < probability;
-
-const shuffle = <T,>(rng: () => number, items: readonly T[]): T[] => {
-  const copy = [...items];
-  for (let index = copy.length - 1; index > 0; index -= 1) {
-    const swap = Math.floor(rng() * (index + 1));
-    [copy[index], copy[swap]] = [copy[swap], copy[index]];
-  }
-  return copy;
 };
 
 /* ------------------------------------------------------------------ */

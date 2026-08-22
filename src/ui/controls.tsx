@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { totalScore } from "../game";
-import type { Scoreboard } from "../game";
+import type { DrillMode, Scoreboard } from "../game";
 
-export type GameMode = "payoff" | "greek" | "orderbook" | "hedge" | "makemarket" | "volatility" | "curve" | "exotic";
+export type GameMode = DrillMode | "hedge";
 
 /** A small LONG/SHORT pill, reused across every drill's option cards. */
 export function SideBadge({ side }: { side: "long" | "short" }) {
@@ -44,21 +44,9 @@ export function AiPromptModal({ prompt, onClose }: { prompt: string; onClose: ()
 
 export function GameScoreboard({ scoreboard, mode }: { scoreboard: Scoreboard; mode: GameMode }) {
   const [feedback, setFeedback] = useState<"success" | "failure" | "life">();
-  const modeStats = mode === "payoff"
-    ? { score: scoreboard.payoff.score, rounds: scoreboard.payoff.answers, successes: scoreboard.payoff.correct }
-    : mode === "greek"
-      ? { score: scoreboard.greek.score, rounds: scoreboard.greek.answers, successes: scoreboard.greek.correct }
-      : mode === "orderbook"
-        ? { score: scoreboard.orderbook.score, rounds: scoreboard.orderbook.answers, successes: scoreboard.orderbook.correct }
-        : mode === "makemarket"
-          ? { score: scoreboard.makemarket.score, rounds: scoreboard.makemarket.answers, successes: scoreboard.makemarket.correct }
-          : mode === "volatility"
-            ? { score: scoreboard.volatility.score, rounds: scoreboard.volatility.answers, successes: scoreboard.volatility.correct }
-            : mode === "curve"
-              ? { score: scoreboard.curve.score, rounds: scoreboard.curve.answers, successes: scoreboard.curve.correct }
-              : mode === "exotic"
-                ? { score: scoreboard.exotic.score, rounds: scoreboard.exotic.answers, successes: scoreboard.exotic.correct }
-                : { score: scoreboard.hedge.score, rounds: scoreboard.hedge.rounds, successes: scoreboard.hedge.passed };
+  const modeStats = mode === "hedge"
+    ? { score: scoreboard.hedge.score, rounds: scoreboard.hedge.rounds, successes: scoreboard.hedge.passed }
+    : { score: scoreboard[mode].score, rounds: scoreboard[mode].answers, successes: scoreboard[mode].correct };
   const previous = useRef({ rounds: modeStats.rounds, successes: modeStats.successes, lives: scoreboard.lives });
   const infiniteLives = scoreboard.difficulty === "intern";
   const lives = infiniteLives

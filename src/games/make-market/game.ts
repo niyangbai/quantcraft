@@ -9,6 +9,7 @@
 import { bestQuote, builtinNormalStats } from "@quantcraft/finmath";
 import type { MarketMakingContext, NormalStats, Quote, QuoteAnalysis } from "@quantcraft/finmath";
 import type { QuantLibRuntime } from "@quantcraft/quantlibjs";
+import { flashDrillDurationMs, pick, shuffle } from "../../shared.js";
 
 export type MakeMarketParams = {
   riskAversion?: number;
@@ -47,7 +48,7 @@ export type MakeMarketRound = {
 };
 
 /** Decision window: shorter on longer streaks. */
-export const makeMarketDurationMs = (streak: number): number => Math.max(4500, 10000 - streak * 250);
+export const makeMarketDurationMs = (streak: number): number => flashDrillDurationMs(streak);
 
 /** Signed tick offsets from fair: [bid, ask]. Ask < |bid| leans to sell. */
 const TEMPLATES: ReadonlyArray<readonly [number, number]> = [
@@ -64,16 +65,6 @@ const TEMPLATES: ReadonlyArray<readonly [number, number]> = [
 
 const UNCERTAINTIES = [0.05, 0.1, 0.15, 0.2, 0.25];
 const TIE_EPSILON = 1e-9;
-
-const pick = <T,>(rng: () => number, items: readonly T[]): T => items[Math.floor(rng() * items.length)];
-const shuffle = <T,>(rng: () => number, items: readonly T[]): T[] => {
-  const copy = [...items];
-  for (let index = copy.length - 1; index > 0; index -= 1) {
-    const swap = Math.floor(rng() * (index + 1));
-    [copy[index], copy[swap]] = [copy[swap], copy[index]];
-  }
-  return copy;
-};
 
 const quoteLabel = (quote: Quote): string => `${quote.bid.toFixed(2)} / ${quote.ask.toFixed(2)}`;
 const spreadText = (quote: Quote): string => (quote.ask - quote.bid).toFixed(2);

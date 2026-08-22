@@ -2,7 +2,8 @@ import "./greek.css";
 import { useEffect, useMemo, useState } from "react";
 import type { QuantLibRuntime } from "@quantcraft/quantlibjs";
 import { AiPromptModal, ChoiceGrid, GameFrame, PositionBook, RevealBar, RoundResult, RoundTimer, ScenarioCard } from "../../ui";
-import { secureSeed, seededRandom } from "../../game";
+import { flashRoundScore, seededRandom } from "../../game";
+import { useSeededRound } from "../../hooks";
 import type { QuestionBank, Scoreboard } from "../../game";
 import { buildGreekPrompt, generateGreekQuestion, greekDurationMs } from "./game";
 import type { GreekDirection } from "./game";
@@ -18,19 +19,18 @@ const DIRECTIONS: { key: GreekDirection; label: string; detail: string; tone: "d
 
 export function Greek({ ql, bank, onScore, onBack, scoreboard }: { ql?: QuantLibRuntime; bank: QuestionBank["greek"]; onScore: (score: number, correct: boolean, streak: number, label: string) => void; onBack: () => void; scoreboard: Scoreboard }) {
   const [seed, setSeed] = useState(0);
-  const [randomKey, setRandomKey] = useState(secureSeed);
+  const { roundKey, nextSeed } = useSeededRound();
   const [answered, setAnswered] = useState(false);
   const [feedback, setFeedback] = useState<"correct" | "wrong" | "timeout">();
   const [lastScore, setLastScore] = useState(0);
   const [aiPrompt, setAiPrompt] = useState<string>();
   const duration = greekDurationMs(scoreboard.streak);
-  const question = useMemo(() => (ql ? generateGreekQuestion(seededRandom(randomKey), ql, bank) : undefined), [ql, randomKey, bank]);
-  const next = () => { setRandomKey(secureSeed()); setSeed((value) => value + 1); setAnswered(false); setFeedback(undefined); setLastScore(0); setAiPrompt(undefined); };
+  const question = useMemo(() => (ql ? generateGreekQuestion(seededRandom(roundKey), ql, bank) : undefined), [ql, roundKey, bank]);
+  const next = () => { nextSeed(); setSeed((value) => value + 1); setAnswered(false); setFeedback(undefined); setLastScore(0); setAiPrompt(undefined); };
   const answer = (direction: GreekDirection) => {
     if (!question || answered) return;
     const correct = direction === question.direction;
-    const nextStreak = correct ? scoreboard.streak + 1 : 0;
-    const points = correct ? 100 + scoreboard.streak * 10 : -50;
+    const { points, nextStreak } = flashRoundScore(scoreboard.streak, correct);
     setAnswered(true); setFeedback(correct ? "correct" : "wrong"); setLastScore(points);
     onScore(points, correct, nextStreak, `${question.metric} · ${question.book.name}`);
   };

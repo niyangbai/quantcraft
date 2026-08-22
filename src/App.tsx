@@ -10,9 +10,10 @@ import { Curve } from "./games/curve";
 import { Exotic } from "./games/exotic";
 import { AppShell, GameOverScreen, Collection, Landing, Onboarding } from "./ui";
 
-import { difficultyLives, emptyScoreboard, exampleQuestionBank, parseQuestionBank, totalScore } from "./game";
+import { difficultyLives, emptyScoreboard, exampleQuestionBank, GAME_LABELS, parseQuestionBank, totalScore } from "./game";
 import type {
   Difficulty,
+  DrillMode,
   Mode,
   PlayerProfile,
   QuestionBank,
@@ -111,53 +112,29 @@ function App() {
     const earnsLife = current.difficulty !== "intern" && streak % 3 === 0 && current.lives < current.maxLives;
     return { streak, lives: current.lives + Number(earnsLife), gameOver: false };
   };
-  const recordPayoff = (score: number, correct: boolean, streak: number, label: string) => setScoreboard((current) => ({
-    ...current,
-    ...nextRunState(current, correct),
-    payoff: { score: current.payoff.score + score, answers: current.payoff.answers + 1, correct: current.payoff.correct + Number(correct), bestStreak: Math.max(current.payoff.bestStreak, streak) },
-    recent: [{ game: "Payoff" as const, label, score, at: nowLabel() }, ...current.recent].slice(0, 8),
-  }));
-  const recordGreek = (score: number, correct: boolean, streak: number, label: string) => setScoreboard((current) => ({
-    ...current,
-    ...nextRunState(current, correct),
-    greek: { score: current.greek.score + score, answers: current.greek.answers + 1, correct: current.greek.correct + Number(correct), bestStreak: Math.max(current.greek.bestStreak, streak) },
-    recent: [{ game: "Greek" as const, label, score, at: nowLabel() }, ...current.recent].slice(0, 8),
-  }));
-  const recordOrderBook = (score: number, correct: boolean, streak: number, label: string) => setScoreboard((current) => ({
-    ...current,
-    ...nextRunState(current, correct),
-    orderbook: { score: current.orderbook.score + score, answers: current.orderbook.answers + 1, correct: current.orderbook.correct + Number(correct), bestStreak: Math.max(current.orderbook.bestStreak, streak) },
-    recent: [{ game: "Order Book" as const, label, score, at: nowLabel() }, ...current.recent].slice(0, 8),
-  }));
+  const recordDrill = (mode: DrillMode) => (score: number, correct: boolean, streak: number, label: string) =>
+    setScoreboard((current) => {
+      const stat = current[mode];
+      const next: Scoreboard = {
+        ...current,
+        ...nextRunState(current, correct),
+        recent: [{ game: GAME_LABELS[mode], label, score, at: nowLabel() }, ...current.recent].slice(0, 8),
+      };
+      next[mode] = { score: stat.score + score, answers: stat.answers + 1, correct: stat.correct + Number(correct), bestStreak: Math.max(stat.bestStreak, streak) };
+      return next;
+    });
+  const recordPayoff = recordDrill("payoff");
+  const recordGreek = recordDrill("greek");
+  const recordOrderBook = recordDrill("orderbook");
+  const recordMakeMarket = recordDrill("makemarket");
+  const recordVolatility = recordDrill("volatility");
+  const recordCurve = recordDrill("curve");
+  const recordExotic = recordDrill("exotic");
   const recordHedge = (score: number, passed: boolean, label: string) => setScoreboard((current) => ({
     ...current,
     ...nextRunState(current, passed),
     hedge: { score: current.hedge.score + score, rounds: current.hedge.rounds + 1, passed: current.hedge.passed + Number(passed), best: Math.max(current.hedge.best, score) },
     recent: [{ game: "Hedge" as const, label, score, at: nowLabel() }, ...current.recent].slice(0, 8),
-  }));
-  const recordMakeMarket = (score: number, correct: boolean, streak: number, label: string) => setScoreboard((current) => ({
-    ...current,
-    ...nextRunState(current, correct),
-    makemarket: { score: current.makemarket.score + score, answers: current.makemarket.answers + 1, correct: current.makemarket.correct + Number(correct), bestStreak: Math.max(current.makemarket.bestStreak, streak) },
-    recent: [{ game: "Make Market" as const, label, score, at: nowLabel() }, ...current.recent].slice(0, 8),
-  }));
-  const recordVolatility = (score: number, correct: boolean, streak: number, label: string) => setScoreboard((current) => ({
-    ...current,
-    ...nextRunState(current, correct),
-    volatility: { score: current.volatility.score + score, answers: current.volatility.answers + 1, correct: current.volatility.correct + Number(correct), bestStreak: Math.max(current.volatility.bestStreak, streak) },
-    recent: [{ game: "Volatility" as const, label, score, at: nowLabel() }, ...current.recent].slice(0, 8),
-  }));
-  const recordCurve = (score: number, correct: boolean, streak: number, label: string) => setScoreboard((current) => ({
-    ...current,
-    ...nextRunState(current, correct),
-    curve: { score: current.curve.score + score, answers: current.curve.answers + 1, correct: current.curve.correct + Number(correct), bestStreak: Math.max(current.curve.bestStreak, streak) },
-    recent: [{ game: "Curve" as const, label, score, at: nowLabel() }, ...current.recent].slice(0, 8),
-  }));
-  const recordExotic = (score: number, correct: boolean, streak: number, label: string) => setScoreboard((current) => ({
-    ...current,
-    ...nextRunState(current, correct),
-    exotic: { score: current.exotic.score + score, answers: current.exotic.answers + 1, correct: current.exotic.correct + Number(correct), bestStreak: Math.max(current.exotic.bestStreak, streak) },
-    recent: [{ game: "Exotic" as const, label, score, at: nowLabel() }, ...current.recent].slice(0, 8),
   }));
   const newRun = () => {
     setShowGameOver(false);

@@ -5,6 +5,7 @@
 
 import { depthAt, matchMarketOrder } from "@quantcraft/finmath";
 import type { BookSide, MatchResult, OrderBook, OrderSide } from "@quantcraft/finmath";
+import { integer, pick, shuffle } from "../../shared.js";
 
 export type OrderBookSeed = {
   id: string;
@@ -40,22 +41,6 @@ export type OrderbookQuestion = {
 };
 
 export const formatPrice = (ticks: number): string => (ticks / 100).toFixed(2);
-
-/* ------------------------------------------------------------------ */
-/* Random helpers (stateless; the caller passes a seeded rng)          */
-/* ------------------------------------------------------------------ */
-
-const pick = <T,>(rng: () => number, items: readonly T[]): T => items[Math.floor(rng() * items.length)];
-const integer = (rng: () => number, min: number, max: number): number => Math.round(min + rng() * (max - min));
-
-const shuffle = <T,>(rng: () => number, items: readonly T[]): T[] => {
-  const copy = [...items];
-  for (let index = copy.length - 1; index > 0; index -= 1) {
-    const swap = Math.floor(rng() * (index + 1));
-    [copy[index], copy[swap]] = [copy[swap], copy[index]];
-  }
-  return copy;
-};
 
 /* ------------------------------------------------------------------ */
 /* Book lifecycle                                                      */

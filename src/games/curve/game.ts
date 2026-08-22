@@ -9,6 +9,7 @@
 // before), so key-rate exposure, coupon, and notional all enter exactly.
 
 import type { CurveBondPositionInput, QuantLibRuntime } from "@quantcraft/quantlibjs";
+import { flashDrillDurationMs, pick, shuffle } from "../../shared.js";
 
 export type CurveParams = { evaluationDate?: string };
 
@@ -78,7 +79,7 @@ export type CurveRound = {
 };
 
 /** Decision window: shorter on longer streaks. */
-export const curveDurationMs = (streak: number): number => Math.max(4500, 10000 - streak * 250);
+export const curveDurationMs = (streak: number): number => flashDrillDurationMs(streak);
 
 /** Winner's P&L must clear this (dollars) to keep "largest P&L" well-posed. */
 export const CURVE_MIN_WINNER_PNL = 50;
@@ -131,16 +132,6 @@ const SHOCK_SHIFTS: Record<string, readonly [number, number, number]> = {
   steepen: [-1, 0, 1],
   flatten: [1, 0, -1],
   butterfly: [1, -1, 1],
-};
-
-const pick = <T,>(rng: () => number, items: readonly T[]): T => items[Math.floor(rng() * items.length)];
-const shuffle = <T,>(rng: () => number, items: readonly T[]): T[] => {
-  const copy = [...items];
-  for (let index = copy.length - 1; index > 0; index -= 1) {
-    const swap = Math.floor(rng() * (index + 1));
-    [copy[index], copy[swap]] = [copy[swap], copy[index]];
-  }
-  return copy;
 };
 
 /** ISO date shifted forward by `months` months from an ISO evaluation date. */

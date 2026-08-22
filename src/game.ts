@@ -35,62 +35,69 @@ export type Settlement = { game: "Payoff" | "Greek" | "Order Book" | "Hedge" | "
 export type PlayerProfile = { name: string; storage: boolean };
 export type Difficulty = "intern" | "analyst" | "associate" | "vp" | "director" | "md";
 export const difficultyLives: Record<Difficulty, number | null> = { intern: null, analyst: 5, associate: 4, vp: 3, director: 2, md: 1 };
+export type DrillStat = { score: number; answers: number; correct: number; bestStreak: number };
+export type HedgeStat = { score: number; rounds: number; passed: number; best: number };
+
+/** Flash-drill modes, excluding hedge (which settles on a different shape). */
+export const DRILL_MODES = ["payoff", "greek", "orderbook", "makemarket", "volatility", "curve", "exotic"] as const;
+export type DrillMode = (typeof DRILL_MODES)[number];
+
+/** Title-case name used in the settlement ledger for each game. */
+export const GAME_LABELS: Record<DrillMode | "hedge", Settlement["game"]> = {
+  payoff: "Payoff",
+  greek: "Greek",
+  orderbook: "Order Book",
+  hedge: "Hedge",
+  makemarket: "Make Market",
+  volatility: "Volatility",
+  curve: "Curve",
+  exotic: "Exotic",
+};
+
 export type Scoreboard = {
   difficulty: Difficulty;
   maxLives: number;
   lives: number;
   streak: number;
   gameOver: boolean;
-  payoff: { score: number; answers: number; correct: number; bestStreak: number };
-  greek: { score: number; answers: number; correct: number; bestStreak: number };
-  orderbook: { score: number; answers: number; correct: number; bestStreak: number };
-  hedge: { score: number; rounds: number; passed: number; best: number };
-  makemarket: { score: number; answers: number; correct: number; bestStreak: number };
-  volatility: { score: number; answers: number; correct: number; bestStreak: number };
-  curve: { score: number; answers: number; correct: number; bestStreak: number };
-  exotic: { score: number; answers: number; correct: number; bestStreak: number };
+  payoff: DrillStat;
+  greek: DrillStat;
+  orderbook: DrillStat;
+  hedge: HedgeStat;
+  makemarket: DrillStat;
+  volatility: DrillStat;
+  curve: DrillStat;
+  exotic: DrillStat;
   recent: Settlement[];
 };
+const emptyDrillStat = (): DrillStat => ({ score: 0, answers: 0, correct: 0, bestStreak: 0 });
+
 export const emptyScoreboard: Scoreboard = {
   difficulty: "intern",
   maxLives: 0,
   lives: 0,
   streak: 0,
   gameOver: false,
-  payoff: { score: 0, answers: 0, correct: 0, bestStreak: 0 },
-  greek: { score: 0, answers: 0, correct: 0, bestStreak: 0 },
-  orderbook: { score: 0, answers: 0, correct: 0, bestStreak: 0 },
+  payoff: emptyDrillStat(),
+  greek: emptyDrillStat(),
+  orderbook: emptyDrillStat(),
   hedge: { score: 0, rounds: 0, passed: 0, best: 0 },
-  makemarket: { score: 0, answers: 0, correct: 0, bestStreak: 0 },
-  volatility: { score: 0, answers: 0, correct: 0, bestStreak: 0 },
-  curve: { score: 0, answers: 0, correct: 0, bestStreak: 0 },
-  exotic: { score: 0, answers: 0, correct: 0, bestStreak: 0 },
+  makemarket: emptyDrillStat(),
+  volatility: emptyDrillStat(),
+  curve: emptyDrillStat(),
+  exotic: emptyDrillStat(),
   recent: [],
 };
 
 /** Combined score across every mode. */
 export const totalScore = (scoreboard: Scoreboard): number =>
-  scoreboard.payoff.score + scoreboard.greek.score + scoreboard.orderbook.score + scoreboard.hedge.score + scoreboard.makemarket.score + scoreboard.volatility.score + scoreboard.curve.score + scoreboard.exotic.score;
+  DRILL_MODES.reduce((sum, mode) => sum + scoreboard[mode].score, 0) + scoreboard.hedge.score;
 
 export const market = {
   maturityDate: "2028-01-03",
 };
-export const secureSeed = () => {
-  const value = new Uint32Array(1);
-  crypto.getRandomValues(value);
-  return value[0];
-};
-export const seededRandom = (seed: number) => {
-  let state = seed >>> 0;
-  return () => {
-    state += 0x6d2b79f5;
-    let value = state;
-    value = Math.imul(value ^ (value >>> 15), value | 1);
-    value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
-    return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
-  };
-};
-export const between = (rng: () => number, min: number, max: number) => min + rng() * (max - min);
+// Seeded PRNG and shared drill helpers re-exported for `../../game` imports.
+export { secureSeed, seededRandom, between, pick, shuffle, integer, chance, flashDrillDurationMs, flashRoundScore } from "./shared.js";
 export const isoDate = (date: Date) => date.toISOString().slice(0, 10);
 
 

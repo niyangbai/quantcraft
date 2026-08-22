@@ -1,7 +1,8 @@
 import "./payoff.css";
 import { useEffect, useMemo, useState } from "react";
 import { AiPromptModal, RoundResult, RoundTimer } from "../../ui";
-import { secureSeed, seededRandom } from "../../game";
+import { flashRoundScore, seededRandom } from "../../game";
+import { useSeededRound } from "../../hooks";
 import type { Scoreboard } from "../../game";
 import { buildPayoffPrompt, decisionDurationMs, generatePayoffQuestion, legDetailText, levelForProgress, levelLabel } from "./game";
 import type { PayoffSeed, PayoffTier } from "./game";
@@ -21,7 +22,7 @@ export function Payoff({
   scoreboard: Scoreboard;
   ql?: QuantLibRuntime;
 }) {
-  const [roundKey, setRoundKey] = useState(secureSeed);
+  const { roundKey, nextSeed } = useSeededRound();
   const [round, setRound] = useState(1);
   const [correctCount, setCorrectCount] = useState(0);
   const [roundLevel, setRoundLevel] = useState<PayoffTier>(1);
@@ -39,7 +40,7 @@ export function Payoff({
   }, [roundKey, seeds, roundLevel, ql]);
 
   const next = () => {
-    setRoundKey(secureSeed());
+    nextSeed();
     setRound((value) => value + 1);
     setRoundLevel(level);
     setAnswered(false);
@@ -51,8 +52,7 @@ export function Payoff({
   const submit = (index: number) => {
     if (!question || answered) return;
     const correct = index === question.answerIndex;
-    const nextStreak = correct ? scoreboard.streak + 1 : 0;
-    const points = correct ? 100 + scoreboard.streak * 10 : -50;
+    const { points, nextStreak } = flashRoundScore(scoreboard.streak, correct);
     setAnswered(true);
     setFeedback(correct ? "correct" : "wrong");
     setSelectedIndex(index);
