@@ -13,7 +13,7 @@
 	<a href="https://niyangbai.github.io/quantcraft/"><strong>▶ PLAY QUANTCRAFT ONLINE</strong></a>
 </p>
 
-**QuantCraft** is a free, browser-based trainer for financial-market intuition. Traders don't learn from reading formulas — they learn by seeing thousands of payoffs, order books, and market shocks until the right call becomes reflex. QuantCraft gives you that repetition: fast, scored drills you can run anywhere, without risking a dollar.
+**QuantCraft** is a free, browser-based trainer for financial-market intuition. Financial analyst don't learn from reading formulas — they learn by seeing thousands of payoffs, order books, and market shocks until the right call becomes reflex. QuantCraft gives you that repetition: fast, scored drills you can run anywhere, without risking a dollar.
 
 > No download, no account, no backend — everything runs in your browser. Every drill shares one score, one streak, and one pool of lives, so you practice the whole desk, not just one skill.
 
