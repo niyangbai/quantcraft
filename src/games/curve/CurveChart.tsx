@@ -1,9 +1,10 @@
-import { useEffect, useRef } from "react";
-import { CHART, CHART_FONT, linear, niceTicks, setupCanvas } from "../../ui/chart";
+import { useEffect } from "react";
+import { CHART, linear, niceTicks, scaledChartFont, setupCanvas } from "../../ui/chart";
 import type { CurveNode } from "./game";
+import { useElementWidth } from "../../hooks";
 
-const W = 800;
-const H = 320;
+const BASE_W = 800;
+const BASE_H = 320;
 const PAD = { left: 56, right: 24, top: 24, bottom: 42 };
 
 function curve(ctx: CanvasRenderingContext2D, points: [number, number][], color: string) {
@@ -23,7 +24,9 @@ function dot(ctx: CanvasRenderingContext2D, px: number, py: number, color: strin
   ctx.fill();
 }
 
-function draw(canvas: HTMLCanvasElement, nodes: CurveNode[]) {
+function draw(canvas: HTMLCanvasElement, nodes: CurveNode[], width: number) {
+  const W = width || BASE_W;
+  const H = Math.max(200, Math.round((W * BASE_H) / BASE_W));
   const ctx = setupCanvas(canvas, W, H);
   ctx.fillStyle = CHART.paper;
   ctx.fillRect(0, 0, W, H);
@@ -42,7 +45,7 @@ function draw(canvas: HTMLCanvasElement, nodes: CurveNode[]) {
   const x = linear(0, xMax, PAD.left, PAD.left + plotW);
   const y = linear(lo, hi, PAD.top + plotH, PAD.top);
 
-  ctx.font = CHART_FONT;
+  ctx.font = scaledChartFont(10, W, BASE_W);
 
   // Horizontal gridlines + rate ticks.
   for (const tick of niceTicks(lo, hi, 4)) {
@@ -100,11 +103,11 @@ function draw(canvas: HTMLCanvasElement, nodes: CurveNode[]) {
 }
 
 export function CurveChart({ nodes }: { nodes: CurveNode[] }) {
-  const ref = useRef<HTMLCanvasElement>(null);
+  const [ref, width] = useElementWidth<HTMLCanvasElement>(BASE_W);
   useEffect(() => {
     const canvas = ref.current;
-    if (canvas) draw(canvas, nodes);
-  }, [nodes]);
+    if (canvas) draw(canvas, nodes, width);
+  }, [nodes, width, ref]);
 
   return (
     <div className="curve-chart-wrap">

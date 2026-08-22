@@ -16,7 +16,7 @@
 
 /* Interactive 3D surface explorer. */
 .vol-surface { margin: 18px 0 0; }
-.vol-surface canvas { display: block; width: 100%; height: auto; background: #fbfbf7; border: 1px solid var(--line); cursor: grab; }
+.vol-surface canvas { display: block; width: 100%; height: auto; background: #fbfbf7; border: 1px solid var(--line); cursor: grab; touch-action: none; }
 .vol-surface canvas:active { cursor: grabbing; }
 .vol-surface-legend { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 8px; color: var(--muted); font-size: 9px; letter-spacing: .8px; }
 .vol-surface-legend span { display: inline-flex; align-items: center; gap: 6px; font-weight: 800; }

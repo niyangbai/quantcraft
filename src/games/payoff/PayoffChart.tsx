@@ -1,11 +1,14 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { bookPayoff } from "@quantcraft/finmath";
 import type { PayoffLeg } from "@quantcraft/finmath";
+import { useElementWidth } from "../../hooks";
+import { scaledChartFont } from "../../ui/chart";
 
-// Logical drawing size (scaled to the container via CSS; the backing store is
-// multiplied by the device pixel ratio so the lines stay crisp).
-const W = 720;
-const H = 340;
+// Base logical size: the diagram is drawn at the rendered width (measured via
+// ResizeObserver) with this aspect ratio, so it stays crisp and legible on
+// every screen instead of being CSS-scaled down from a fixed resolution.
+const BASE_W = 720;
+const BASE_H = 340;
 const PAD = { left: 50, right: 18, top: 24, bottom: 40 };
 
 const C = {
@@ -18,7 +21,9 @@ const C = {
   spot: "#24383a",
 };
 
-function draw(canvas: HTMLCanvasElement, legs: PayoffLeg[], spot?: number) {
+function draw(canvas: HTMLCanvasElement, legs: PayoffLeg[], spot: number | undefined, width: number) {
+  const W = width || BASE_W;
+  const H = Math.max(200, Math.round((W * BASE_H) / BASE_W));
   const dpr = window.devicePixelRatio || 1;
   canvas.width = W * dpr;
   canvas.height = H * dpr;
@@ -59,7 +64,7 @@ function draw(canvas: HTMLCanvasElement, legs: PayoffLeg[], spot?: number) {
 
   ctx.fillStyle = C.paper;
   ctx.fillRect(0, 0, W, H);
-  ctx.font = "10px Avenir Next, Segoe UI, sans-serif";
+  ctx.font = scaledChartFont(10, W, BASE_W);
 
   // Gridlines + x tick labels.
   ctx.strokeStyle = C.grid;
@@ -148,11 +153,11 @@ function draw(canvas: HTMLCanvasElement, legs: PayoffLeg[], spot?: number) {
 }
 
 export function PayoffChart({ legs, spot }: { legs: PayoffLeg[]; spot?: number }) {
-  const ref = useRef<HTMLCanvasElement>(null);
+  const [ref, width] = useElementWidth<HTMLCanvasElement>(BASE_W);
   useEffect(() => {
     const canvas = ref.current;
-    if (canvas) draw(canvas, legs, spot);
-  }, [legs, spot]);
+    if (canvas) draw(canvas, legs, spot, width);
+  }, [legs, spot, width, ref]);
 
   return (
     <section className="payoff-chart">

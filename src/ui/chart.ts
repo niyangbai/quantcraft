@@ -15,6 +15,14 @@ export const CHART = {
 
 export const CHART_FONT = '10px "Avenir Next", "Segoe UI", Inter, sans-serif';
 
+/** A font that scales with the canvas's rendered width but never drops below a
+ * legible floor, so tick labels stay readable when a wide diagram is drawn on
+ * a narrow phone screen. */
+export function scaledChartFont(base: number, width: number, baseWidth: number, weight?: "bold"): string {
+  const px = Math.max(9, Math.round((base * width) / baseWidth));
+  return `${weight ? `${weight} ` : ""}${px}px "Avenir Next", "Segoe UI", Inter, sans-serif`;
+}
+
 /** Size the backing store for the device pixel ratio and return the context. */
 export function setupCanvas(canvas: HTMLCanvasElement, width: number, height: number): CanvasRenderingContext2D {
   const dpr = window.devicePixelRatio || 1;

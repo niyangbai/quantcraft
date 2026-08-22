@@ -1,14 +1,16 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { DEFAULT_GREEK_SCALES, GREEK_KEYS, GREEK_LABELS } from "@quantcraft/finmath";
 import type { GreekKey, GreekRisk } from "@quantcraft/finmath";
-import { CHART, CHART_FONT, linear, niceTicks, setupCanvas } from "../../ui/chart";
+import { CHART, linear, niceTicks, scaledChartFont, setupCanvas } from "../../ui/chart";
+import { useElementWidth } from "../../hooks";
 
-const W = 800;
-const H = 300;
+const BASE_W = 800;
+const BASE_H = 300;
 const PAD = { left: 56, right: 24, top: 24, bottom: 44 };
-const BOLD_FONT = 'bold 10px "Avenir Next", "Segoe UI", Inter, sans-serif';
 
-function draw(canvas: HTMLCanvasElement, before: GreekRisk, user: GreekRisk, best: GreekRisk, objectiveKeys: GreekKey[]) {
+function draw(canvas: HTMLCanvasElement, before: GreekRisk, user: GreekRisk, best: GreekRisk, objectiveKeys: GreekKey[], width: number) {
+  const W = width || BASE_W;
+  const H = Math.max(200, Math.round((W * BASE_H) / BASE_W));
   const ctx = setupCanvas(canvas, W, H);
   ctx.fillStyle = CHART.paper;
   ctx.fillRect(0, 0, W, H);
@@ -30,7 +32,7 @@ function draw(canvas: HTMLCanvasElement, before: GreekRisk, user: GreekRisk, bes
   const y = linear(0, yMax, PAD.top + plotH, PAD.top);
   const groupW = plotW / groups.length;
 
-  ctx.font = CHART_FONT;
+  ctx.font = scaledChartFont(10, W, BASE_W);
 
   // Horizontal gridlines.
   for (const tick of niceTicks(0, yMax, 4)) {
@@ -72,7 +74,7 @@ function draw(canvas: HTMLCanvasElement, before: GreekRisk, user: GreekRisk, bes
     drawBar(group.user, userColor, 0);
     drawBar(group.best, bestColor, barW * 1.15);
 
-    ctx.font = group.objective ? BOLD_FONT : CHART_FONT;
+    ctx.font = scaledChartFont(10, W, BASE_W, group.objective ? "bold" : undefined);
     ctx.fillStyle = group.objective ? CHART.deep : CHART.muted;
     ctx.textAlign = "center";
     ctx.fillText(GREEK_LABELS[group.key], center, PAD.top + plotH + 18);
@@ -89,11 +91,11 @@ function draw(canvas: HTMLCanvasElement, before: GreekRisk, user: GreekRisk, bes
 }
 
 export function HedgeChart({ before, user, best, objectiveKeys }: { before: GreekRisk; user: GreekRisk; best: GreekRisk; objectiveKeys: GreekKey[] }) {
-  const ref = useRef<HTMLCanvasElement>(null);
+  const [ref, width] = useElementWidth<HTMLCanvasElement>(BASE_W);
   useEffect(() => {
     const canvas = ref.current;
-    if (canvas) draw(canvas, before, user, best, objectiveKeys);
-  }, [before, user, best, objectiveKeys]);
+    if (canvas) draw(canvas, before, user, best, objectiveKeys, width);
+  }, [before, user, best, objectiveKeys, width, ref]);
 
   return (
     <div className="hedge-chart-wrap">

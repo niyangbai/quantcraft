@@ -353,27 +353,53 @@ export function VolSurface3D({
 
     render();
 
+    // Drag to rotate, two-finger pinch to zoom, wheel for desktop trackpads.
+    // Pointer Events cover both mouse and touch, so the surface is fully
+    // explorable on phones (the canvas gets `touch-action: none` in CSS so a
+    // drag rotates instead of scrolling the page).
     let dragging = false;
     let lastX = 0;
     let lastY = 0;
+    let pinchDist = 0;
+    const pointers = new Map<number, { x: number; y: number }>();
 
-    const onDown = (event: MouseEvent) => {
-      dragging = true;
-      lastX = event.clientX;
-      lastY = event.clientY;
+    const onPointerDown = (event: PointerEvent) => {
+      pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+      if (pointers.size === 1) {
+        dragging = true;
+        lastX = event.clientX;
+        lastY = event.clientY;
+      } else if (pointers.size === 2) {
+        dragging = false;
+        const [a, b] = [...pointers.values()];
+        pinchDist = Math.hypot(a.x - b.x, a.y - b.y);
+      }
     };
-    const onMove = (event: MouseEvent) => {
-      if (!dragging) return;
-      const dx = event.clientX - lastX;
-      const dy = event.clientY - lastY;
-      yaw += dx * 0.008;
-      pitch = Math.max(-1.45, Math.min(1.45, pitch + dy * 0.008));
-      lastX = event.clientX;
-      lastY = event.clientY;
-      render();
+    const onPointerMove = (event: PointerEvent) => {
+      if (!pointers.has(event.pointerId)) return;
+      pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+      if (pointers.size === 1 && dragging) {
+        const dx = event.clientX - lastX;
+        const dy = event.clientY - lastY;
+        yaw += dx * 0.008;
+        pitch = Math.max(-1.45, Math.min(1.45, pitch + dy * 0.008));
+        lastX = event.clientX;
+        lastY = event.clientY;
+        render();
+      } else if (pointers.size === 2) {
+        const [a, b] = [...pointers.values()];
+        const dist = Math.hypot(a.x - b.x, a.y - b.y);
+        if (pinchDist > 0) {
+          zoom = Math.max(0.4, Math.min(3, zoom * (dist / pinchDist)));
+          render();
+        }
+        pinchDist = dist;
+      }
     };
-    const onUp = () => {
-      dragging = false;
+    const onPointerEnd = (event: PointerEvent) => {
+      pointers.delete(event.pointerId);
+      if (pointers.size < 2) pinchDist = 0;
+      if (pointers.size === 0) dragging = false;
     };
     const onWheel = (event: WheelEvent) => {
       event.preventDefault();
@@ -381,15 +407,17 @@ export function VolSurface3D({
       render();
     };
 
-    canvas.addEventListener("mousedown", onDown);
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
+    canvas.addEventListener("pointerdown", onPointerDown);
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", onPointerEnd);
+    window.addEventListener("pointercancel", onPointerEnd);
     canvas.addEventListener("wheel", onWheel, { passive: false });
 
     return () => {
-      canvas.removeEventListener("mousedown", onDown);
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
+      canvas.removeEventListener("pointerdown", onPointerDown);
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerEnd);
+      window.removeEventListener("pointercancel", onPointerEnd);
       canvas.removeEventListener("wheel", onWheel);
     };
   }, [base, shocked, markers]);

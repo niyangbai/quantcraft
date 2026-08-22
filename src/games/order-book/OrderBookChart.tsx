@@ -1,9 +1,10 @@
-import { useEffect, useRef } from "react";
-import { CHART, CHART_FONT, linear, niceTicks, setupCanvas } from "../../ui/chart";
+import { useEffect } from "react";
+import { CHART, linear, niceTicks, scaledChartFont, setupCanvas } from "../../ui/chart";
 import type { OrderBook } from "@quantcraft/finmath";
+import { useElementWidth } from "../../hooks";
 
-const W = 800;
-const H = 300;
+const BASE_W = 800;
+const BASE_H = 300;
 const PAD = { left: 56, right: 24, top: 24, bottom: 40 };
 
 type Step = { price: number; size: number }[];
@@ -42,7 +43,9 @@ function strokeDepth(ctx: CanvasRenderingContext2D, levels: Step, x: (p: number)
   ctx.stroke();
 }
 
-function draw(canvas: HTMLCanvasElement, book: OrderBook) {
+function draw(canvas: HTMLCanvasElement, book: OrderBook, width: number) {
+  const W = width || BASE_W;
+  const H = Math.max(200, Math.round((W * BASE_H) / BASE_W));
   const ctx = setupCanvas(canvas, W, H);
   ctx.fillStyle = CHART.paper;
   ctx.fillRect(0, 0, W, H);
@@ -67,7 +70,7 @@ function draw(canvas: HTMLCanvasElement, book: OrderBook) {
   const x = linear(pLo, pHi, PAD.left, PAD.left + plotW);
   const y = linear(0, yMax, PAD.top + plotH, PAD.top);
 
-  ctx.font = CHART_FONT;
+  ctx.font = scaledChartFont(10, W, BASE_W);
 
   // Horizontal gridlines + size ticks.
   for (const tick of niceTicks(0, yMax, 4)) {
@@ -114,11 +117,11 @@ function draw(canvas: HTMLCanvasElement, book: OrderBook) {
 }
 
 export function OrderBookChart({ book }: { book: OrderBook }) {
-  const ref = useRef<HTMLCanvasElement>(null);
+  const [ref, width] = useElementWidth<HTMLCanvasElement>(BASE_W);
   useEffect(() => {
     const canvas = ref.current;
-    if (canvas) draw(canvas, book);
-  }, [book]);
+    if (canvas) draw(canvas, book, width);
+  }, [book, width, ref]);
 
   return (
     <div className="orderbook-chart-wrap">
