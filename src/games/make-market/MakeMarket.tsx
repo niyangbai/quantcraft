@@ -1,7 +1,7 @@
 import "./make-market.css";
 import { useEffect, useMemo, useState } from "react";
 import { AiPromptModal, GameFrame, RoundResult, RoundTimer, ScenarioCard } from "../../ui";
-import { roundScore, seededRandom } from "../../game";
+import { difficultyTimeScale, roundScore, seededRandom } from "../../game";
 import { useSeededRound } from "../../hooks";
 import type { Scoreboard } from "../../game";
 import type { QuantLibRuntime } from "@quantcraft/quantlibjs";
@@ -31,7 +31,7 @@ export function MakeMarket({
   const [lastScore, setLastScore] = useState(0);
   const [aiPrompt, setAiPrompt] = useState<string>();
 
-  const duration = makeMarketDurationMs(scoreboard.streak);
+  const duration = makeMarketDurationMs(scoreboard.streak) * difficultyTimeScale(scoreboard.difficulty);
   const question = useMemo(() => {
     const rng = seededRandom(roundKey);
     return generateMakeMarketRound(rng, ql, params);

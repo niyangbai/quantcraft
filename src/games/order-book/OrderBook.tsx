@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { bestAsk, bestBid, spread } from "@quantcraft/finmath";
 import type { OrderBook as Book } from "@quantcraft/finmath";
 import { AiPromptModal, RoundResult, RoundTimer } from "../../ui";
-import { roundScore, secureSeed, seededRandom } from "../../game";
+import { difficultyTimeScale, roundScore, secureSeed, seededRandom } from "../../game";
 import { useSeededRound } from "../../hooks";
 import type { Scoreboard } from "../../game";
 import { applyEvent, buildOrderbookPrompt, formatPrice, generateInitialBook, generateQuestion, isBookHealthy } from "./game";
@@ -34,7 +34,7 @@ export function OrderBook({
   const [lastScore, setLastScore] = useState(0);
   const [aiPrompt, setAiPrompt] = useState<string>();
 
-  const duration = Math.max(4000, 10000 - scoreboard.streak * 450);
+  const duration = Math.max(4000, 10000 - scoreboard.streak * 450) * difficultyTimeScale(scoreboard.difficulty);
   const question = useMemo<OrderbookQuestion | undefined>(() => {
     const rng = seededRandom(roundKey);
     return generateQuestion(rng, book, seed);

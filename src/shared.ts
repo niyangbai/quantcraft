@@ -60,12 +60,9 @@ export const roundScore = (streak: number, correct: boolean): { points: number; 
 export const knowledgeLevel = (difficulty: string): string =>
   ({
     intern: "little finance background",
-    analyst: "basic finance knowledge",
-    associate: "solid working knowledge of options",
-    vp: "strong derivatives and risk experience",
-    director: "deep market experience",
+    vp: "strong working knowledge of markets",
     md: "expert-level market knowledge",
-  })[difficulty] ?? "basic finance knowledge";
+  })[difficulty] ?? "working knowledge of finance";
 
 /** Shared opening lines for every AI-tutor prompt: intuition over mechanics. */
 export const tutorIntro = (difficulty: string): string =>

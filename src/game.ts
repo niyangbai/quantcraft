@@ -33,8 +33,10 @@ export type QuestionBank = {
 };
 export type Settlement = { game: "Payoff" | "Greek" | "Order Book" | "Hedge" | "Make Market" | "Volatility" | "Curve" | "Exotic"; label: string; score: number; at: string };
 export type PlayerProfile = { name: string; storage: boolean };
-export type Difficulty = "intern" | "analyst" | "associate" | "vp" | "director" | "md";
-export const difficultyLives: Record<Difficulty, number | null> = { intern: null, analyst: 5, associate: 4, vp: 3, director: 2, md: 1 };
+export type Difficulty = "intern" | "vp" | "md";
+export const difficultyLives: Record<Difficulty, number | null> = { intern: null, vp: 5, md: 1 };
+/** Multiplier applied to each drill's base decision window by difficulty. */
+export const difficultyTimeScale = (difficulty: Difficulty): number => ({ intern: 5, vp: 2, md: 1 })[difficulty];
 export type DrillStat = { score: number; answers: number; correct: number; bestStreak: number };
 export type HedgeStat = { score: number; rounds: number; passed: number; best: number };
 

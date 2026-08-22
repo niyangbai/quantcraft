@@ -48,7 +48,8 @@ function App() {
       const saved = localStorage.getItem("quantcraft.scoreboard");
       if (!saved) return emptyScoreboard;
       const parsed = JSON.parse(saved) as Partial<Scoreboard> & { greekthon?: Scoreboard["greek"] };
-      const difficulty = parsed.difficulty ?? emptyScoreboard.difficulty;
+      const rawDifficulty = parsed.difficulty ?? emptyScoreboard.difficulty;
+      const difficulty = rawDifficulty in difficultyLives ? rawDifficulty : emptyScoreboard.difficulty;
       const defaultLives = difficultyLives[difficulty] ?? 0;
       return {
         ...emptyScoreboard,

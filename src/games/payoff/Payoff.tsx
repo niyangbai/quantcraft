@@ -1,11 +1,11 @@
 import "./payoff.css";
 import { useEffect, useMemo, useState } from "react";
 import { AiPromptModal, RoundResult, RoundTimer } from "../../ui";
-import { roundScore, seededRandom } from "../../game";
+import { difficultyTimeScale, drillDurationMs, roundScore, seededRandom } from "../../game";
 import { useSeededRound } from "../../hooks";
 import type { Scoreboard } from "../../game";
-import { buildPayoffPrompt, decisionDurationMs, generatePayoffQuestion, legDetailText, levelForProgress, levelLabel } from "./game";
-import type { PayoffSeed, PayoffTier } from "./game";
+import { buildPayoffPrompt, generatePayoffQuestion, legDetailText } from "./game";
+import type { PayoffSeed } from "./game";
 import { PayoffChart } from "./PayoffChart";
 import type { QuantLibRuntime } from "@quantcraft/quantlibjs";
 import { ChoiceGrid, GameFrame, PositionBook, RevealBar, ScenarioCard } from "../../ui";
@@ -25,26 +25,22 @@ export function Payoff({
 }) {
   const { roundKey, nextSeed } = useSeededRound();
   const [round, setRound] = useState(1);
-  const [correctCount, setCorrectCount] = useState(0);
-  const [roundLevel, setRoundLevel] = useState<PayoffTier>(1);
   const [answered, setAnswered] = useState(false);
   const [feedback, setFeedback] = useState<"correct" | "wrong" | "timeout">();
   const [selectedIndex, setSelectedIndex] = useState<number>();
   const [lastScore, setLastScore] = useState(0);
   const [aiPrompt, setAiPrompt] = useState<string>();
 
-  const level = levelForProgress(correctCount);
-  const duration = decisionDurationMs(roundLevel, scoreboard.streak);
+  const duration = drillDurationMs(scoreboard.streak) * difficultyTimeScale(scoreboard.difficulty);
   const question = useMemo(() => {
     if (!ql) return undefined;
     const rng = seededRandom(roundKey);
-    return generatePayoffQuestion(rng, seeds, roundLevel, ql);
-  }, [roundKey, seeds, roundLevel, ql]);
+    return generatePayoffQuestion(rng, seeds, ql);
+  }, [roundKey, seeds, ql]);
 
   const next = () => {
     nextSeed();
     setRound((value) => value + 1);
-    setRoundLevel(level);
     setAnswered(false);
     setFeedback(undefined);
     setSelectedIndex(undefined);
@@ -59,7 +55,6 @@ export function Payoff({
     setFeedback(correct ? "correct" : "wrong");
     setSelectedIndex(index);
     setLastScore(points);
-    if (correct) setCorrectCount((value) => value + 1);
     onScore(points, correct, nextStreak, `${question.typeLabel} · ${question.seed.label}`);
   };
 
@@ -82,7 +77,7 @@ export function Payoff({
   return (
     <GameFrame
       mode="payoff"
-      eyebrow={`PAYOFF · ROUND ${round} · ${levelLabel(roundLevel)}`}
+      eyebrow={`PAYOFF · ROUND ${round}`}
       title="Call the payoff."
       onBack={onBack}
       scoreboard={scoreboard}
@@ -98,7 +93,7 @@ export function Payoff({
             metrics={[
               { label: "TERMINAL SPOT S(T)", value: question.type === "payoff" ? question.spot : "?" },
               { label: "POSITION", value: question.bookSummary },
-              { label: "LEVEL", value: question.levelLabel },
+              { label: "TYPE", value: question.typeLabel },
             ]}
           />
           <div className="game-layout">

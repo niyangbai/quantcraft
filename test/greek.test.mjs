@@ -88,9 +88,9 @@ test("the AI prompt carries the metric, book, and direction", () => {
   const rally = { label: "Spot rallies", detail: "spot up", spot: 118, vol: 0.2, rate: 0.025, date: "2025-01-02" };
   const longCall = { name: "Long call", legs: [{ type: "call", strike: 100, qty: 1 }] };
   const q = generateGreekQuestion(rng(7), ql, singleBank(rally, longCall, "delta"));
-  const prompt = buildGreekPrompt(q, "analyst");
+  const prompt = buildGreekPrompt(q, "vp");
   assert.ok(prompt.includes("DELTA"), "prompt names the metric");
   assert.ok(prompt.includes("Long call"), "prompt names the book");
   assert.ok(prompt.includes("up"), "prompt names the direction");
-  assert.ok(prompt.includes("basic finance knowledge"), "prompt names the learner's level");
+  assert.ok(prompt.includes("strong working knowledge of markets"), "prompt names the learner's level");
 });

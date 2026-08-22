@@ -5,7 +5,7 @@ import type { QuantLibRuntime } from "@quantcraft/quantlibjs";
 import { GREEK_LABELS } from "@quantcraft/finmath";
 import type { GreekKey, GreekRisk } from "@quantcraft/finmath";
 import { AiPromptModal, ChoiceGrid, GameFrame, PositionBook, RevealBar, RoundResult, RoundTimer, ScenarioCard, SideBadge } from "../../ui";
-import { seededRandom, tutorIntro } from "../../game";
+import { difficultyTimeScale, seededRandom, tutorIntro } from "../../game";
 import { useSeededRound } from "../../hooks";
 import type { QuestionBank, Scoreboard } from "../../game";
 import { generateHedgeRound, settleHedge, tradeBody } from "./game";
@@ -24,7 +24,7 @@ const greekLines = (greeks: GreekRisk, keys: GreekKey[]) => (
 );
 
 export function Hedge({ ql, bank, onScore, onBack, scoreboard }: { ql?: QuantLibRuntime; bank: QuestionBank["hedge"]; onScore: (score: number, passed: boolean, label: string) => void; onBack: () => void; scoreboard: Scoreboard }) {
-  const ROUND_SECONDS = 45;
+  const ROUND_SECONDS = 45 * difficultyTimeScale(scoreboard.difficulty);
   const { roundKey, nextSeed } = useSeededRound();
   const [selectedTrades, setSelectedTrades] = useState<string[]>([]);
   const [secondsLeft, setSecondsLeft] = useState(ROUND_SECONDS);

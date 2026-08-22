@@ -169,7 +169,7 @@ test("decision window shortens with streak and floors", () => {
 
 test("the AI prompt carries the surface, shock, positions and the machine answer", () => {
   const round = generateVolatilityRound(rng(7), ql);
-  const prompt = buildVolatilityPrompt(round, "analyst");
+  const prompt = buildVolatilityPrompt(round, "vp");
   assert.ok(prompt.includes(`spot ${round.spot}`));
   assert.ok(prompt.includes(round.shockLabel));
   assert.ok(prompt.includes(round.answerText));

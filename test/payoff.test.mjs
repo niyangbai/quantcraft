@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
 import { QuantLibRuntime } from "@quantcraft/quantlibjs";
 import { bookPayoff, breakevens, isContinuousBook, legPayoff, normalCdf, normalPdf, payoffExtremes } from "@quantcraft/finmath";
-import { generatePayoffQuestion, levelForProgress, decisionDurationMs, toTerminalLeg } from "./dist/games/payoff/game.js";
+import { generatePayoffQuestion, toTerminalLeg } from "./dist/games/payoff/game.js";
 
 const moduleUrl = new URL("../packages/quantlibjs/wasm/quantlib.mjs", import.meta.url);
 const wasmUrl = fileURLToPath(new URL("../packages/quantlibjs/wasm/quantlib.wasm", import.meta.url));
@@ -37,24 +37,19 @@ const SEEDS = [
 ];
 
 test("generator always yields 4 distinct choices with a matching answer", () => {
-  let valid = 0;
-  for (let seed = 1; seed <= 4000; seed += 1) {
-    for (let tier = 1; tier <= 5; tier += 1) {
-      const question = generatePayoffQuestion(rng(seed), SEEDS, tier, ql);
-      assert.equal(new Set(question.choices.map((c) => c.label)).size, 4, `seed=${seed} tier=${tier}`);
-      const answerValue = question.choices[question.answerIndex].value;
-      const expected = question.type === "maxProfit" && question.answerText === "UNLIMITED" ? "unbounded" : Number(question.answerText);
-      assert.equal(answerValue, expected, `seed=${seed} tier=${tier} type=${question.type}`);
-      valid += 1;
-    }
+  for (let seed = 1; seed <= 20000; seed += 1) {
+    const question = generatePayoffQuestion(rng(seed), SEEDS, ql);
+    assert.equal(new Set(question.choices.map((c) => c.label)).size, 4, `seed=${seed}`);
+    const answerValue = question.choices[question.answerIndex].value;
+    const expected = question.type === "maxProfit" && question.answerText === "UNLIMITED" ? "unbounded" : Number(question.answerText);
+    assert.equal(answerValue, expected, `seed=${seed} type=${question.type}`);
   }
-  assert.equal(valid, 20000);
 });
 
 test("payoff-type questions match bookPayoff at the terminal spot", () => {
   let verified = 0;
   for (let seed = 1; seed <= 1000; seed += 1) {
-    const question = generatePayoffQuestion(rng(seed), SEEDS, 1, ql);
+    const question = generatePayoffQuestion(rng(seed), SEEDS, ql);
     if (question.type === "payoff") {
       assert.equal(bookPayoff(question.legs, question.spot), question.choices[question.answerIndex].value);
       verified += 1;
@@ -65,7 +60,7 @@ test("payoff-type questions match bookPayoff at the terminal spot", () => {
 
 test("max-profit questions report the book's true extreme", () => {
   for (let seed = 1; seed <= 2000; seed += 1) {
-    const question = generatePayoffQuestion(rng(seed), SEEDS, 5, ql);
+    const question = generatePayoffQuestion(rng(seed), SEEDS, ql);
     if (question.type !== "maxProfit") continue;
     const max = payoffExtremes(question.legs).max;
     assert.equal(question.choices[question.answerIndex].value, max);
@@ -74,22 +69,13 @@ test("max-profit questions report the book's true extreme", () => {
 
 test("breakeven questions use the book's unique integer root", () => {
   for (let seed = 1; seed <= 2000; seed += 1) {
-    const question = generatePayoffQuestion(rng(seed), SEEDS, 5, ql);
+    const question = generatePayoffQuestion(rng(seed), SEEDS, ql);
     if (question.type !== "breakeven") continue;
     const roots = breakevens(question.legs);
     assert.equal(roots.length, 1);
     assert.ok(Number.isInteger(roots[0]));
     assert.equal(question.choices[question.answerIndex].value, roots[0]);
   }
-});
-
-test("level progression advances only forward", () => {
-  assert.equal(levelForProgress(0), 1);
-  assert.equal(levelForProgress(1), 1);
-  assert.equal(levelForProgress(2), 2);
-  assert.equal(levelForProgress(4), 3);
-  assert.equal(levelForProgress(6), 4);
-  assert.equal(levelForProgress(8), 5);
 });
 
 test("QuantLib payoff math agrees with the pure finmath analyzers", () => {
@@ -145,7 +131,7 @@ test("QuantLib-backed questions carry QuantLib-computed answers", () => {
   let maxProfitChecks = 0;
   let breakevenChecks = 0;
   for (let seed = 1; seed <= 600; seed += 1) {
-    const question = generatePayoffQuestion(rng(seed), SEEDS, 5, ql);
+    const question = generatePayoffQuestion(rng(seed), SEEDS, ql);
     if (question.type === "payoff") {
       const expected = question.legs.reduce((sum, leg) => sum + ql.terminalPayoff(toTerminalLeg(leg), question.spot), 0);
       assert.equal(question.choices[question.answerIndex].value, expected, `seed=${seed}`);
@@ -165,7 +151,3 @@ test("QuantLib-backed questions carry QuantLib-computed answers", () => {
   assert.ok(payoffChecks > 0 && maxProfitChecks > 0 && breakevenChecks > 0, "expected a mix of question types in 600 draws");
 });
 
-test("decision window shrinks as difficulty and streak grow", () => {
-  assert.ok(decisionDurationMs(1, 0) > decisionDurationMs(5, 10));
-  assert.ok(decisionDurationMs(1, 0) >= 4500);
-});

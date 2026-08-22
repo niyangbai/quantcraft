@@ -154,7 +154,7 @@ test("decision window shortens with streak and floors", () => {
 
 test("the AI prompt carries the curve, shock, positions and the machine answer", () => {
   const round = generateCurveRound(rng(7), ql);
-  const prompt = buildCurvePrompt(round, "analyst");
+  const prompt = buildCurvePrompt(round, "vp");
   assert.ok(prompt.includes(round.shockLabel));
   assert.ok(prompt.includes(round.answerText));
   assert.ok(prompt.includes("P&L"));

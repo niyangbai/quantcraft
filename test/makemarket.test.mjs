@@ -103,7 +103,7 @@ test("inventoryText and the AI prompt carry the market facts", () => {
   assert.equal(inventoryText(40), "+40 LONG");
   assert.equal(inventoryText(-12), "-12 SHORT");
   const round = generateMakeMarketRound(rng(7), ql);
-  const prompt = buildMakeMarketPrompt(round, "analyst");
+  const prompt = buildMakeMarketPrompt(round, "vp");
   assert.ok(prompt.includes(`fair value ${round.fairValue.toFixed(2)}`));
   assert.ok(prompt.includes(round.answerText));
   assert.ok(prompt.includes(`uncertainty ${round.uncertainty.toFixed(2)}`));

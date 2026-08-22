@@ -1,7 +1,7 @@
 import "./curve.css";
 import { useEffect, useMemo, useState } from "react";
 import { AiPromptModal, ChoiceGrid, GameFrame, RevealBar, RoundResult, RoundTimer, ScenarioCard, SideBadge } from "../../ui";
-import { roundScore, seededRandom } from "../../game";
+import { difficultyTimeScale, roundScore, seededRandom } from "../../game";
 import { useSeededRound } from "../../hooks";
 import type { Scoreboard } from "../../game";
 import type { QuantLibRuntime } from "@quantcraft/quantlibjs";
@@ -32,7 +32,7 @@ export function Curve({
   const [lastScore, setLastScore] = useState(0);
   const [aiPrompt, setAiPrompt] = useState<string>();
 
-  const duration = curveDurationMs(scoreboard.streak);
+  const duration = curveDurationMs(scoreboard.streak) * difficultyTimeScale(scoreboard.difficulty);
   const question = useMemo(() => {
     if (!ql) return undefined;
     const rng = seededRandom(roundKey);
