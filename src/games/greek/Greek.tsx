@@ -2,7 +2,7 @@ import "./greek.css";
 import { useEffect, useMemo, useState } from "react";
 import type { QuantLibRuntime } from "@quantcraft/quantlibjs";
 import { AiPromptModal, ChoiceGrid, GameFrame, PositionBook, RevealBar, RoundResult, RoundTimer, ScenarioCard } from "../../ui";
-import { flashRoundScore, seededRandom } from "../../game";
+import { roundScore, seededRandom } from "../../game";
 import { useSeededRound } from "../../hooks";
 import type { QuestionBank, Scoreboard } from "../../game";
 import { buildGreekPrompt, generateGreekQuestion, greekDurationMs } from "./game";
@@ -30,7 +30,7 @@ export function Greek({ ql, bank, onScore, onBack, scoreboard }: { ql?: QuantLib
   const answer = (direction: GreekDirection) => {
     if (!question || answered) return;
     const correct = direction === question.direction;
-    const { points, nextStreak } = flashRoundScore(scoreboard.streak, correct);
+    const { points, nextStreak } = roundScore(scoreboard.streak, correct);
     setAnswered(true); setFeedback(correct ? "correct" : "wrong"); setLastScore(points);
     onScore(points, correct, nextStreak, `${question.metric} · ${question.book.name}`);
   };
@@ -42,7 +42,7 @@ export function Greek({ ql, bank, onScore, onBack, scoreboard }: { ql?: QuantLib
   return (
     <GameFrame
       mode="greek"
-      eyebrow={`GREEK · FLASH ROUND · STREAK ×${scoreboard.streak}`}
+      eyebrow={`GREEK · STREAK ×${scoreboard.streak}`}
       title="Up, flat, or down?"
       intro="Read the market shock, the position, and the requested metric. No calculator. Just direction."
       onBack={onBack}

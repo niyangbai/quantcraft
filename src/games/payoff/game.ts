@@ -59,7 +59,9 @@ export const toTerminalLeg = (leg: PayoffLeg): TerminalPayoffInput => ({
   kind: leg.kind,
   quantity: signedQuantity(leg),
   strike: leg.strike,
-  call: leg.optionType === "call",
+  // Direction comes from `kind` for vanilla call/put legs and from `optionType`
+  // for digital/barrier legs (where `kind` does not encode the direction).
+  call: leg.kind === "call" ? true : leg.kind === "put" ? false : leg.optionType === "call",
   cashPayoff: leg.cashPayoff,
   redemption: leg.faceAmount,
   couponRate: leg.couponRate / 100,
@@ -140,7 +142,7 @@ const buildLegs = (seed: PayoffSeed, rng: () => number, tier: PayoffTier, baseSp
       side: "long" as PayoffSide,
       quantity,
       strike: baseSpot + (leg.strikeOffset ?? 0),
-      optionType: leg.optionType ?? "call",
+      optionType: leg.kind === "call" ? "call" : leg.kind === "put" ? "put" : leg.optionType ?? "call",
       cashPayoff: leg.cashPayoff ?? 10,
       faceAmount: leg.faceAmount ?? 100,
       couponRate: leg.couponRate ?? 5,

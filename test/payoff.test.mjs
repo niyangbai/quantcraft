@@ -100,6 +100,7 @@ test("QuantLib payoff math agrees with the pure finmath analyzers", () => {
   const books = [
     [legs({ kind: "call" })],
     [legs({ kind: "put", optionType: "put" })],
+    [legs({ kind: "put" })], // regression: a put leg whose optionType was left as "call"
     [legs({ kind: "equity" })],
     [legs({ kind: "forward" })],
     [legs({ kind: "bond" })],

@@ -3,7 +3,7 @@
 // then evaluates it before/after the shock through @quantcraft/quantlibjs.
 // No React, no storage.
 
-import { between, flashDrillDurationMs, isoDate, market, pick } from "../../game.js";
+import { between, drillDurationMs, isoDate, market, pick } from "../../game.js";
 import type { QuestionBank } from "../../game.js";
 import type { QuantLibRuntime } from "@quantcraft/quantlibjs";
 
@@ -43,8 +43,8 @@ export const displayedDirection = (before: number, after: number, precision: num
 export const greekDirection = (before: number, after: number): GreekDirection =>
   displayedDirection(before, after, 4);
 
-/** Decision window: shorter on longer streaks, matching the other flash drills. */
-export const greekDurationMs = (streak: number): number => flashDrillDurationMs(streak);
+/** Decision window: shorter on longer streaks, matching the other drills. */
+export const greekDurationMs = (streak: number): number => drillDurationMs(streak);
 
 const METRIC_LABELS: Record<GreekMetric, string> = { value: "FAIR VALUE", delta: "DELTA", gamma: "GAMMA", vega: "VEGA", theta: "THETA", rho: "RHO" };
 

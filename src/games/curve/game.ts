@@ -9,7 +9,7 @@
 // before), so key-rate exposure, coupon, and notional all enter exactly.
 
 import type { CurveBondPositionInput, QuantLibRuntime } from "@quantcraft/quantlibjs";
-import { flashDrillDurationMs, pick, shuffle } from "../../shared.js";
+import { drillDurationMs, pick, shuffle } from "../../shared.js";
 
 export type CurveParams = { evaluationDate?: string };
 
@@ -79,7 +79,7 @@ export type CurveRound = {
 };
 
 /** Decision window: shorter on longer streaks. */
-export const curveDurationMs = (streak: number): number => flashDrillDurationMs(streak);
+export const curveDurationMs = (streak: number): number => drillDurationMs(streak);
 
 /** Winner's P&L must clear this (dollars) to keep "largest P&L" well-posed. */
 export const CURVE_MIN_WINNER_PNL = 50;

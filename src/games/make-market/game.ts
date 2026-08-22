@@ -9,7 +9,7 @@
 import { bestQuote, builtinNormalStats } from "@quantcraft/finmath";
 import type { MarketMakingContext, NormalStats, Quote, QuoteAnalysis } from "@quantcraft/finmath";
 import type { QuantLibRuntime } from "@quantcraft/quantlibjs";
-import { flashDrillDurationMs, pick, shuffle } from "../../shared.js";
+import { drillDurationMs, pick, shuffle } from "../../shared.js";
 
 export type MakeMarketParams = {
   riskAversion?: number;
@@ -48,7 +48,7 @@ export type MakeMarketRound = {
 };
 
 /** Decision window: shorter on longer streaks. */
-export const makeMarketDurationMs = (streak: number): number => flashDrillDurationMs(streak);
+export const makeMarketDurationMs = (streak: number): number => drillDurationMs(streak);
 
 /** Signed tick offsets from fair: [bid, ask]. Ask < |bid| leans to sell. */
 const TEMPLATES: ReadonlyArray<readonly [number, number]> = [

@@ -1,7 +1,7 @@
 import "./exotic.css";
 import { useEffect, useMemo, useState } from "react";
 import { AiPromptModal, ChoiceGrid, GameFrame, RevealBar, RoundResult, RoundTimer, ScenarioCard, SideBadge } from "../../ui";
-import { flashRoundScore, seededRandom } from "../../game";
+import { roundScore, seededRandom } from "../../game";
 import { useSeededRound } from "../../hooks";
 import type { Scoreboard } from "../../game";
 import type { QuantLibRuntime } from "@quantcraft/quantlibjs";
@@ -48,7 +48,7 @@ export function Exotic({
   const submit = (index: number) => {
     if (!question || answered) return;
     const correct = index === question.answerIndex;
-    const { points, nextStreak } = flashRoundScore(scoreboard.streak, correct);
+    const { points, nextStreak } = roundScore(scoreboard.streak, correct);
     setAnswered(true);
     setFeedback(correct ? "correct" : "wrong");
     setSelectedIndex(index);
@@ -78,7 +78,7 @@ export function Exotic({
   return (
     <GameFrame
       mode="exotic"
-      eyebrow={`EXOTIC · FLASH DRILL · ROUND ${round}`}
+      eyebrow={`EXOTIC · ROUND ${round}`}
       title="Find the state that matters. Find the pain."
       onBack={onBack}
       scoreboard={scoreboard}

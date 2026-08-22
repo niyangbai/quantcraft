@@ -1,7 +1,7 @@
 import "./curve.css";
 import { useEffect, useMemo, useState } from "react";
 import { AiPromptModal, ChoiceGrid, GameFrame, RevealBar, RoundResult, RoundTimer, ScenarioCard, SideBadge } from "../../ui";
-import { flashRoundScore, seededRandom } from "../../game";
+import { roundScore, seededRandom } from "../../game";
 import { useSeededRound } from "../../hooks";
 import type { Scoreboard } from "../../game";
 import type { QuantLibRuntime } from "@quantcraft/quantlibjs";
@@ -51,7 +51,7 @@ export function Curve({
   const submit = (index: number) => {
     if (!question || answered) return;
     const correct = index === question.answerIndex;
-    const { points, nextStreak } = flashRoundScore(scoreboard.streak, correct);
+    const { points, nextStreak } = roundScore(scoreboard.streak, correct);
     setAnswered(true);
     setFeedback(correct ? "correct" : "wrong");
     setSelectedIndex(index);
@@ -81,7 +81,7 @@ export function Curve({
   return (
     <GameFrame
       mode="curve"
-      eyebrow={`CURVE TRADER · FLASH DRILL · ROUND ${round}`}
+      eyebrow={`CURVE TRADER · ROUND ${round}`}
       title="Read the curve move. Find the P&L."
       onBack={onBack}
       scoreboard={scoreboard}

@@ -1,7 +1,7 @@
 import "./volatility.css";
 import { useEffect, useMemo, useState } from "react";
 import { AiPromptModal, ChoiceGrid, GameFrame, RevealBar, RoundResult, RoundTimer, ScenarioCard, SideBadge, VolSurface3D } from "../../ui";
-import { flashRoundScore, seededRandom } from "../../game";
+import { roundScore, seededRandom } from "../../game";
 import { useSeededRound } from "../../hooks";
 import type { Scoreboard } from "../../game";
 import type { QuantLibRuntime } from "@quantcraft/quantlibjs";
@@ -48,7 +48,7 @@ export function Volatility({
   const submit = (index: number) => {
     if (!question || answered) return;
     const correct = index === question.answerIndex;
-    const { points, nextStreak } = flashRoundScore(scoreboard.streak, correct);
+    const { points, nextStreak } = roundScore(scoreboard.streak, correct);
     setAnswered(true);
     setFeedback(correct ? "correct" : "wrong");
     setSelectedIndex(index);
@@ -78,7 +78,7 @@ export function Volatility({
   return (
     <GameFrame
       mode="volatility"
-      eyebrow={`VOLATILITY · FLASH DRILL · ROUND ${round}`}
+      eyebrow={`VOLATILITY · ROUND ${round}`}
       title="Read the surface. Find the vol P&L."
       onBack={onBack}
       scoreboard={scoreboard}

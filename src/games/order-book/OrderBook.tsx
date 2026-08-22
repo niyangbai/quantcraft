@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { bestAsk, bestBid, spread } from "@quantcraft/finmath";
 import type { OrderBook as Book } from "@quantcraft/finmath";
 import { AiPromptModal, RoundResult, RoundTimer } from "../../ui";
-import { flashRoundScore, secureSeed, seededRandom } from "../../game";
+import { roundScore, secureSeed, seededRandom } from "../../game";
 import { useSeededRound } from "../../hooks";
 import type { Scoreboard } from "../../game";
 import { applyEvent, buildOrderbookPrompt, formatPrice, generateInitialBook, generateQuestion, isBookHealthy } from "./game";
@@ -61,7 +61,7 @@ export function OrderBook({
   const submit = (index: number) => {
     if (!question || answered) return;
     const correct = index === question.answerIndex;
-    const { points, nextStreak } = flashRoundScore(scoreboard.streak, correct);
+    const { points, nextStreak } = roundScore(scoreboard.streak, correct);
     setAnswered(true);
     setFeedback(correct ? "correct" : "wrong");
     setSelectedIndex(index);
@@ -97,7 +97,7 @@ export function OrderBook({
   return (
     <GameFrame
       mode="orderbook"
-      eyebrow={`ORDER BOOK · FLASH ROUND · ROUND ${round + 1} · BOOK ${bookIndex + 1}`}
+      eyebrow={`ORDER BOOK · ROUND ${round + 1} · BOOK ${bookIndex + 1}`}
       title="Read the book."
       intro="A market order walks the ladder in price-time priority. Call what happens to the book."
       onBack={onBack}

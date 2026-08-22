@@ -12,7 +12,7 @@
 import { applyVolShock, blackVol, termBumpAt } from "@quantcraft/finmath";
 import type { VolPnlBreakdown, VolShock, VolSurfaceParams } from "@quantcraft/finmath";
 import type { QuantLibRuntime } from "@quantcraft/quantlibjs";
-import { flashDrillDurationMs, pick, shuffle } from "../../shared.js";
+import { drillDurationMs, pick, shuffle } from "../../shared.js";
 
 export type VolatilityParams = {
   riskFreeRate?: number;
@@ -77,7 +77,7 @@ export type VolatilityRound = {
 };
 
 /** Decision window: shorter on longer streaks. */
-export const volatilityDurationMs = (streak: number): number => flashDrillDurationMs(streak);
+export const volatilityDurationMs = (streak: number): number => drillDurationMs(streak);
 
 /** Winner's P&L must clear this to keep "largest positive" well-posed. */
 export const VOLATILITY_MIN_WINNER_PNL = 0.02;

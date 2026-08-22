@@ -38,7 +38,7 @@ export const difficultyLives: Record<Difficulty, number | null> = { intern: null
 export type DrillStat = { score: number; answers: number; correct: number; bestStreak: number };
 export type HedgeStat = { score: number; rounds: number; passed: number; best: number };
 
-/** Flash-drill modes, excluding hedge (which settles on a different shape). */
+/** Drill modes, excluding hedge (which settles on a different shape). */
 export const DRILL_MODES = ["payoff", "greek", "orderbook", "makemarket", "volatility", "curve", "exotic"] as const;
 export type DrillMode = (typeof DRILL_MODES)[number];
 
@@ -97,7 +97,7 @@ export const market = {
   maturityDate: "2028-01-03",
 };
 // Seeded PRNG and shared drill helpers re-exported for `../../game` imports.
-export { secureSeed, seededRandom, between, pick, shuffle, integer, chance, flashDrillDurationMs, flashRoundScore } from "./shared.js";
+export { secureSeed, seededRandom, between, pick, shuffle, integer, chance, drillDurationMs, roundScore } from "./shared.js";
 export const isoDate = (date: Date) => date.toISOString().slice(0, 10);
 
 

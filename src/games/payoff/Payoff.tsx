@@ -1,7 +1,7 @@
 import "./payoff.css";
 import { useEffect, useMemo, useState } from "react";
 import { AiPromptModal, RoundResult, RoundTimer } from "../../ui";
-import { flashRoundScore, seededRandom } from "../../game";
+import { roundScore, seededRandom } from "../../game";
 import { useSeededRound } from "../../hooks";
 import type { Scoreboard } from "../../game";
 import { buildPayoffPrompt, decisionDurationMs, generatePayoffQuestion, legDetailText, levelForProgress, levelLabel } from "./game";
@@ -52,7 +52,7 @@ export function Payoff({
   const submit = (index: number) => {
     if (!question || answered) return;
     const correct = index === question.answerIndex;
-    const { points, nextStreak } = flashRoundScore(scoreboard.streak, correct);
+    const { points, nextStreak } = roundScore(scoreboard.streak, correct);
     setAnswered(true);
     setFeedback(correct ? "correct" : "wrong");
     setSelectedIndex(index);
@@ -80,7 +80,7 @@ export function Payoff({
   return (
     <GameFrame
       mode="payoff"
-      eyebrow={`PAYOFF · FLASH DRILL · ROUND ${round} · ${levelLabel(roundLevel)}`}
+      eyebrow={`PAYOFF · ROUND ${round} · ${levelLabel(roundLevel)}`}
       title="Call the payoff."
       onBack={onBack}
       scoreboard={scoreboard}

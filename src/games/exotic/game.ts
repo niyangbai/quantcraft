@@ -8,7 +8,7 @@
 // strike, the running average, the weakest asset — and find the pain.
 
 import type { QuantLibRuntime } from "@quantcraft/quantlibjs";
-import { flashDrillDurationMs, pick, shuffle } from "../../shared.js";
+import { drillDurationMs, pick, shuffle } from "../../shared.js";
 
 export type ExoticParams = { riskFreeRate?: number; dividendYield?: number };
 
@@ -67,7 +67,7 @@ export type ExoticRound = {
 };
 
 /** Decision window: exotics take a little longer to read. */
-export const exoticDurationMs = (streak: number): number => flashDrillDurationMs(streak, 5000, 11000, 250);
+export const exoticDurationMs = (streak: number): number => drillDurationMs(streak, 5000, 11000, 250);
 
 /** The loser must be clearly negative, with a visible margin over the runner-up. */
 export const EXOTIC_MIN_LOSS = 0.5;

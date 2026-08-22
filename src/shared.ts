@@ -1,7 +1,7 @@
 // shared — deterministic PRNG and stateless drill helpers.
 //
 // Every game module reuses the same seeded-random utilities and the same
-// flash-drill scoring / timing formulas, so they live here once. This module
+// scoring / timing formulas, so they live here once. This module
 // is a leaf: it imports nothing from the app, so no game module introduces a
 // circular dependency by importing it.
 
@@ -48,10 +48,10 @@ export const shuffle = <T,>(rng: Rng, items: readonly T[]): T[] => {
   return copy;
 };
 
-/** Decision window for flash drills: shrinks with streak, floored to `floor` ms. */
-export const flashDrillDurationMs = (streak: number, floor = 4500, start = 10000, perStreak = 250): number =>
+/** Decision window for a drill: shrinks with streak, floored to `floor` ms. */
+export const drillDurationMs = (streak: number, floor = 4500, start = 10000, perStreak = 250): number =>
   Math.max(floor, start - streak * perStreak);
 
-/** Points and resulting streak for a flash-drill answer. */
-export const flashRoundScore = (streak: number, correct: boolean): { points: number; nextStreak: number } =>
+/** Points and resulting streak for a drill answer. */
+export const roundScore = (streak: number, correct: boolean): { points: number; nextStreak: number } =>
   correct ? { points: 100 + streak * 10, nextStreak: streak + 1 } : { points: -50, nextStreak: 0 };
